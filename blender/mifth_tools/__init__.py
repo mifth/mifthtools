@@ -60,11 +60,17 @@ def register():
 
 
         # Draw Cloned Settings
-        #drawForClonesObj = StringProperty(
-            #name="drawForClonesObj",
-            #subtype="NONE",
-            #default=""
-        #)
+        drawStrokeLength = FloatProperty(
+            default = 0.5,
+            min = 0.001,
+            max = 500.0
+        )
+
+        drawRandomStrokeLength = FloatProperty(
+            default = 0.0,
+            min = 0.0,
+            max = 500.0
+        )
 
         drawClonesDirectionRotate = BoolProperty(
             name="drawClonesDirectionRotate",
@@ -96,6 +102,12 @@ def register():
             max = 0.99
         )
 
+        drawPressure = FloatProperty(
+            default = 0.95,
+            min = 0.0,
+            max = 0.95
+        )
+
         drawClonesAxis = EnumProperty(
             items = (('X', 'X', ''),
                    ('-X', '-X', ''),
@@ -104,7 +116,7 @@ def register():
                    ('Z', 'Z', ''),
                    ('-Z', '-Z', '')
                    ),
-            default = '-Y'
+            default = 'Z'
         )
 
         # Radial Clone Settings

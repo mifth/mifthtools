@@ -26,9 +26,6 @@ import random
 
 bpy.mifthTools = dict()
 
-global prevClonePos
-prevClonePos = None  # PreviousClone position
-
 global drawForClonesObj
 drawForClonesObj = []  # Array of Objects Names
 
@@ -39,23 +36,32 @@ class MFTDrawClones(bpy.types.Operator):
     bl_description = "Draw Clones with Mouse"
     bl_options = {'REGISTER', 'UNDO'}
 
+    prevClonePos = None  # PreviousClone position
+    doPick = False
+    tabletPressure = 1.0
 
     def modal(self, context, event):
         if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
             # allow navigation
             return {'PASS_THROUGH'}
-        elif event.type == 'LEFTMOUSE' and event.value == 'PRESS':
-            mft_pick_and_clone(context, event)
-            return {'RUNNING_MODAL'}
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            return {'CANCELLED'}
+            return {'FINISHED'}
+        elif event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            self.doPick = True
+        elif event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+            self.doPick = False
+
+        if self.doPick is True:
+                mft_pick_and_clone(self, context, event)
+                self.tabletPressure = event.pressure
 
         return {'RUNNING_MODAL'}
+
 
     def invoke(self, context, event):
         mifthTools = bpy.context.scene.mifthTools
         #global drawForClonesObj
-        if len(drawForClonesObj) == 0:
+        if len(drawForClonesObj) == 0 or len(context.selected_objects) == 0:
             self.report({'WARNING'}, "Pick Objects to Clone")
             return {'CANCELLED'}
 
@@ -85,23 +91,13 @@ class MFTPickObjToDrawClone(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def mft_pick_and_clone(context, event, ray_max=1000.0):
+def mft_pick_and_clone(self, context, event, ray_max=1000.0):
     """Run this function on left mouse, execute the ray cast"""
     # get the context arguments
     scene = context.scene
     region = context.region
     rv3d = context.region_data
     coord = event.mouse_region_x, event.mouse_region_y
-
-    # get the ray from the viewport and mouse
-    view_vector = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
-    ray_origin = view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
-
-    if rv3d.view_perspective == 'ORTHO':
-        # move ortho origin back
-        ray_origin = ray_origin - (view_vector * (ray_max / 2.0))
-
-    ray_target = ray_origin + (view_vector * ray_max)
 
 
     def mft_selected_objects_and_duplis():
@@ -121,8 +117,10 @@ def mft_pick_and_clone(context, event, ray_max=1000.0):
             obj.dupli_list_clear()
 
 
-    def mft_obj_ray_cast(obj, matrix):
+    def mft_obj_ray_cast(obj, matrix, view_vector, ray_origin, best_length_squared):
         """Wrapper for ray casting that moves the ray into object space"""
+
+        ray_target = ray_origin + (view_vector * ray_max)
 
         # get the ray relative to the object
         matrix_inv = matrix.inverted()
@@ -132,38 +130,67 @@ def mft_pick_and_clone(context, event, ray_max=1000.0):
         # cast the ray
         hit, normal, face_index = obj.ray_cast(ray_origin_obj, ray_target_obj)
 
-        if face_index != -1:
-            return hit, normal, face_index
-        else:
-            return None, None, None
+        if hit is not None:
+            hit_world = matrix * hit
+
+            length_squared = (hit_world - ray_origin_mouse).length_squared
+
+            if length_squared < best_length_squared and face_index != -1:
+                return obj, normal.normalized(), hit_world, length_squared
+
+        return None, None, None, best_length_squared
 
 
     # cast rays and find the closest object
     best_length_squared = ray_max * ray_max
-    best_obj = None
+    best_obj, best_obj_nor, best_obj_pos = None, None, None
+    best_obj_rand, best_obj_nor_rand, best_obj_pos_rand = None, None, None
+    best_obj_hit = None
 
     mifthTools = bpy.context.scene.mifthTools
 
     for obj, matrix in mft_selected_objects_and_duplis():
         if obj.type == 'MESH':
-            hit, normal, face_index = mft_obj_ray_cast(obj, matrix)
 
-            if hit is not None:
-                hit_world = matrix * hit
+            # get the ray from the viewport and mouse
+            view_vector_mouse = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
+            ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
 
-                length_squared = (hit_world - ray_origin).length_squared
+            # Random Vec
+            if mifthTools.drawRandomStrokeLength > 0.0:
+                randX_mouse = random.uniform(-1.0, 1.0)
+                randY_mouse = random.uniform(-1.0, 1.0)
+                coordRandAdd =  (coord[0] + randX_mouse, coord[1] +randY_mouse)
+                ray_origin_rand = view3d_utils.region_2d_to_origin_3d(region, rv3d, coordRandAdd)
+                ray_origin_rand_vec = (ray_origin_rand - ray_origin_mouse).normalized() * random.uniform(0.0, mifthTools.drawRandomStrokeLength)
+                ray_origin_rand = ray_origin_mouse + ray_origin_rand_vec
 
-                if length_squared < best_length_squared:
-                    best_length_squared = length_squared
-                    best_obj = obj
-                    best_obj_pos = hit_world
-                    best_obj_nor = normal.normalized()
-                    # scene.cursor_location = hit_world
+            if rv3d.view_perspective == 'ORTHO':
+                # move ortho origin back
+                ray_origin_mouse = ray_origin_mouse - (view_vector_mouse * (ray_max / 2.0))
+                if mifthTools.drawRandomStrokeLength > 0.0:
+                    ray_origin_rand = ray_origin_rand - (view_vector_mouse * (ray_max / 2.0))
+
+            # Do RayCast!
+            best_obj, best_obj_nor, best_obj_pos, best_length_squared = mft_obj_ray_cast(obj, matrix, view_vector_mouse, ray_origin_mouse, best_length_squared)
+            best_obj_hit = best_obj_pos
+
+            # Check for random
+            if best_obj is not None:
+                if self.prevClonePos is not None and (best_obj_pos - self.prevClonePos).length <= mifthTools.drawStrokeLength:
+                    best_obj = None  # Don't do cloning
+
+            if mifthTools.drawRandomStrokeLength > 0.0 and best_obj is not None:
+                #if self.prevClonePos is not None and (best_obj_pos - self.prevClonePos).length >= 0.5:
+                    best_obj_rand, best_obj_nor_rand, best_obj_pos_rand, length_squared_temp = mft_obj_ray_cast(obj, matrix, view_vector_mouse, ray_origin_rand, best_length_squared)
+                    if best_obj_rand is None:
+                        best_obj = None
+                    else:
+                        best_obj, best_obj_nor, best_obj_pos = best_obj_rand, best_obj_nor_rand, best_obj_pos_rand
+
 
     # now we have the object under the mouse cursor,
-    # we could do lots of stuff but for the example just select.
-    #global drawForClonesObj
-    if best_obj is not None and len(drawForClonesObj) > 0:
+    if best_obj is not None:
         selected_Obj_True = context.selected_objects
         obj_Active_True = context.scene.objects.active
         bpy.ops.object.select_all(action='DESELECT')
@@ -218,9 +245,9 @@ def mft_pick_and_clone(context, event, ray_max=1000.0):
                 bpy.ops.transform.rotate(value=angleRotate, axis=( (xRotateAxis.x, xRotateAxis.y, xRotateAxis.z) ), proportional='DISABLED')
 
         # Ratate to Direction
-        global prevClonePos
-        if mifthTools.drawClonesDirectionRotate is True and prevClonePos is not None:
-            newDirRotLookAtt = (prevClonePos - best_obj_pos).normalized()
+        #global prevClonePos
+        if mifthTools.drawClonesDirectionRotate is True and self.prevClonePos is not None:
+            newDirRotLookAtt = (self.prevClonePos - best_obj_pos).normalized()
 
             newDupMatrix2 = newDup.matrix_world
             newDupZAxisTuple2 = (newDupMatrix2[0][2], newDupMatrix2[1][2], newDupMatrix2[2][2])
@@ -238,7 +265,8 @@ def mft_pick_and_clone(context, event, ray_max=1000.0):
             # Main rotation
             bpy.ops.transform.rotate(value= newDirRotAngle, axis=( (best_obj_nor.x, best_obj_nor.y, best_obj_nor.z) ), proportional='DISABLED')
 
-        prevClonePos = best_obj_pos.copy()  # set PreviousClone position
+        # set PreviousClone position
+        self.prevClonePos = best_obj_hit
 
         # Change Axis
         objMatrix = newDup.matrix_world
@@ -266,6 +294,10 @@ def mft_pick_and_clone(context, event, ray_max=1000.0):
             if mifthTools.drawClonesRadialRotate is False and mifthTools.drawClonesNormalRotate is False:
                 randNorAxis = (0.0, 0.0, 1.0)
             bpy.ops.transform.rotate(value=randNorAngle, axis=( randNorAxis ), proportional='DISABLED')
+
+        if self.tabletPressure < 1.0:
+            thePressure = max(1.0 - mifthTools.drawPressure, self.tabletPressure)
+            bpy.ops.transform.resize(value=(thePressure, thePressure, thePressure), constraint_axis=(False, False, False), constraint_orientation='GLOBAL')
 
         # Random Scale
         if mifthTools.randScaleClone > 0.0:

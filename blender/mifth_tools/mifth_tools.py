@@ -40,19 +40,25 @@ class MFTPanelCloning(bpy.types.Panel):
         layout = self.layout
         mifthTools = bpy.context.scene.mifthTools
 
+        layout.label(text="Draw Clones:")
         layout.operator("mft.draw_clones", text="DrawClones")
         layout.operator("mft.pick_obj_to_clone_draw", text="PickObjects")
         layout.prop(mifthTools, "drawClonesDirectionRotate", text='DirectionRotate')
         layout.prop(mifthTools, "drawClonesRadialRotate", text='RadialRotate')
         layout.prop(mifthTools, "drawClonesNormalRotate", text='NormalRotate')
+        layout.prop(mifthTools, "drawStrokeLength", text='StrokeLength')
+        layout.prop(mifthTools, "drawRandomStrokeLength", text='RandomLength')
         layout.prop(mifthTools, "randNormalClone", text='RandRot')
         layout.prop(mifthTools, "randScaleClone", text='RandScale')
+        layout.prop(mifthTools, "drawPressure", text='DrawPressure')
         layout.prop(mifthTools, "drawClonesAxis", text='Axis')
         layout.separator()
         layout.separator()
 
+        layout.label(text="Clone Selected:")
         layout.operator("mft.clonetoselected", text="CloneToSelected")
 
+        layout.label(text="Radial Clone:")
         layout.separator()
         layout.separator()
         layout.operator("mft.radialclone", text="Radial Clone")
@@ -62,6 +68,7 @@ class MFTPanelCloning(bpy.types.Panel):
         row.prop(mifthTools, "radialClonesAxisType", text='')
         #row.prop(mifthTools, "radialClonesAngle", text='')
 
+        layout.label(text="Position Group:")
         layout.separator()
         layout.separator()
         layout.operator("mft.group_instance_to_cursor", text="Position Group")
