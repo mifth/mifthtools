@@ -103,7 +103,7 @@ def register():
         )
 
         drawPressure = FloatProperty(
-            default = 0.95,
+            default = 0.7,
             min = 0.0,
             max = 0.95
         )
