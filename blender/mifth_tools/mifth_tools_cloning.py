@@ -117,7 +117,7 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
             obj.dupli_list_clear()
 
 
-    def mft_obj_ray_cast(obj, matrix, view_vector, ray_origin, best_length_squared):
+    def mft_obj_ray_cast(obj, matrix, view_vector, ray_origin):
         """Wrapper for ray casting that moves the ray into object space"""
 
         ray_target = ray_origin + (view_vector * ray_max)
@@ -133,12 +133,12 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
         if hit is not None:
             hit_world = matrix * hit
 
-            length_squared = (hit_world - ray_origin_mouse).length_squared
+            length_squared = (hit_world - ray_origin).length_squared
 
-            if length_squared < best_length_squared and face_index != -1:
-                return obj, normal.normalized(), hit_world, length_squared
+            if face_index != -1:
+                return normal.normalized(), hit_world, length_squared
 
-        return None, None, None, best_length_squared
+        return None, None, None
 
 
     # cast rays and find the closest object
@@ -158,12 +158,13 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
 
             # Random Vec
             if mifthTools.drawRandomStrokeLength > 0.0:
-                randX_mouse = random.uniform(-1.0, 1.0)
-                randY_mouse = random.uniform(-1.0, 1.0)
-                coordRandAdd =  (coord[0] + randX_mouse, coord[1] +randY_mouse)
+                randX_mouse = random.uniform(-10.0, 10.0)
+                randY_mouse = random.uniform(-10.0, 10.0)
+                coordRandAdd =  (coord[0] + randX_mouse, coord[1] + randY_mouse)
                 ray_origin_rand = view3d_utils.region_2d_to_origin_3d(region, rv3d, coordRandAdd)
                 ray_origin_rand_vec = (ray_origin_rand - ray_origin_mouse).normalized() * random.uniform(0.0, mifthTools.drawRandomStrokeLength)
                 ray_origin_rand = ray_origin_mouse + ray_origin_rand_vec
+                print(ray_origin_rand, ray_origin_mouse)
 
             if rv3d.view_perspective == 'ORTHO':
                 # move ortho origin back
@@ -171,23 +172,23 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
                 if mifthTools.drawRandomStrokeLength > 0.0:
                     ray_origin_rand = ray_origin_rand - (view_vector_mouse * (ray_max / 2.0))
 
-            # Do RayCast!
-            best_obj, best_obj_nor, best_obj_pos, best_length_squared = mft_obj_ray_cast(obj, matrix, view_vector_mouse, ray_origin_mouse, best_length_squared)
-            best_obj_hit = best_obj_pos
+            # Do RayCast! t1,t2,t3,t4 - temp values
+            t1,t2,t3 = mft_obj_ray_cast(obj, matrix, view_vector_mouse, ray_origin_mouse)
+            if t1 is not None and t3 < best_length_squared:
+                best_obj = obj
+                best_obj_nor, best_obj_pos, best_length_squared = t1,t2,t3
+                best_obj_hit = best_obj_pos
 
-            # Check for random
+            # Check for stroke length
             if best_obj is not None:
                 if self.prevClonePos is not None and (best_obj_pos - self.prevClonePos).length <= mifthTools.drawStrokeLength:
                     best_obj = None  # Don't do cloning
 
+            # random scatter things
             if mifthTools.drawRandomStrokeLength > 0.0 and best_obj is not None:
-                #if self.prevClonePos is not None and (best_obj_pos - self.prevClonePos).length >= 0.5:
-                    best_obj_rand, best_obj_nor_rand, best_obj_pos_rand, length_squared_temp = mft_obj_ray_cast(obj, matrix, view_vector_mouse, ray_origin_rand, best_length_squared)
-                    if best_obj_rand is None:
-                        best_obj = None
-                    else:
-                        best_obj, best_obj_nor, best_obj_pos = best_obj_rand, best_obj_nor_rand, best_obj_pos_rand
-
+                t1,t2,t3 = mft_obj_ray_cast(obj, matrix, view_vector_mouse, ray_origin_rand)
+                if t1 is not None:
+                    best_obj_nor, best_obj_pos = t1,t2
 
     # now we have the object under the mouse cursor,
     if best_obj is not None:
