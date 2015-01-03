@@ -90,10 +90,16 @@ def register():
             default=True
         )
 
-        randNormalClone = FloatProperty(
+        randNormalRotateClone = FloatProperty(
             default = 0.0,
             min = 0.0,
-            max = 1.0
+            max = 180.0
+        )
+
+        randDirectionRotateClone = FloatProperty(
+            default = 0.0,
+            min = 0.0,
+            max = 180.0
         )
 
         randScaleClone = FloatProperty(

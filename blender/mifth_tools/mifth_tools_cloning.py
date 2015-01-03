@@ -50,6 +50,7 @@ class MFTDrawClones(bpy.types.Operator):
             self.doPick = True
         elif event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
             self.doPick = False
+            self.prevClonePos = None
 
         if self.doPick is True:
                 mft_pick_and_clone(self, context, event)
@@ -164,7 +165,6 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
                 ray_origin_rand = view3d_utils.region_2d_to_origin_3d(region, rv3d, coordRandAdd)
                 ray_origin_rand_vec = (ray_origin_rand - ray_origin_mouse).normalized() * random.uniform(0.0, mifthTools.drawRandomStrokeLength)
                 ray_origin_rand = ray_origin_mouse + ray_origin_rand_vec
-                print(ray_origin_rand, ray_origin_mouse)
 
             if rv3d.view_perspective == 'ORTHO':
                 # move ortho origin back
@@ -289,13 +289,21 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
                 bpy.ops.transform.rotate(value= math.radians(90), axis=( objFixAxisTuple ), proportional='DISABLED')
 
         # Random rotation along Picked Normal
-        if mifthTools.randNormalClone > 0.0:
-            randNorAngle = random.uniform(math.radians(-180.0), math.radians(180.0)) * mifthTools.randNormalClone
+        if mifthTools.randNormalRotateClone > 0.0:
+            randNorAngle = random.uniform(math.radians(-mifthTools.randNormalRotateClone), math.radians(mifthTools.randNormalRotateClone))
             randNorAxis = (best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)
             if mifthTools.drawClonesRadialRotate is False and mifthTools.drawClonesNormalRotate is False:
                 randNorAxis = (0.0, 0.0, 1.0)
             bpy.ops.transform.rotate(value=randNorAngle, axis=( randNorAxis ), proportional='DISABLED')
 
+        # Random rotation along Picked Normal
+        if mifthTools.randDirectionRotateClone > 0.0:
+            randDirX, randDirY, randDirZ = random.uniform(0.0, 1.0), random.uniform(0.0, 1.0), random.uniform(0.0, 1.0)
+            randDirVec = (mathutils.Vector((randDirX, randDirY, randDirZ))).normalized()
+            randDirAngle = random.uniform(math.radians(-mifthTools.randDirectionRotateClone), math.radians(mifthTools.randDirectionRotateClone))
+            bpy.ops.transform.rotate(value=randDirAngle, axis=( randDirVec ), proportional='DISABLED')
+
+        # Pressure sensetivity for scale
         if self.tabletPressure < 1.0:
             thePressure = max(1.0 - mifthTools.drawPressure, self.tabletPressure)
             bpy.ops.transform.resize(value=(thePressure, thePressure, thePressure), constraint_axis=(False, False, False), constraint_orientation='GLOBAL')
