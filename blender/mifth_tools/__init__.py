@@ -66,7 +66,7 @@ def register():
             max = 500.0
         )
 
-        drawRandomStrokeLength = FloatProperty(
+        drawRandomStrokeScatter = FloatProperty(
             default = 0.0,
             min = 0.0,
             max = 500.0

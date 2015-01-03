@@ -158,19 +158,19 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
             ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
 
             # Random Vec
-            if mifthTools.drawRandomStrokeLength > 0.0:
+            if mifthTools.drawRandomStrokeScatter > 0.0:
                 randX_mouse = random.uniform(-10.0, 10.0)
                 randY_mouse = random.uniform(-10.0, 10.0)
                 coordRandAdd =  (coord[0] + randX_mouse, coord[1] + randY_mouse)
                 ray_origin_rand = view3d_utils.region_2d_to_origin_3d(region, rv3d, coordRandAdd)
                 view_vector_rand = view3d_utils.region_2d_to_vector_3d(region, rv3d, coordRandAdd)
-                ray_origin_rand_vec = (ray_origin_rand - ray_origin_mouse).normalized() * random.uniform(0.0, mifthTools.drawRandomStrokeLength)
+                ray_origin_rand_vec = (ray_origin_rand - ray_origin_mouse).normalized() * random.uniform(0.0, mifthTools.drawRandomStrokeScatter)
                 ray_origin_rand = ray_origin_mouse + ray_origin_rand_vec
 
             if rv3d.view_perspective != 'PERSP':
                 # move ortho origin back
                 ray_origin_mouse = ray_origin_mouse - (view_vector_mouse * (ray_max / 2.0))
-                if mifthTools.drawRandomStrokeLength > 0.0:
+                if mifthTools.drawRandomStrokeScatter > 0.0:
                     ray_origin_rand = ray_origin_rand - (view_vector_rand * (ray_max / 2.0))
 
             # Do RayCast! t1,t2,t3,t4 - temp values
@@ -186,7 +186,7 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
                     best_obj = None  # Don't do cloning
 
             # random scatter things
-            if mifthTools.drawRandomStrokeLength > 0.0 and best_obj is not None:
+            if mifthTools.drawRandomStrokeScatter > 0.0 and best_obj is not None:
                 t1,t2,t3 = mft_obj_ray_cast(obj, matrix, view_vector_rand, ray_origin_rand)
                 if t1 is not None:
                     best_obj_nor, best_obj_pos = t1,t2

@@ -47,7 +47,7 @@ class MFTPanelCloning(bpy.types.Panel):
         layout.prop(mifthTools, "drawClonesRadialRotate", text='RadialRotate')
         layout.prop(mifthTools, "drawClonesNormalRotate", text='NormalRotate')
         layout.prop(mifthTools, "drawStrokeLength", text='StrokeLength')
-        layout.prop(mifthTools, "drawRandomStrokeLength", text='RandomLength')
+        layout.prop(mifthTools, "drawRandomStrokeScatter", text='RandomLength')
         layout.prop(mifthTools, "randNormalRotateClone", text='RandNormal')
         layout.prop(mifthTools, "randDirectionRotateClone", text='RandDirection')
         layout.prop(mifthTools, "randScaleClone", text='RandScale')
