@@ -92,7 +92,7 @@ class MFTPickObjToDrawClone(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def mft_pick_and_clone(self, context, event, ray_max=1000.0):
+def mft_pick_and_clone(self, context, event, ray_max=10000.0):
     """Run this function on left mouse, execute the ray cast"""
     # get the context arguments
     scene = context.scene
@@ -157,9 +157,9 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
             view_vector_mouse = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
             ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
 
-            if rv3d.view_perspective != 'PERSP':
-                # move ortho origin back
-                ray_origin_mouse = ray_origin_mouse - (view_vector_mouse * (ray_max / 2.0))
+            #if rv3d.view_perspective != 'PERSP':
+            # move origin back for better work
+            ray_origin_mouse = ray_origin_mouse - (view_vector_mouse * (ray_max / 2.0))
 
             # Do RayCast! t1,t2,t3,t4 - temp values
             t1,t2,t3 = mft_obj_ray_cast(obj, matrix, view_vector_mouse, ray_origin_mouse)
@@ -188,8 +188,9 @@ def mft_pick_and_clone(self, context, event, ray_max=1000.0):
                 
                 #print(ray_origin_mouse, ray_origin_rand)
 
-                if rv3d.view_perspective != 'PERSP':
-                    ray_origin_rand = ray_origin_rand - (view_vector_rand * (ray_max / 2.0))
+                #if rv3d.view_perspective != 'PERSP':
+                # move origin back for better work
+                ray_origin_rand = ray_origin_rand - (view_vector_rand * (ray_max / 2.0))
 
                 t1,t2,t3 = mft_obj_ray_cast(obj, matrix, view_vector_rand, ray_origin_rand)
                 if t1 is not None:
