@@ -39,12 +39,21 @@ class MFTDrawClones(bpy.types.Operator):
     prevClonePos = None  # PreviousClone position
     doPick = False
     tabletPressure = 1.0
+    drawOnObjects = None  # List of objects on which will be drawn
+    obj_Active_True = None  # Active object befor starting drawing
+    dupliList = None  # duplilist of objects
 
     def modal(self, context, event):
         if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
             # allow navigation
             return {'PASS_THROUGH'}
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
+            for obj in self.drawOnObjects:
+                obj.select = True
+            context.scene.objects.active = self.obj_Active_True
+            self.drawOnObjects = None
+            self.dupliList = None
+
             return {'FINISHED'}
         elif event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             self.doPick = True
@@ -68,6 +77,13 @@ class MFTDrawClones(bpy.types.Operator):
 
         if context.space_data.type == 'VIEW_3D':
             context.window_manager.modal_handler_add(self)
+            self.drawOnObjects = context.selected_objects
+            for obj in self.drawOnObjects:
+                obj.select = False
+            self.obj_Active_True = context.scene.objects.active
+
+            self.dupliList = mft_selected_objects_and_duplis(self)
+
             return {'RUNNING_MODAL'}
         else:
             self.report({'WARNING'}, "Active space must be a View3d")
@@ -92,7 +108,26 @@ class MFTPickObjToDrawClone(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def mft_pick_and_clone(self, context, event, ray_max=10000.0):
+def mft_selected_objects_and_duplis(self):
+    """Loop over (object, matrix) pairs (mesh only)"""
+
+    listObjMatrix = []
+    for obj in self.drawOnObjects:
+        if obj.type == 'MESH':
+            listObjMatrix.append((obj, obj.matrix_world.copy()))
+
+        if obj.dupli_type != 'NONE':
+            obj.dupli_list_create(scene)
+            for dob in obj.dupli_list:
+                obj_dupli = dob.object
+                if obj_dupli.type == 'MESH':
+                    listObjMatrix.append((obj_dupli, dob.matrix.copy()))
+
+        obj.dupli_list_clear()
+
+    return listObjMatrix
+
+def mft_pick_and_clone(self, context, event, ray_max=5000.0):
     """Run this function on left mouse, execute the ray cast"""
     # get the context arguments
     scene = context.scene
@@ -101,21 +136,7 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
     coord = event.mouse_region_x, event.mouse_region_y
 
 
-    def mft_selected_objects_and_duplis():
-        """Loop over (object, matrix) pairs (mesh only)"""
 
-        for obj in context.selected_objects:
-            if obj.type == 'MESH':
-                yield (obj, obj.matrix_world.copy())
-
-            if obj.dupli_type != 'NONE':
-                obj.dupli_list_create(scene)
-                for dob in obj.dupli_list:
-                    obj_dupli = dob.object
-                    if obj_dupli.type == 'MESH':
-                        yield (obj_dupli, dob.matrix.copy())
-
-            obj.dupli_list_clear()
 
 
     def mft_obj_ray_cast(obj, matrix, view_vector, ray_origin):
@@ -150,7 +171,7 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
 
     mifthTools = bpy.context.scene.mifthTools
 
-    for obj, matrix in mft_selected_objects_and_duplis():
+    for obj, matrix in self.dupliList:
         if obj.type == 'MESH':
 
             # get the ray from the viewport and mouse
@@ -198,10 +219,6 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
 
     # now we have the object under the mouse cursor,
     if best_obj is not None:
-        selected_Obj_True = context.selected_objects
-        obj_Active_True = context.scene.objects.active
-        bpy.ops.object.select_all(action='DESELECT')
-
         objToClone = bpy.data.objects.get(random.choice(drawForClonesObj))
         objToClone.select = True
         context.scene.objects.active = objToClone
@@ -319,14 +336,7 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
             randScaleClone = 1.0 - (random.uniform(0.0, 0.99) * mifthTools.randScaleClone)
             bpy.ops.transform.resize(value=(randScaleClone, randScaleClone, randScaleClone), constraint_axis=(False, False, False), constraint_orientation='GLOBAL')
 
-        bpy.ops.object.select_all(action='DESELECT')
-
-        for obj in selected_Obj_True:
-            obj.select = True
-        context.scene.objects.active = obj_Active_True
-
-        #best_obj.select = True
-        #context.scene.objects.active = best_obj
+        newDup.select = False  # Clear Selection
 
 
 def register():
