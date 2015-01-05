@@ -41,7 +41,8 @@ class MFTDrawClones(bpy.types.Operator):
     tabletPressure = 1.0
     drawOnObjects = None  # List of objects on which will be drawn
     obj_Active_True = None  # Active object befor starting drawing
-    dupliList = None  # duplilist of objects
+    dupliList = None  # duplilist of objects for picking stuff
+    dupliListClones = None # if clones have duplied - they go here
 
     def modal(self, context, event):
         if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
@@ -53,13 +54,19 @@ class MFTDrawClones(bpy.types.Operator):
             context.scene.objects.active = self.obj_Active_True
             self.drawOnObjects = None
             self.dupliList = None
+            self.dupliListClones = None
 
             return {'FINISHED'}
         elif event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             self.doPick = True
+            self.dupliListClones = []
         elif event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
             self.doPick = False
             self.prevClonePos = None
+
+            for newObj, oldObj in self.dupliListClones:
+                copy_settings_clones(newObj, oldObj)
+            self.dupliListClones = None
 
         if self.doPick is True:
                 mft_pick_and_clone(self, context, event)
@@ -127,6 +134,24 @@ def mft_selected_objects_and_duplis(self):
 
     return listObjMatrix
 
+
+def copy_settings_clones(newObj, oldObj):
+    # Copy Groups
+    for thisGroup in bpy.data.groups:
+        if oldObj.name in thisGroup:
+            thisGroup.objects.link(newObj)
+
+    # Copy Modifiers
+    for old_modifier in oldObj.modifiers.values():
+            new_modifier = newObj.modifiers.new(name=old_modifier.name,
+            type=old_modifier.type)
+
+    # copy duplis
+    if oldObj.dupli_group is not None:
+        newObj.dupli_type = oldObj.dupli_type
+        newObj.dupli_group = oldObj.dupli_group
+
+
 def mft_pick_and_clone(self, context, event, ray_max=5000.0):
     """Run this function on left mouse, execute the ray cast"""
     # get the context arguments
@@ -134,10 +159,6 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
     region = context.region
     rv3d = context.region_data
     coord = event.mouse_region_x, event.mouse_region_y
-
-
-
-
 
     def mft_obj_ray_cast(obj, matrix, view_vector, ray_origin):
         """Wrapper for ray casting that moves the ray into object space"""
@@ -220,14 +241,21 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
     # now we have the object under the mouse cursor,
     if best_obj is not None:
         objToClone = bpy.data.objects.get(random.choice(drawForClonesObj))
-        objToClone.select = True
-        context.scene.objects.active = objToClone
 
-        bpy.ops.object.duplicate(linked=True, mode='DUMMY')
-        newDup = bpy.context.selected_objects[0]
+        #if objToClone.type != 'MESH':
+            #objToClone.select = True
+            #context.scene.objects.active = objToClone
+            #bpy.ops.object.duplicate(linked=True, mode='DUMMY')
+            #newDup = bpy.context.selected_objects[0]
+        #else:
+        newDup = bpy.data.objects.new('testName', objToClone.data)
+        context.scene.objects.link(newDup)
+
+        newDup.select = True
+        context.scene.objects.active = newDup
         newDup.location = best_obj_pos
+        newDup.scale = objToClone.scale
         bpy.ops.object.rotation_clear()
-
 
         xyNor = best_obj_nor.copy()
         xyNor.z = 0.0
@@ -327,7 +355,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
             bpy.ops.transform.rotate(value=randDirAngle, axis=( randDirVec ), proportional='DISABLED')
 
         # Pressure sensetivity for scale
-        if self.tabletPressure < 1.0:
+        if self.tabletPressure < 1.0 and mifthTools.drawPressure > 0.0:
             thePressure = max(1.0 - mifthTools.drawPressure, self.tabletPressure)
             bpy.ops.transform.resize(value=(thePressure, thePressure, thePressure), constraint_axis=(False, False, False), constraint_orientation='GLOBAL')
 
@@ -336,6 +364,11 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
             randScaleClone = 1.0 - (random.uniform(0.0, 0.99) * mifthTools.randScaleClone)
             bpy.ops.transform.resize(value=(randScaleClone, randScaleClone, randScaleClone), constraint_axis=(False, False, False), constraint_orientation='GLOBAL')
 
+        # do optimization for a stroke or not
+        if mifthTools.drawClonesOptimize is True:
+            self.dupliListClones.append((newDup, objToClone))  # apply settings after stroke ends
+        else:
+            copy_settings_clones(newDup, objToClone)
         newDup.select = False  # Clear Selection
 
 

@@ -90,6 +90,12 @@ def register():
             default=True
         )
 
+        drawClonesOptimize = BoolProperty(
+            name="drawClonesOptimize",
+            description="drawClonesOptimize...",
+            default=True
+        )
+
         randNormalRotateClone = FloatProperty(
             default = 0.0,
             min = 0.0,
