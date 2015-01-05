@@ -138,7 +138,7 @@ def mft_selected_objects_and_duplis(self):
 def copy_settings_clones(newObj, oldObj):
     # Copy Groups
     for thisGroup in bpy.data.groups:
-        if oldObj.name in thisGroup:
+        if oldObj.name in thisGroup.objects:
             thisGroup.objects.link(newObj)
 
     # Copy Modifiers
