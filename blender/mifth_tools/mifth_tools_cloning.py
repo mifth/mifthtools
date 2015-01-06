@@ -45,6 +45,7 @@ class MFTDrawClones(bpy.types.Operator):
     dupliListClones = None # if clones have duplied - they go here
 
     def modal(self, context, event):
+        mifthTools = bpy.context.scene.mifthTools
         if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
             # allow navigation
             return {'PASS_THROUGH'}
@@ -64,8 +65,9 @@ class MFTDrawClones(bpy.types.Operator):
             self.doPick = False
             self.prevClonePos = None
 
-            for newObj, oldObj in self.dupliListClones:
-                copy_settings_clones(newObj, oldObj)
+            if mifthTools.drawClonesOptimize is True:
+                for newObj, oldObj in self.dupliListClones:
+                    copy_settings_clones(newObj, oldObj)
             self.dupliListClones = None
 
         if self.doPick is True:
