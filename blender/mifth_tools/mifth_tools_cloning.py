@@ -248,7 +248,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
             #bpy.ops.object.duplicate(linked=True, mode='DUMMY')
             #newDup = bpy.context.selected_objects[0]
         #else:
-        newDup = bpy.data.objects.new('testName', objToClone.data)
+        newDup = bpy.data.objects.new(objToClone.name, objToClone.data)
         context.scene.objects.link(newDup)
 
         newDup.select = True
