@@ -30,9 +30,6 @@ global drawForClonesObj
 drawForClonesObj = []  # Array of Objects Names
 
 
-# class MTFDrawClones
-
-
 class MFTDrawClones(bpy.types.Operator):
     bl_idname = "mft.draw_clones"
     bl_label = "Draw Clones"
@@ -45,7 +42,6 @@ class MFTDrawClones(bpy.types.Operator):
     drawOnObjects = None  # List of objects on which will be drawn
     obj_Active_True = None  # Active object befor starting drawing
     dupliList = None  # duplilist of objects for picking stuff
-    clonesAddList = None  # if clones have duplied - they go here
 
     def modal(self, context, event):
         mifthTools = bpy.context.scene.mifthTools
@@ -58,20 +54,21 @@ class MFTDrawClones(bpy.types.Operator):
             context.scene.objects.active = self.obj_Active_True
             self.drawOnObjects = None
             self.dupliList = None
-            self.clonesAddList = None
+            self.clonePointsList = None
 
             return {'FINISHED'}
         elif event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             self.doPick = True
-            self.clonesAddList = []
+            self.clonePointsList = []
         elif event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
             self.doPick = False
             self.prevClonePos = None
 
+            # Do optimization
             if mifthTools.drawClonesOptimize is True:
-                for newObj, oldObj in self.clonesAddList:
-                    copy_settings_clones(newObj, oldObj)
-            self.clonesAddList = None
+                for point in self.clonePointsList:
+                    copy_settings_clones(point.objNew, point.objOriginal)
+            self.clonePointsList = None
 
         if self.doPick is True:
             self.tabletPressure = event.pressure
@@ -117,6 +114,11 @@ class MFTPickObjToDrawClone(bpy.types.Operator):
                 drawForClonesObj.append(obj.name)
 
         return {'FINISHED'}
+
+
+class MTFDCPoint:
+    def __init__(self, objNew, objOriginal, hitPoint, hitNormal):
+        self.objNew, self.objOriginal, self.hitPoint, self.hitNormal = objNew, objOriginal, hitPoint, hitNormal
 
 
 def mft_selected_objects_and_duplis(self):
@@ -196,63 +198,62 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
     mifthTools = bpy.context.scene.mifthTools
 
     for obj, matrix in self.dupliList:
-        if obj.type == 'MESH':
+        # get the ray from the viewport and mouse
+        view_vector_mouse = view3d_utils.region_2d_to_vector_3d(
+            region, rv3d, coord)
+        ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(
+            region, rv3d, coord)
 
-            # get the ray from the viewport and mouse
-            view_vector_mouse = view3d_utils.region_2d_to_vector_3d(
-                region, rv3d, coord)
-            ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(
-                region, rv3d, coord)
+        # if rv3d.view_perspective != 'PERSP':
+        # move origin back for better work
+        ray_origin_mouse = ray_origin_mouse - \
+            (view_vector_mouse * (ray_max / 2.0))
+
+        # Do RayCast! t1,t2,t3,t4 - temp values
+        t1, t2, t3 = mft_obj_ray_cast(
+            obj, matrix, view_vector_mouse, ray_origin_mouse)
+        if t1 is not None and t3 < best_length_squared:
+            best_obj = obj
+            best_obj_nor, best_obj_pos, best_length_squared = t1, t2, t3
+            best_obj_hit = t2
+
+        # Check for stroke length
+        if best_obj is not None:
+            if self.prevClonePos is not None and (best_obj_pos - self.prevClonePos).length <= mifthTools.drawStrokeLength:
+                best_obj = None  # Don't do cloning
+
+    # random scatter things
+    if mifthTools.drawRandomStrokeScatter > 0.0 and best_obj is not None and t1 is not None:
+        # Random Vec
+        randX = random.uniform(
+            -1.0, 1.0) * mifthTools.drawRandomStrokeScatter
+        randY = random.uniform(
+            -1.0, 1.0) * mifthTools.drawRandomStrokeScatter
+        randZ = random.uniform(
+            -1.0, 1.0) * mifthTools.drawRandomStrokeScatter
+        randVect = mathutils.Vector((randX, randY, randZ))
+
+        for obj, matrix in self.dupliList:
+            ray_origin_rand = best_obj_pos + randVect
+            ray_origin_rand_2d = view3d_utils.location_3d_to_region_2d(
+                region, rv3d, ray_origin_rand)
+
+            view_vector_rand = view3d_utils.region_2d_to_vector_3d(
+                region, rv3d, (ray_origin_rand_2d.x, ray_origin_rand_2d.y))
+            #ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(
+                #region, rv3d, (ray_origin_rand_2d.x, ray_origin_rand_2d.y))
+
+            # print(ray_origin_mouse, ray_origin_rand)
 
             # if rv3d.view_perspective != 'PERSP':
             # move origin back for better work
-            ray_origin_mouse = ray_origin_mouse - \
-                (view_vector_mouse * (ray_max / 2.0))
+            ray_origin_rand = ray_origin_rand - \
+                (view_vector_rand * (ray_max / 2.0))
 
-            # Do RayCast! t1,t2,t3,t4 - temp values
             t1, t2, t3 = mft_obj_ray_cast(
-                obj, matrix, view_vector_mouse, ray_origin_mouse)
-            if t1 is not None and t3 < best_length_squared:
-                best_obj = obj
-                best_obj_nor, best_obj_pos, best_length_squared = t1, t2, t3
-                best_obj_hit = best_obj_pos
-
-            # Check for stroke length
-            if best_obj is not None:
-                if self.prevClonePos is not None and (best_obj_pos - self.prevClonePos).length <= mifthTools.drawStrokeLength:
-                    best_obj = None  # Don't do cloning
-
-            # random scatter things
-            if mifthTools.drawRandomStrokeScatter > 0.0 and best_obj is not None and t1 is not None:
-                # Random Vec
-                randX = random.uniform(
-                    -1.0, 1.0) * mifthTools.drawRandomStrokeScatter
-                randY = random.uniform(
-                    -1.0, 1.0) * mifthTools.drawRandomStrokeScatter
-                randZ = random.uniform(
-                    -1.0, 1.0) * mifthTools.drawRandomStrokeScatter
-
-                ray_origin_rand = best_obj_pos + \
-                    mathutils.Vector((randX, randY, randZ))
-                ray_origin_rand_2d = view3d_utils.location_3d_to_region_2d(
-                    region, rv3d, ray_origin_rand)
-
-                view_vector_rand = view3d_utils.region_2d_to_vector_3d(
-                    region, rv3d, (ray_origin_rand_2d.x, ray_origin_rand_2d.y))
-                ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(
-                    region, rv3d, (ray_origin_rand_2d.x, ray_origin_rand_2d.y))
-
-                # print(ray_origin_mouse, ray_origin_rand)
-
-                # if rv3d.view_perspective != 'PERSP':
-                # move origin back for better work
-                ray_origin_rand = ray_origin_rand - \
-                    (view_vector_rand * (ray_max / 2.0))
-
-                t1, t2, t3 = mft_obj_ray_cast(
-                    obj, matrix, view_vector_rand, ray_origin_rand)
-                if t1 is not None:
-                    best_obj_nor, best_obj_pos = t1, t2
+                obj, matrix, view_vector_rand, ray_origin_rand)
+            if t1 is not None and (t2 - best_obj_hit).length <= mifthTools.drawRandomStrokeScatter:
+                best_obj_nor, best_obj_pos = t1, t2
 
     # now we have the object under the mouse cursor,
     if best_obj is not None:
@@ -398,28 +399,26 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
             bpy.ops.transform.rotate(
                 value=randDirAngle, axis=(randDirVec), proportional='DISABLED')
 
-        # Pressure sensetivity for scale
-        if self.tabletPressure < 1.0 and mifthTools.drawPressure > 0.0:
-            thePressure = max(
-                1.0 - mifthTools.drawPressure, self.tabletPressure)
-            bpy.ops.transform.resize(
-                value=(thePressure, thePressure, thePressure),
-                constraint_axis=(False, False, False), constraint_orientation='GLOBAL')
+        # change Size
+        if mifthTools.drawPressure > 0.0 or mifthTools.randScaleClone > 0.0:
+            newSize = newDup.scale
+            if self.tabletPressure < 1.0 and mifthTools.drawPressure > 0.0:
+                thePressure = max(
+                    1.0 - mifthTools.drawPressure, self.tabletPressure)
+                newSize *= thePressure
 
-        # Random Scale
-        if mifthTools.randScaleClone > 0.0:
-            randScaleClone = 1.0 - \
-                (random.uniform(0.0, 0.99) * mifthTools.randScaleClone)
-            bpy.ops.transform.resize(
-                value=(randScaleClone, randScaleClone, randScaleClone),
-                constraint_axis=(False, False, False), constraint_orientation='GLOBAL')
+            if mifthTools.randScaleClone > 0.0:
+                randScaleClone = 1.0 - \
+                    (random.uniform(0.0, 0.99) * mifthTools.randScaleClone)
+                newSize *= randScaleClone
+
+        # Add this point with all its stuff
+        self.clonePointsList.append(MTFDCPoint(newDup, objToClone, best_obj_hit, best_obj_nor))
 
         # do optimization for a stroke or not
-        if mifthTools.drawClonesOptimize is True:
-            self.clonesAddList.append(
-                (newDup, objToClone))  # apply settings after stroke ends
-        else:
+        if mifthTools.drawClonesOptimize is False:
             copy_settings_clones(newDup, objToClone)
+
         newDup.select = False  # Clear Selection
 
 
