@@ -36,7 +36,7 @@ if "bpy" in locals():
 else:
     from . import mifth_tools_cloning
     from . import mifth_tools
-    
+
 
 import bpy
 from bpy.props import *
@@ -48,7 +48,7 @@ def getGroups(scene, context):
     obj = context.scene.objects.active
     for group in bpy.data.groups:
         if obj is not None and obj.name in group.objects:
-            lst.append((group.name, group.name,""))
+            lst.append((group.name, group.name, ""))
 
     return lst
 
@@ -58,18 +58,17 @@ def register():
 
     class MFTProperties(bpy.types.PropertyGroup):
 
-
         # Draw Cloned Settings
         drawStrokeLength = FloatProperty(
-            default = 0.5,
-            min = 0.001,
-            max = 500.0
+            default=0.5,
+            min=0.001,
+            max=500.0
         )
 
         drawRandomStrokeScatter = FloatProperty(
-            default = 0.0,
-            min = 0.0,
-            max = 500.0
+            default=0.0,
+            min=0.0,
+            max=500.0
         )
 
         drawClonesDirectionRotate = BoolProperty(
@@ -97,31 +96,31 @@ def register():
         )
 
         randNormalRotateClone = FloatProperty(
-            default = 0.0,
-            min = 0.0,
-            max = 180.0
+            default=0.0,
+            min=0.0,
+            max=180.0
         )
 
         randDirectionRotateClone = FloatProperty(
-            default = 0.0,
-            min = 0.0,
-            max = 180.0
+            default=0.0,
+            min=0.0,
+            max=180.0
         )
 
         randScaleClone = FloatProperty(
-            default = 0.0,
-            min = 0.0,
-            max = 0.99
+            default=0.0,
+            min=0.0,
+            max=0.99
         )
 
         drawPressure = FloatProperty(
-            default = 0.7,
-            min = 0.0,
-            max = 0.95
+            default=0.7,
+            min=0.0,
+            max=0.95
         )
 
         drawClonesAxis = EnumProperty(
-            items = (('X', 'X', ''),
+            items=(('X', 'X', ''),
                    ('-X', '-X', ''),
                    ('Y', 'Y', ''),
                    ('-Y', '-Y', ''),
@@ -133,7 +132,7 @@ def register():
 
         # Radial Clone Settings
         radialClonesAxis = EnumProperty(
-            items = (('X', 'X', ''),
+            items=(('X', 'X', ''),
                    ('Y', 'Y', ''),
                    ('Z', 'Z', '')
                    ),
@@ -141,7 +140,7 @@ def register():
         )
 
         radialClonesAxisType = EnumProperty(
-            items = (('Global', 'Global', ''),
+            items=(('Global', 'Global', ''),
                    ('Local', 'Local', '')
                    ),
             default = 'Global'
@@ -167,9 +166,9 @@ def register():
         )
 
         outputSequenceSize = IntProperty(
-            default = 8,
-            min = 1,
-            max = 60
+            default=8,
+            min=1,
+            max=60
         )
 
         doOutputSubFolder = BoolProperty(
@@ -186,27 +185,27 @@ def register():
         )
 
         curveAniStartFrame = IntProperty(
-            default = 1,
-            min = 1,
-            max = 10000
+            default=1,
+            min=1,
+            max=10000
         )
 
         curveAniEndFrame = IntProperty(
-            default = 100,
-            min = 1,
-            max = 10000
+            default=100,
+            min=1,
+            max=10000
         )
 
         curveAniStepFrame = IntProperty(
-            default = 10,
-            min = 1,
-            max = 10000
+            default=10,
+            min=1,
+            max=10000
         )
 
         curveAniInterpolation = FloatProperty(
-            default = 0.3,
-            min = 0.0,
-            max = 1.0
+            default=0.3,
+            min=0.0,
+            max=1.0
         )
 
         # MorfCreator settings
@@ -230,9 +229,8 @@ def register():
 
         # GroupInstance to Cursor
         getGroupsLst = EnumProperty(name='Get Groups',
-                                description='Get Groups.',
-                                items=getGroups)
-
+                                    description='Get Groups.',
+                                    items=getGroups)
 
     bpy.utils.register_module(__name__)
 
