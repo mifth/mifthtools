@@ -42,109 +42,11 @@ import bpy
 from bpy.props import *
 
 
-def getGroups(scene, context):
-
-    lst = []
-    obj = context.scene.objects.active
-    for group in bpy.data.groups:
-        if obj is not None and obj.name in group.objects:
-            lst.append((group.name, group.name, ""))
-
-    return lst
-
-
 def register():
     bpy.mifthTools = dict()
+    # bpy.mifthCloneTools = dict()
 
     class MFTProperties(bpy.types.PropertyGroup):
-
-        # Draw Cloned Settings
-        drawStrokeLength = FloatProperty(
-            default=0.5,
-            min=0.001,
-            max=500.0
-        )
-
-        drawRandomStrokeScatter = FloatProperty(
-            default=0.0,
-            min=0.0,
-            max=500.0
-        )
-
-        drawClonesDirectionRotate = BoolProperty(
-            name="drawClonesDirectionRotate",
-            description="drawClonesDirectionRotate...",
-            default=False
-        )
-
-        drawClonesRadialRotate = BoolProperty(
-            name="drawClonesRadialRotate",
-            description="drawClonesRadialRotate...",
-            default=True
-        )
-
-        drawClonesNormalRotate = BoolProperty(
-            name="drawClonesNormalRotate",
-            description="drawClonesNormalRotate...",
-            default=True
-        )
-
-        drawClonesOptimize = BoolProperty(
-            name="drawClonesOptimize",
-            description="drawClonesOptimize...",
-            default=True
-        )
-
-        randNormalRotateClone = FloatProperty(
-            default=0.0,
-            min=0.0,
-            max=180.0
-        )
-
-        randDirectionRotateClone = FloatProperty(
-            default=0.0,
-            min=0.0,
-            max=180.0
-        )
-
-        randScaleClone = FloatProperty(
-            default=0.0,
-            min=0.0,
-            max=0.99
-        )
-
-        drawPressure = FloatProperty(
-            default=0.7,
-            min=0.0,
-            max=0.95
-        )
-
-        drawClonesAxis = EnumProperty(
-            items=(('X', 'X', ''),
-                   ('-X', '-X', ''),
-                   ('Y', 'Y', ''),
-                   ('-Y', '-Y', ''),
-                   ('Z', 'Z', ''),
-                   ('-Z', '-Z', '')
-                   ),
-            default = 'Z'
-        )
-
-        # Radial Clone Settings
-        radialClonesAxis = EnumProperty(
-            items=(('X', 'X', ''),
-                   ('Y', 'Y', ''),
-                   ('Z', 'Z', '')
-                   ),
-            default = 'Z'
-        )
-
-        radialClonesAxisType = EnumProperty(
-            items=(('Global', 'Global', ''),
-                   ('Local', 'Local', '')
-                   ),
-            default = 'Global'
-        )
 
         # Output Settings
         outputFolder = StringProperty(
@@ -227,11 +129,6 @@ def register():
             default=False
         )
 
-        # GroupInstance to Cursor
-        getGroupsLst = EnumProperty(name='Get Groups',
-                                    description='Get Groups.',
-                                    items=getGroups)
-
     bpy.utils.register_module(__name__)
 
     bpy.types.Scene.mifthTools = PointerProperty(
@@ -240,12 +137,20 @@ def register():
         description="Mifth Tools Properties"
     )
 
+    bpy.types.Scene.mifthCloneTools = PointerProperty(
+        name="Mifth Cloning Variables",
+        type=mifth_tools_cloning.MFTCloneProperties,
+        description="Mifth Cloning Properties"
+    )
+
 
 def unregister():
     import bpy
 
     del bpy.types.Scene.mifthTools
+    del bpy.types.Scene.mifthCloneTools
     del bpy.mifthTools
+    # del bpy.mifthCloneTools
     bpy.utils.unregister_module(__name__)
 
 

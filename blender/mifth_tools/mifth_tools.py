@@ -28,57 +28,6 @@ import math
 bpy.mifthTools = dict()
 
 
-class MFTPanelCloning(bpy.types.Panel):
-    bl_label = "Cloning"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
-    bl_context = "objectmode"
-    bl_category = 'Mifth'
-    # bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mifthTools = bpy.context.scene.mifthTools
-
-        layout.label(text="Draw Clones:")
-        layout.operator("mft.draw_clones", text="DrawClones")
-        layout.operator("mft.pick_obj_to_clone_draw", text="PickObjects")
-        layout.prop(
-            mifthTools, "drawClonesDirectionRotate", text='DirectionRotate')
-        layout.prop(mifthTools, "drawClonesRadialRotate", text='RadialRotate')
-        layout.prop(mifthTools, "drawClonesNormalRotate", text='NormalRotate')
-        layout.prop(mifthTools, "drawClonesOptimize", text='Optimize')
-        layout.prop(mifthTools, "drawStrokeLength", text='Stroke')
-        layout.prop(mifthTools, "drawRandomStrokeScatter", text='Scatter')
-        layout.prop(mifthTools, "randNormalRotateClone", text='RandNormal')
-        layout.prop(
-            mifthTools, "randDirectionRotateClone", text='RandDirection')
-        layout.prop(mifthTools, "randScaleClone", text='RandScale')
-        layout.prop(mifthTools, "drawPressure", text='DrawPressure')
-        layout.prop(mifthTools, "drawClonesAxis", text='Axis')
-        layout.separator()
-        layout.separator()
-
-        layout.label(text="Clone Selected:")
-        layout.operator("mft.clonetoselected", text="CloneToSelected")
-
-        layout.label(text="Radial Clone:")
-        layout.separator()
-        layout.separator()
-        layout.operator("mft.radialclone", text="Radial Clone")
-        # layout.prop(mifthTools, "radialClonesNumber", text='')
-        row = layout.row()
-        row.prop(mifthTools, "radialClonesAxis", text='')
-        row.prop(mifthTools, "radialClonesAxisType", text='')
-        # row.prop(mifthTools, "radialClonesAngle", text='')
-
-        layout.label(text="Position Group:")
-        layout.separator()
-        layout.separator()
-        layout.operator("mft.group_instance_to_cursor", text="Position Group")
-        layout.prop(mifthTools, "getGroupsLst", text='')
-
-
 class MFTPanelAnimation(bpy.types.Panel):
     bl_label = "Animations"
     bl_space_type = 'VIEW_3D'
@@ -130,116 +79,6 @@ class MFTPanelPlaykot(bpy.types.Panel):
         row.prop(mifthTools, "doOutputSubFolder", text='')
         layout.prop(mifthTools, "outputSequence")
         layout.prop(mifthTools, "outputSequenceSize")
-
-
-class MFTCloneToSelected(bpy.types.Operator):
-    bl_idname = "mft.clonetoselected"
-    bl_label = "Clone To Selected"
-    bl_description = "Clone To Selected"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-
-        if len(bpy.context.selected_objects) > 1:
-            objToClone = bpy.context.scene.objects.active
-            objectsToClone = []
-
-            for obj in bpy.context.selected_objects:
-                if obj != objToClone:
-                    objectsToClone.append(obj)
-
-            for obj in objectsToClone:
-                bpy.ops.object.select_all(action='DESELECT')
-                objToClone.select = True
-
-                bpy.ops.object.duplicate(linked=True, mode='DUMMY')
-                newDup = bpy.context.selected_objects[0]
-                # print(newDup)
-                newDup.location = obj.location
-                newDup.rotation_euler = obj.rotation_euler
-                newDup.scale = obj.scale
-
-            bpy.ops.object.select_all(action='DESELECT')
-            for obj3 in objectsToClone:
-                obj3.select = True
-            bpy.ops.object.delete(use_global=False)
-
-            objectsToClone = None
-        else:
-            self.report({'INFO'}, "Need more Objects!")
-
-        return {'FINISHED'}
-
-
-class MFTRadialClone(bpy.types.Operator):
-    bl_idname = "mft.radialclone"
-    bl_label = "Radial Clone"
-    bl_description = "Radial Clone"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    radialClonesAngle = FloatProperty(
-        default=360.0,
-        min=-360.0,
-        max=360.0
-    )
-    clonez = IntProperty(
-        default=8,
-        min=2,
-        max=300
-    )
-
-    def execute(self, context):
-
-        if len(bpy.context.selected_objects) > 0:
-            activeObj = bpy.context.scene.objects.active
-            selObjects = bpy.context.selected_objects
-            mifthTools = bpy.context.scene.mifthTools
-            # self.clonez = mifthTools.radialClonesNumber
-
-            activeObjMatrix = activeObj.matrix_world
-
-            for i in range(self.clonez - 1):
-                bpy.ops.object.duplicate(linked=True, mode='DUMMY')
-                # newObj = bpy.context.selected_objects[0]
-                # print(newObj)
-                # for obj in bpy.context.selected_objects:
-                theAxis = None
-
-                if mifthTools.radialClonesAxis == 'X':
-                    if mifthTools.radialClonesAxisType == 'Local':
-                        theAxis = (
-                            activeObjMatrix[0][0], activeObjMatrix[1][0], activeObjMatrix[2][0])
-                    else:
-                        theAxis = (1, 0, 0)
-
-                elif mifthTools.radialClonesAxis == 'Y':
-                    if mifthTools.radialClonesAxisType == 'Local':
-                        theAxis = (
-                            activeObjMatrix[0][1], activeObjMatrix[1][1], activeObjMatrix[2][1])
-                    else:
-                        theAxis = (0, 1, 0)
-
-                elif mifthTools.radialClonesAxis == 'Z':
-                    if mifthTools.radialClonesAxisType == 'Local':
-                        theAxis = (
-                            activeObjMatrix[0][2], activeObjMatrix[1][2], activeObjMatrix[2][2])
-                    else:
-                        theAxis = (0, 0, 1)
-
-                rotateValue = (
-                    math.radians(self.radialClonesAngle) / float(self.clonez))
-                bpy.ops.transform.rotate(value=rotateValue, axis=theAxis)
-
-            bpy.ops.object.select_all(action='DESELECT')
-
-            for obj in selObjects:
-                obj.select = True
-            selObjects = None
-            bpy.context.scene.objects.active = activeObj
-        else:
-            self.report({'INFO'}, "Select Objects!")
-
-        return {'FINISHED'}
 
 
 class MFTCropNodeRegion(bpy.types.Operator):
@@ -434,28 +273,6 @@ class MFTMorfCreator(bpy.types.Operator):
                     else:
                         self.report(
                             {'INFO'}, "Model " + obj.name + " has different points count")
-
-        return {'FINISHED'}
-
-
-class MFTGroupInstance(bpy.types.Operator):
-    bl_idname = "mft.group_instance_to_cursor"
-    bl_label = "Set GroupInstance to Cursor"
-    bl_description = "Set GroupInstance to Cursor..."
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        scene = bpy.context.scene
-        mifthTools = scene.mifthTools
-
-        obj_group = bpy.data.groups.get(mifthTools.getGroupsLst)
-        if obj_group is not None:
-            obj_group.dupli_offset[
-                0] = bpy.context.space_data.cursor_location[0]
-            obj_group.dupli_offset[
-                1] = bpy.context.space_data.cursor_location[1]
-            obj_group.dupli_offset[
-                2] = bpy.context.space_data.cursor_location[2]
 
         return {'FINISHED'}
 
