@@ -36,12 +36,13 @@ class MFTDrawClones(bpy.types.Operator):
     bl_description = "Draw Clones with Mouse"
     bl_options = {'REGISTER', 'UNDO'}
 
-    prevClonePos = None  # PreviousClone position
     doPick = False
     tabletPressure = 1.0
     drawOnObjects = None  # List of objects on which will be drawn
     obj_Active_True = None  # Active object befor starting drawing
     dupliList = None  # duplilist of objects for picking stuff
+    currentStrokeList = None # this is a stroke
+    allStrokesList = None # this is all strokes
 
     def modal(self, context, event):
         mifthTools = bpy.context.scene.mifthTools
@@ -49,26 +50,20 @@ class MFTDrawClones(bpy.types.Operator):
             # allow navigation
             return {'PASS_THROUGH'}
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            for obj in self.drawOnObjects:
-                obj.select = True
-            context.scene.objects.active = self.obj_Active_True
-            self.drawOnObjects = None
-            self.dupliList = None
-            self.clonePointsList = None
-
+            finish_drawing(self, context)
             return {'FINISHED'}
         elif event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             self.doPick = True
-            self.clonePointsList = []
+            self.currentStrokeList = []
         elif event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
             self.doPick = False
-            self.prevClonePos = None
+            self.allStrokesList.append(self.currentStrokeList)
 
             # Do optimization
             if mifthTools.drawClonesOptimize is True:
-                for point in self.clonePointsList:
+                for point in self.currentStrokeList:
                     copy_settings_clones(point.objNew, point.objOriginal)
-            self.clonePointsList = None
+            self.currentStrokeList = None
 
         if self.doPick is True:
             self.tabletPressure = event.pressure
@@ -85,13 +80,7 @@ class MFTDrawClones(bpy.types.Operator):
 
         if context.space_data.type == 'VIEW_3D':
             context.window_manager.modal_handler_add(self)
-            self.drawOnObjects = context.selected_objects
-            for obj in self.drawOnObjects:
-                obj.select = False
-            self.obj_Active_True = context.scene.objects.active
-
-            self.dupliList = mft_selected_objects_and_duplis(self)
-
+            prepare_drawing(self, context)
             return {'RUNNING_MODAL'}
         else:
             self.report({'WARNING'}, "Active space must be a View3d")
@@ -119,6 +108,36 @@ class MFTPickObjToDrawClone(bpy.types.Operator):
 class MTFDCPoint:
     def __init__(self, objNew, objOriginal, hitPoint, hitNormal):
         self.objNew, self.objOriginal, self.hitPoint, self.hitNormal = objNew, objOriginal, hitPoint, hitNormal
+
+
+# Just prepare some stuff
+def prepare_drawing(self, context):
+    self.drawOnObjects = context.selected_objects
+    for obj in self.drawOnObjects:
+        obj.select = False
+    self.obj_Active_True = context.scene.objects.active
+
+    self.dupliList = mft_selected_objects_and_duplis(self)
+    self.allStrokesList = []
+
+
+# Just clear some stuff at the end
+def finish_drawing(self, context):
+    for obj in self.drawOnObjects:
+        obj.select = True
+    context.scene.objects.active = self.obj_Active_True
+    self.drawOnObjects = None
+    self.dupliList = None
+
+    if self.allStrokesList is not None:
+        for stroke in self.allStrokesList:
+            stroke.clear()
+        self.allStrokesList.clear()
+    self.allStrokesList = None
+
+    if self.currentStrokeList is not None:
+        self.currentStrokeList.clear()
+    self.currentStrokeList = None
 
 
 def mft_selected_objects_and_duplis(self):
@@ -219,7 +238,11 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
 
         # Check for stroke length
         if best_obj is not None:
-            if self.prevClonePos is not None and (best_obj_pos - self.prevClonePos).length <= mifthTools.drawStrokeLength:
+            previousHit = None
+            if len(self.currentStrokeList)>0:
+                previousHit = self.currentStrokeList[-1]  # get Last Element
+
+            if previousHit is not None and (best_obj_pos - previousHit.hitPoint).length < mifthTools.drawStrokeLength:
                 best_obj = None  # Don't do cloning
 
     # random scatter things
@@ -240,10 +263,6 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
 
             view_vector_rand = view3d_utils.region_2d_to_vector_3d(
                 region, rv3d, (ray_origin_rand_2d.x, ray_origin_rand_2d.y))
-            #ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(
-                #region, rv3d, (ray_origin_rand_2d.x, ray_origin_rand_2d.y))
-
-            # print(ray_origin_mouse, ray_origin_rand)
 
             # if rv3d.view_perspective != 'PERSP':
             # move origin back for better work
@@ -252,22 +271,16 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
 
             t1, t2, t3 = mft_obj_ray_cast(
                 obj, matrix, view_vector_rand, ray_origin_rand)
-            if t1 is not None and (t2 - best_obj_hit).length <= mifthTools.drawRandomStrokeScatter:
+            if t1 is not None and (t2 - best_obj_hit).length <= mifthTools.drawRandomStrokeScatter * 5.0:
                 best_obj_nor, best_obj_pos = t1, t2
 
     # now we have the object under the mouse cursor,
     if best_obj is not None:
         objToClone = bpy.data.objects.get(random.choice(drawForClonesObj))
 
-        # if objToClone.type != 'MESH':
-            # objToClone.select = True
-            # context.scene.objects.active = objToClone
-            # bpy.ops.object.duplicate(linked=True, mode='DUMMY')
-            # newDup = bpy.context.selected_objects[0]
-        # else:
+        # clone objects
         newDup = bpy.data.objects.new(objToClone.name, objToClone.data)
         context.scene.objects.link(newDup)
-
         newDup.select = True
         context.scene.objects.active = newDup
         newDup.location = best_obj_pos
@@ -321,30 +334,37 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
                     (xRotateAxis.x, xRotateAxis.y, xRotateAxis.z)), proportional='DISABLED')
 
         # Ratate to Direction
-        # global prevClonePos
-        if mifthTools.drawClonesDirectionRotate is True and self.prevClonePos is not None:
-            newDirRotLookAtt = (self.prevClonePos - best_obj_pos).normalized()
+        if mifthTools.drawClonesDirectionRotate is True:
+            previousHit = None
+            if len(self.currentStrokeList)>0:
+                previousHit = self.currentStrokeList[-1]  # get Last Element
+            else:
+                if len(self.allStrokesList)>0:
+                    previousHit = self.allStrokesList[-1][-1]  # get Last Element of previous Stroke
 
-            newDupMatrix2 = newDup.matrix_world
-            newDupZAxisTuple2 = (
-                newDupMatrix2[0][2], newDupMatrix2[1][2], newDupMatrix2[2][2])
-            newDupZAxis2 = (mathutils.Vector(newDupZAxisTuple2)).normalized()
+            if previousHit is not None:
+                newDirRotLookAtt = (self.prevClonePos - best_obj_pos).normalized()
 
-            newDirRotVec2 = (newDirRotLookAtt.cross(best_obj_nor)).normalized().cross(
-                best_obj_nor).normalized()
+                newDupMatrix2 = newDup.matrix_world
+                newDupZAxisTuple2 = (
+                    newDupMatrix2[0][2], newDupMatrix2[1][2], newDupMatrix2[2][2])
+                newDupZAxis2 = (mathutils.Vector(newDupZAxisTuple2)).normalized()
 
-            newDirRotAngle = newDirRotVec2.angle(newDupZAxis2)
+                newDirRotVec2 = (newDirRotLookAtt.cross(best_obj_nor)).normalized().cross(
+                    best_obj_nor).normalized()
 
-            fixDirRotAngle = newDirRotLookAtt.cross(
-                best_obj_nor).angle(newDupZAxis2)
+                newDirRotAngle = newDirRotVec2.angle(newDupZAxis2)
 
-            if fixDirRotAngle < math.radians(90.0):
-                newDirRotAngle = - \
-                    newDirRotAngle  # As we do it in negative axis
+                fixDirRotAngle = newDirRotLookAtt.cross(
+                    best_obj_nor).angle(newDupZAxis2)
 
-            # Main rotation
-            bpy.ops.transform.rotate(value=newDirRotAngle, axis=(
-                (best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)), proportional='DISABLED')
+                if fixDirRotAngle < math.radians(90.0):
+                    newDirRotAngle = - \
+                        newDirRotAngle  # As we do it in negative axis
+
+                # Main rotation
+                bpy.ops.transform.rotate(value=newDirRotAngle, axis=(
+                    (best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)), proportional='DISABLED')
 
         # set PreviousClone position
         self.prevClonePos = best_obj_hit
@@ -413,7 +433,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
                 newSize *= randScaleClone
 
         # Add this point with all its stuff
-        self.clonePointsList.append(MTFDCPoint(newDup, objToClone, best_obj_hit, best_obj_nor))
+        self.currentStrokeList.append(MTFDCPoint(newDup, objToClone, best_obj_hit, best_obj_nor))
 
         # do optimization for a stroke or not
         if mifthTools.drawClonesOptimize is False:
