@@ -45,18 +45,6 @@ def getGroups(scene, context):
 
 class MFTCloneProperties(bpy.types.PropertyGroup):
     # Draw Cloned Settings
-    drawStrokeLength = FloatProperty(
-        default=0.5,
-        min=0.001,
-        max=500.0
-    )
-
-    drawRandomStrokeScatter = FloatProperty(
-        default=0.0,
-        min=0.0,
-        max=500.0
-    )
-
     drawClonesDirectionRotate = BoolProperty(
         name="drawClonesDirectionRotate",
         description="drawClonesDirectionRotate...",
@@ -81,6 +69,18 @@ class MFTCloneProperties(bpy.types.PropertyGroup):
         default=True
     )
 
+    drawStrokeLength = FloatProperty(
+        default=0.5,
+        min=0.001,
+        max=500.0
+    )
+
+    drawRandomStrokeScatter = FloatProperty(
+        default=0.0,
+        min=0.0,
+        max=500.0
+    )
+
     randNormalRotateClone = FloatProperty(
         default=0.0,
         min=0.0,
@@ -103,6 +103,24 @@ class MFTCloneProperties(bpy.types.PropertyGroup):
         default=0.7,
         min=0.0,
         max=0.95
+    )
+
+    drawPressureRelativeStroke = BoolProperty(
+        name="drawPressureRelativeStroke",
+        description="Relative Stroke To Scale and Pressure",
+        default=True
+    )
+
+    drawPressureScale = BoolProperty(
+        name="drawPressureScale",
+        description="Pressure for Scale",
+        default=True
+    )
+
+    drawPressureScatter = BoolProperty(
+        name="drawPressureScatter",
+        description="Pressure for Scatter",
+        default=True
     )
 
     drawClonesAxis = EnumProperty(
@@ -161,14 +179,22 @@ class MFTPanelCloning(bpy.types.Panel):
         layout.prop(
             mifthCloneTools, "drawClonesNormalRotate", text='NormalRotate')
         layout.prop(mifthCloneTools, "drawClonesOptimize", text='Optimize')
+
         layout.prop(mifthCloneTools, "drawStrokeLength", text='Stroke')
+
         layout.prop(mifthCloneTools, "drawRandomStrokeScatter", text='Scatter')
         layout.prop(
             mifthCloneTools, "randNormalRotateClone", text='RandNormal')
         layout.prop(
             mifthCloneTools, "randDirectionRotateClone", text='RandDirection')
         layout.prop(mifthCloneTools, "randScaleClone", text='RandScale')
+
         layout.prop(mifthCloneTools, "drawPressure", text='DrawPressure')
+        row = layout.row()
+        row.prop(mifthCloneTools, "drawPressureRelativeStroke", text='S')
+        row.prop(mifthCloneTools, "drawPressureScale", text='S')
+        row.prop(mifthCloneTools, "drawPressureScatter", text='S')
+
         layout.prop(mifthCloneTools, "drawClonesAxis", text='Axis')
         layout.separator()
 
@@ -219,7 +245,7 @@ class MFTDrawClones(bpy.types.Operator):
             self.allStrokesList.append(self.currentStrokeList)
 
             # Do optimization
-            if mifthCloneTools.drawClonesOptimize is True:
+            if mifthCloneTools.drawClonesOptimize is True and self.currentStrokeList is not None:
                 for point in self.currentStrokeList:
                     copy_settings_clones(point.objNew, point.objOriginal)
             self.currentStrokeList = None
@@ -375,6 +401,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
     best_obj_hit = None
 
     mifthCloneTools = bpy.context.scene.mifthCloneTools
+    thePressure = max(1.0 - mifthCloneTools.drawPressure, self.tabletPressure)  # The pressure of a pen!
 
     for obj, matrix in self.dupliList:
         # get the ray from the viewport and mouse
@@ -402,18 +429,28 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
             if len(self.currentStrokeList) > 0:
                 previousHit = self.currentStrokeList[-1]  # get Last Element
 
-            if previousHit is not None and (best_obj_pos - previousHit.hitPoint).length < mifthCloneTools.drawStrokeLength:
+            # Check for stroke
+            strokeLength = mifthCloneTools.drawStrokeLength
+            if mifthCloneTools.drawPressureScale is True and mifthCloneTools.drawPressureRelativeStroke is True and self.tabletPressure < 1.0 and mifthCloneTools.drawPressure > 0.0:
+                strokeLength *= thePressure
+            if previousHit is not None and (best_obj_pos - previousHit.hitPoint).length < strokeLength:
                 best_obj = None  # Don't do cloning
 
     # random scatter things
     if mifthCloneTools.drawRandomStrokeScatter > 0.0 and best_obj is not None and t1 is not None:
         # Random Vec
         randX = random.uniform(
-            -1.0, 1.0) * mifthCloneTools.drawRandomStrokeScatter
+            -1.0, 1.0) * mifthCloneTools.drawRandomStrokeScatter  # 3.0 is random addition
         randY = random.uniform(
-            -1.0, 1.0) * mifthCloneTools.drawRandomStrokeScatter
+            -1.0, 1.0) * mifthCloneTools.drawRandomStrokeScatter  # 3.0 is random addition
         randZ = random.uniform(
-            -1.0, 1.0) * mifthCloneTools.drawRandomStrokeScatter
+            -1.0, 1.0) * mifthCloneTools.drawRandomStrokeScatter 
+
+        if mifthCloneTools.drawPressureScatter is True and self.tabletPressure < 1.0 and mifthCloneTools.drawPressure > 0.0:
+            randX *= thePressure
+            randY *= thePressure
+            randZ *= thePressure
+
         randVect = mathutils.Vector((randX, randY, randZ))
 
         for obj, matrix in self.dupliList:
@@ -431,7 +468,8 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
 
             t1, t2, t3 = mft_obj_ray_cast(
                 obj, matrix, view_vector_rand, ray_origin_rand)
-            if t1 is not None and (t2 - best_obj_hit).length <= mifthCloneTools.drawRandomStrokeScatter * 5.0:
+            # 3.0 is random addition
+            if t1 is not None and (t2 - best_obj_hit).length <= mifthCloneTools.drawRandomStrokeScatter * 3.0:
                 best_obj_nor, best_obj_pos = t1, t2
 
     # now we have the object under the mouse cursor,
@@ -585,9 +623,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
         # change Size
         if mifthCloneTools.drawPressure > 0.0 or mifthCloneTools.randScaleClone > 0.0:
             newSize = newDup.scale
-            if self.tabletPressure < 1.0 and mifthCloneTools.drawPressure > 0.0:
-                thePressure = max(
-                    1.0 - mifthCloneTools.drawPressure, self.tabletPressure)
+            if self.tabletPressure < 1.0 and mifthCloneTools.drawPressure > 0.0 and mifthCloneTools.drawPressureScale is True:
                 newSize *= thePressure
 
             if mifthCloneTools.randScaleClone > 0.0:
