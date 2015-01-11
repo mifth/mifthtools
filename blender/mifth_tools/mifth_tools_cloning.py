@@ -24,6 +24,7 @@ import math
 import mathutils
 import random
 from bpy.props import *
+from mathutils import *
 
 # bpy.mifthCloneTools = dict()
 
@@ -451,7 +452,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
             randY *= thePressure
             randZ *= thePressure
 
-        randVect = mathutils.Vector((randX, randY, randZ))
+        randVect = Vector((randX, randY, randZ))
 
         for obj, matrix in self.dupliList:
             ray_origin_rand = best_obj_pos + randVect
@@ -502,11 +503,11 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
             if mifthCloneTools.drawClonesRadialRotate is True:
                 # xyRot = ((best_obj_pos.copy() + xyNor) -
                 # best_obj_pos.copy()).normalized()
-                xyAngleRotate = mathutils.Vector((0.0, -1.0, 0.0)).angle(xyNor)
+                xyAngleRotate = Vector((0.0, -1.0, 0.0)).angle(xyNor)
 
                 if xyNor.x < 0:
                     xyAngleRotate = -xyAngleRotate
-                xyRotateAxis = mathutils.Vector((0.0, 0.0, 1.0))
+                xyRotateAxis = Vector((0.0, 0.0, 1.0))
                 bpy.ops.transform.rotate(
                     value=xyAngleRotate, axis=(0.0, 0.0, 1.0), proportional='DISABLED')
 
@@ -521,7 +522,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
 
                     newDupYAxisTuple = (
                         newDupMatrix[0][1], newDupMatrix[1][1], newDupMatrix[2][1])
-                    newDupYAxis = mathutils.Vector(
+                    newDupYAxis = Vector(
                         newDupYAxisTuple).normalized()
                     newDupYAxis.negate()
 
@@ -549,7 +550,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
                 newDupZAxisTuple2 = (
                     newDupMatrix2[0][2], newDupMatrix2[1][2], newDupMatrix2[2][2])
                 newDupZAxis2 = (
-                    mathutils.Vector(newDupZAxisTuple2)).normalized()
+                    Vector(newDupZAxisTuple2)).normalized()
 
                 newDirRotVec2 = (newDirRotLookAtt.cross(best_obj_nor)).normalized().cross(
                     best_obj_nor).normalized()
@@ -614,7 +615,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
             randDirX, randDirY, randDirZ = random.uniform(
                 0.0, 1.0), random.uniform(0.0, 1.0), random.uniform(0.0, 1.0)
             randDirVec = (
-                mathutils.Vector((randDirX, randDirY, randDirZ))).normalized()
+                Vector((randDirX, randDirY, randDirZ))).normalized()
             randDirAngle = random.uniform(
                 math.radians(-mifthCloneTools.randDirectionRotateClone), math.radians(mifthCloneTools.randDirectionRotateClone))
             bpy.ops.transform.rotate(
