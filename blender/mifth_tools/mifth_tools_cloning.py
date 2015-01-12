@@ -573,32 +573,32 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
 
         # Change Axis
         objMatrix = newDup.matrix_world
-        if mifthCloneTools.drawClonesDirectionRotate or mifthCloneTools.drawClonesRadialRotate:
-            if mifthCloneTools.drawClonesAxis == 'Y':
-                objFixAxisTuple = (
-                    objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
-                bpy.ops.transform.rotate(value=math.radians(
-                    180), axis=(objFixAxisTuple), proportional='DISABLED')
-            elif mifthCloneTools.drawClonesAxis == 'Z':
-                objFixAxisTuple = (
-                    objMatrix[0][0], objMatrix[1][0], objMatrix[2][0])
-                bpy.ops.transform.rotate(value=math.radians(
-                    90), axis=(objFixAxisTuple), proportional='DISABLED')
-            elif mifthCloneTools.drawClonesAxis == '-Z':
-                objFixAxisTuple = (
-                    objMatrix[0][0], objMatrix[1][0], objMatrix[2][0])
-                bpy.ops.transform.rotate(
-                    value=math.radians(-90), axis=(objFixAxisTuple), proportional='DISABLED')
-            elif mifthCloneTools.drawClonesAxis == 'X':
-                objFixAxisTuple = (
-                    objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
-                bpy.ops.transform.rotate(
-                    value=math.radians(-90), axis=(objFixAxisTuple), proportional='DISABLED')
-            elif mifthCloneTools.drawClonesAxis == '-X':
-                objFixAxisTuple = (
-                    objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
-                bpy.ops.transform.rotate(value=math.radians(
-                    90), axis=(objFixAxisTuple), proportional='DISABLED')
+        #if mifthCloneTools.drawClonesDirectionRotate or mifthCloneTools.drawClonesRadialRotate:
+        if mifthCloneTools.drawClonesAxis == 'Y':
+            objFixAxisTuple = (
+                objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
+            bpy.ops.transform.rotate(value=math.radians(
+                180), axis=(objFixAxisTuple), proportional='DISABLED')
+        elif mifthCloneTools.drawClonesAxis == 'Z':
+            objFixAxisTuple = (
+                objMatrix[0][0], objMatrix[1][0], objMatrix[2][0])
+            bpy.ops.transform.rotate(value=math.radians(
+                90), axis=(objFixAxisTuple), proportional='DISABLED')
+        elif mifthCloneTools.drawClonesAxis == '-Z':
+            objFixAxisTuple = (
+                objMatrix[0][0], objMatrix[1][0], objMatrix[2][0])
+            bpy.ops.transform.rotate(
+                value=math.radians(-90), axis=(objFixAxisTuple), proportional='DISABLED')
+        elif mifthCloneTools.drawClonesAxis == 'X':
+            objFixAxisTuple = (
+                objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
+            bpy.ops.transform.rotate(
+                value=math.radians(-90), axis=(objFixAxisTuple), proportional='DISABLED')
+        elif mifthCloneTools.drawClonesAxis == '-X':
+            objFixAxisTuple = (
+                objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
+            bpy.ops.transform.rotate(value=math.radians(
+                90), axis=(objFixAxisTuple), proportional='DISABLED')
 
         # Random rotation along Picked Normal
         if mifthCloneTools.randNormalRotateClone > 0.0:
