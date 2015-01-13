@@ -402,7 +402,8 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
     best_obj_hit = None
 
     mifthCloneTools = bpy.context.scene.mifthCloneTools
-    thePressure = max(1.0 - mifthCloneTools.drawPressure, self.tabletPressure)  # The pressure of a pen!
+    thePressure = max(1.0 - mifthCloneTools.drawPressure,
+                      self.tabletPressure)  # The pressure of a pen!
 
     for obj, matrix in self.dupliList:
         # get the ray from the viewport and mouse
@@ -445,7 +446,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
         randY = random.uniform(
             -1.0, 1.0) * mifthCloneTools.drawRandomStrokeScatter  # 3.0 is random addition
         randZ = random.uniform(
-            -1.0, 1.0) * mifthCloneTools.drawRandomStrokeScatter 
+            -1.0, 1.0) * mifthCloneTools.drawRandomStrokeScatter
 
         if mifthCloneTools.drawPressureScatter is True and self.tabletPressure < 1.0 and mifthCloneTools.drawPressure > 0.0:
             randX *= thePressure
@@ -573,7 +574,8 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
 
         # Change Axis
         objMatrix = newDup.matrix_world
-        #if mifthCloneTools.drawClonesDirectionRotate or mifthCloneTools.drawClonesRadialRotate:
+        # if mifthCloneTools.drawClonesDirectionRotate or
+        # mifthCloneTools.drawClonesRadialRotate:
         if mifthCloneTools.drawClonesAxis == 'Y':
             objFixAxisTuple = (
                 objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
