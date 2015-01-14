@@ -292,7 +292,6 @@ class MFTPickObjToDrawClone(bpy.types.Operator):
 
 
 class MTFDCPoint:
-
     def __init__(self, objNew, objOriginal, hitPoint, hitNormal):
         self.objNew, self.objOriginal, self.hitPoint, self.hitNormal = objNew, objOriginal, hitPoint, hitNormal
 
@@ -318,7 +317,8 @@ def finish_drawing(self, context):
 
     if self.allStrokesList is not None:
         for stroke in self.allStrokesList:
-            stroke.clear()
+            if stroke is not None:
+                stroke.clear()
         self.allStrokesList.clear()
     self.allStrokesList = None
 
@@ -362,6 +362,24 @@ def copy_settings_clones(newObj, oldObj):
     if oldObj.dupli_group is not None:
         newObj.dupli_type = oldObj.dupli_type
         newObj.dupli_group = oldObj.dupli_group
+
+
+def get_obj_axis(obj, axis):
+    ax = 0
+    if axis == 'Y' or axis == '-Y':
+        ax = 1
+    if axis == 'Z' or axis == '-Z':
+        ax = 2
+
+    obj_matrix = obj.matrix_world
+    axis_tuple = (
+        obj_matrix[0][ax], obj_matrix[1][ax], obj_matrix[2][ax])
+    axisResult = Vector(axis_tuple).normalized()
+    
+    if axis == '-X' or axis == '-Y' or axis == '-Z':
+        axisResult.negate()
+    
+    return axisResult
 
 
 def mft_pick_and_clone(self, context, event, ray_max=5000.0):
@@ -477,130 +495,121 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
     # now we have the object under the mouse cursor,
     if best_obj is not None:
         objToClone = bpy.data.objects.get(random.choice(drawForClonesObj))
+        best_obj_nor = best_obj_nor.normalized()
 
-        # clone objects
+        # clone object
         newDup = bpy.data.objects.new(objToClone.name, objToClone.data)
         context.scene.objects.link(newDup)
         newDup.select = True
         context.scene.objects.active = newDup
+        newDup.matrix_world = objToClone.matrix_world
         newDup.location = best_obj_pos
         newDup.scale = objToClone.scale
-        bpy.ops.object.rotation_clear()
+        newDup.rotation_euler = objToClone.rotation_euler
+        #bpy.ops.object.rotation_clear()
 
-        xyNor = best_obj_nor.copy()
-        xyNor.z = 0.0
+        # Rotation To Normal
+        if mifthCloneTools.drawClonesNormalRotate is True:
+            # rotate To Normal
+            newDupZAxis = get_obj_axis(newDup, 'Z')
+            angleRotate = newDupZAxis.angle(best_obj_nor)
+            rotateAxis = newDupZAxis.cross(best_obj_nor).normalized()
 
-        if xyNor.length == 0:
-            rotatePlaneAngle = math.radians(90.0)
-            if best_obj_nor.z > 0:
-                bpy.ops.transform.rotate(
-                    value=-rotatePlaneAngle, axis=(1.0, 0.0, 0.0), proportional='DISABLED')
-            else:
-                bpy.ops.transform.rotate(
-                    value=rotatePlaneAngle, axis=(1.0, 0.0, 0.0), proportional='DISABLED')
-        else:
-            xyNor = xyNor.normalized()
-
-            if mifthCloneTools.drawClonesRadialRotate is True:
-                # xyRot = ((best_obj_pos.copy() + xyNor) -
-                # best_obj_pos.copy()).normalized()
-                xyAngleRotate = Vector((0.0, -1.0, 0.0)).angle(xyNor)
-
-                if xyNor.x < 0:
-                    xyAngleRotate = -xyAngleRotate
-                xyRotateAxis = Vector((0.0, 0.0, 1.0))
-                bpy.ops.transform.rotate(
-                    value=xyAngleRotate, axis=(0.0, 0.0, 1.0), proportional='DISABLED')
-
-            if mifthCloneTools.drawClonesNormalRotate is True:
-                # Other rotate
-
-                xRotateAxis = xyNor.cross(best_obj_nor).normalized()
-                angleRotate = xyNor.angle(best_obj_nor)
-
-                if mifthCloneTools.drawClonesRadialRotate is False:
-                    newDupMatrix = newDup.matrix_world
-
-                    newDupYAxisTuple = (
-                        newDupMatrix[0][1], newDupMatrix[1][1], newDupMatrix[2][1])
-                    newDupYAxis = Vector(
-                        newDupYAxisTuple).normalized()
-                    newDupYAxis.negate()
-
-                    xRotateAxis = newDupYAxis.cross(best_obj_nor).normalized()
-                    angleRotate = newDupYAxis.angle(best_obj_nor)
-
-                bpy.ops.transform.rotate(value=angleRotate, axis=(
-                    (xRotateAxis.x, xRotateAxis.y, xRotateAxis.z)), proportional='DISABLED')
-
-        # Ratate to Direction
-        if mifthCloneTools.drawClonesDirectionRotate is True:
-            previousHit = None
-            if len(self.currentStrokeList) > 0:
-                previousHit = self.currentStrokeList[-1]  # get Last Element
-            else:
-                if len(self.allStrokesList) > 0:
-                    previousHit = self.allStrokesList[-1][
-                        -1]  # get Last Element of previous Stroke
-
-            if previousHit is not None:
-                newDirRotLookAtt = (
-                    self.prevClonePos - best_obj_pos).normalized()
-
-                newDupMatrix2 = newDup.matrix_world
-                newDupZAxisTuple2 = (
-                    newDupMatrix2[0][2], newDupMatrix2[1][2], newDupMatrix2[2][2])
-                newDupZAxis2 = (
-                    Vector(newDupZAxisTuple2)).normalized()
-
-                newDirRotVec2 = (newDirRotLookAtt.cross(best_obj_nor)).normalized().cross(
-                    best_obj_nor).normalized()
-
-                newDirRotAngle = newDirRotVec2.angle(newDupZAxis2)
-
-                fixDirRotAngle = newDirRotLookAtt.cross(
-                    best_obj_nor).angle(newDupZAxis2)
-
-                if fixDirRotAngle < math.radians(90.0):
-                    newDirRotAngle = - \
-                        newDirRotAngle  # As we do it in negative axis
-
-                # Main rotation
-                bpy.ops.transform.rotate(value=newDirRotAngle, axis=(
-                    (best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)), proportional='DISABLED')
-
-        # set PreviousClone position
-        self.prevClonePos = best_obj_hit
+            bpy.ops.transform.rotate(value=angleRotate, axis=(
+                (rotateAxis.x, rotateAxis.y, rotateAxis.z)), proportional='DISABLED')
 
         # Change Axis
-        objMatrix = newDup.matrix_world
-        # if mifthCloneTools.drawClonesDirectionRotate or
-        # mifthCloneTools.drawClonesRadialRotate:
         if mifthCloneTools.drawClonesAxis == 'Y':
-            objFixAxisTuple = (
-                objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
             bpy.ops.transform.rotate(value=math.radians(
-                180), axis=(objFixAxisTuple), proportional='DISABLED')
-        elif mifthCloneTools.drawClonesAxis == 'Z':
-            objFixAxisTuple = (
-                objMatrix[0][0], objMatrix[1][0], objMatrix[2][0])
+                90), axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
+        elif mifthCloneTools.drawClonesAxis == '-Y':
             bpy.ops.transform.rotate(value=math.radians(
-                90), axis=(objFixAxisTuple), proportional='DISABLED')
+                -90), axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
+            bpy.ops.transform.rotate(value=math.radians(
+                180), axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
         elif mifthCloneTools.drawClonesAxis == '-Z':
-            objFixAxisTuple = (
-                objMatrix[0][0], objMatrix[1][0], objMatrix[2][0])
             bpy.ops.transform.rotate(
-                value=math.radians(-90), axis=(objFixAxisTuple), proportional='DISABLED')
+                value=math.radians(180), axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
         elif mifthCloneTools.drawClonesAxis == 'X':
-            objFixAxisTuple = (
-                objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
             bpy.ops.transform.rotate(
-                value=math.radians(-90), axis=(objFixAxisTuple), proportional='DISABLED')
+                value=math.radians(-90), axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
         elif mifthCloneTools.drawClonesAxis == '-X':
-            objFixAxisTuple = (
-                objMatrix[0][2], objMatrix[1][2], objMatrix[2][2])
             bpy.ops.transform.rotate(value=math.radians(
-                90), axis=(objFixAxisTuple), proportional='DISABLED')
+                90), axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
+
+        # Other rotate
+        if mifthCloneTools.drawClonesRadialRotate is True or mifthCloneTools.drawClonesDirectionRotate is True:
+
+            # Ratate to Direction
+            newDirRotLookAtt = None
+            if mifthCloneTools.drawClonesDirectionRotate is True:
+                previousHit = None
+                if len(self.currentStrokeList) > 0:
+                    previousHit = self.currentStrokeList[-1]  # get Last Element
+                else:
+                    if len(self.allStrokesList) > 0:
+                        previousHit = self.allStrokesList[-1][
+                            -1]  # get Last Element of previous Stroke
+
+                if previousHit is not None:
+                    newDirRotLookAtt = (best_obj_hit - previousHit.hitPoint).normalized()
+            else:
+                newDirRotLookAtt = Vector((0.0, 0.0, 1.0))
+
+            # Get the axis to rotate
+            if newDirRotLookAtt is not None:
+                tempYCross = best_obj_nor.cross(newDirRotLookAtt).normalized()
+                if tempYCross != Vector((0.0, 0.0, 0.0)):
+                    tempYCross.negate()
+                    radialVec = best_obj_nor.cross(tempYCross).normalized()
+
+                    axisPickTemp = 'Y'
+                    if mifthCloneTools.drawClonesAxis == 'Y':
+                        axisPickTemp = 'Z'
+                    if mifthCloneTools.drawClonesAxis == '-Y':
+                        axisPickTemp = 'Z'
+                    if mifthCloneTools.drawClonesAxis == '-Z':
+                        axisPickTemp = 'Y'
+                    if mifthCloneTools.drawClonesAxis == 'X':
+                        axisPickTemp = 'Z'
+                    if mifthCloneTools.drawClonesAxis == '-X':
+                        axisPickTemp = 'Z'
+
+                    tempY = get_obj_axis(newDup, axisPickTemp)
+                    xyAngleRotate = Vector(radialVec).angle(tempY)
+
+                    if tempYCross.angle(tempY) > math.radians(90.0):
+                        xyAngleRotate = -xyAngleRotate
+
+                    bpy.ops.transform.rotate(
+                        value=xyAngleRotate, axis=best_obj_nor, proportional='DISABLED')
+
+
+
+                #newDupMatrix2 = newDup.matrix_world
+                #newDupZAxisTuple2 = (
+                    #newDupMatrix2[0][2], newDupMatrix2[1][2], newDupMatrix2[2][2])
+                #newDupZAxis2 = (
+                    #Vector(newDupZAxisTuple2)).normalized()
+
+                #newDirRotVec2 = (newDirRotLookAtt.cross(best_obj_nor)).normalized().cross(
+                    #best_obj_nor).normalized()
+
+                #newDirRotAngle = newDirRotVec2.angle(newDupZAxis2)
+
+                #fixDirRotAngle = newDirRotLookAtt.cross(
+                    #best_obj_nor).angle(newDupZAxis2)
+
+                #if fixDirRotAngle < math.radians(90.0):
+                    #newDirRotAngle = - \
+                        #newDirRotAngle  # As we do it in negative axis
+
+                ## Main rotation
+                #bpy.ops.transform.rotate(value=newDirRotAngle, axis=(
+                    #(best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)), proportional='DISABLED')
+
+        # set PreviousClone position
+        #self.prevClonePos = best_obj_hit
 
         # Random rotation along Picked Normal
         if mifthCloneTools.randNormalRotateClone > 0.0:
