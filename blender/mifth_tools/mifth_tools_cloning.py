@@ -292,6 +292,7 @@ class MFTPickObjToDrawClone(bpy.types.Operator):
 
 
 class MTFDCPoint:
+
     def __init__(self, objNew, objOriginal, hitPoint, hitNormal):
         self.objNew, self.objOriginal, self.hitPoint, self.hitNormal = objNew, objOriginal, hitPoint, hitNormal
 
@@ -375,10 +376,10 @@ def get_obj_axis(obj, axis):
     axis_tuple = (
         obj_matrix[0][ax], obj_matrix[1][ax], obj_matrix[2][ax])
     axisResult = Vector(axis_tuple).normalized()
-    
+
     if axis == '-X' or axis == '-Y' or axis == '-Z':
         axisResult.negate()
-    
+
     return axisResult
 
 
@@ -506,7 +507,7 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
         newDup.location = best_obj_pos
         newDup.scale = objToClone.scale
         newDup.rotation_euler = objToClone.rotation_euler
-        #bpy.ops.object.rotation_clear()
+        # bpy.ops.object.rotation_clear()
 
         # Rotation To Normal
         if mifthCloneTools.drawClonesNormalRotate is True:
@@ -545,14 +546,16 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
             if mifthCloneTools.drawClonesDirectionRotate is True:
                 previousHit = None
                 if len(self.currentStrokeList) > 0:
-                    previousHit = self.currentStrokeList[-1]  # get Last Element
+                    previousHit = self.currentStrokeList[
+                        -1]  # get Last Element
                 else:
                     if len(self.allStrokesList) > 0:
                         previousHit = self.allStrokesList[-1][
                             -1]  # get Last Element of previous Stroke
 
                 if previousHit is not None:
-                    newDirRotLookAtt = (best_obj_hit - previousHit.hitPoint).normalized()
+                    newDirRotLookAtt = (
+                        best_obj_hit - previousHit.hitPoint).normalized()
             else:
                 newDirRotLookAtt = Vector((0.0, 0.0, 1.0))
 
@@ -584,33 +587,24 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
                     bpy.ops.transform.rotate(
                         value=xyAngleRotate, axis=best_obj_nor, proportional='DISABLED')
 
-
-
-                #newDupMatrix2 = newDup.matrix_world
-                #newDupZAxisTuple2 = (
-                    #newDupMatrix2[0][2], newDupMatrix2[1][2], newDupMatrix2[2][2])
-                #newDupZAxis2 = (
-                    #Vector(newDupZAxisTuple2)).normalized()
-
-                #newDirRotVec2 = (newDirRotLookAtt.cross(best_obj_nor)).normalized().cross(
-                    #best_obj_nor).normalized()
-
-                #newDirRotAngle = newDirRotVec2.angle(newDupZAxis2)
-
-                #fixDirRotAngle = newDirRotLookAtt.cross(
-                    #best_obj_nor).angle(newDupZAxis2)
-
-                #if fixDirRotAngle < math.radians(90.0):
-                    #newDirRotAngle = - \
-                        #newDirRotAngle  # As we do it in negative axis
-
-                ## Main rotation
-                #bpy.ops.transform.rotate(value=newDirRotAngle, axis=(
+                # newDupMatrix2 = newDup.matrix_world
+                # newDupZAxisTuple2 = (
+                    # newDupMatrix2[0][2], newDupMatrix2[1][2], newDupMatrix2[2][2])
+                # newDupZAxis2 = (
+                    # Vector(newDupZAxisTuple2)).normalized()
+                # newDirRotVec2 = (newDirRotLookAtt.cross(best_obj_nor)).normalized().cross(
+                    # best_obj_nor).normalized()
+                # newDirRotAngle = newDirRotVec2.angle(newDupZAxis2)
+                # fixDirRotAngle = newDirRotLookAtt.cross(
+                    # best_obj_nor).angle(newDupZAxis2)
+                # if fixDirRotAngle < math.radians(90.0):
+                    # newDirRotAngle = - \
+                        # newDirRotAngle  # As we do it in negative axis
+                # Main rotation
+                # bpy.ops.transform.rotate(value=newDirRotAngle, axis=(
                     #(best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)), proportional='DISABLED')
-
         # set PreviousClone position
-        #self.prevClonePos = best_obj_hit
-
+        # self.prevClonePos = best_obj_hit
         # Random rotation along Picked Normal
         if mifthCloneTools.randNormalRotateClone > 0.0:
             randNorAngle = random.uniform(
