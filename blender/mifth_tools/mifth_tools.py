@@ -275,15 +275,3 @@ class MFTMorfCreator(bpy.types.Operator):
                             {'INFO'}, "Model " + obj.name + " has different points count")
 
         return {'FINISHED'}
-
-
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
-
-
-if __name__ == "__main__":
-    register()
