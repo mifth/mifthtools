@@ -25,7 +25,7 @@ import math
 # import mifth_tools_cloning
 
 
-bpy.mifthTools = dict()
+#bpy.mifthTools = dict()
 
 
 class MFTPanelAnimation(bpy.types.Panel):

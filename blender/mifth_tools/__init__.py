@@ -43,7 +43,7 @@ from bpy.props import *
 
 
 def register():
-    bpy.mifthTools = dict()
+    #bpy.mifthTools = dict()
     # bpy.mifthCloneTools = dict()
 
     class MFTProperties(bpy.types.PropertyGroup):
@@ -149,7 +149,7 @@ def unregister():
 
     del bpy.types.Scene.mifthTools
     del bpy.types.Scene.mifthCloneTools
-    del bpy.mifthTools
+    #del bpy.mifthTools
     # del bpy.mifthCloneTools
     bpy.utils.unregister_module(__name__)
 
