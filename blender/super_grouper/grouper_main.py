@@ -101,21 +101,22 @@ class SG_BasePanel(bpy.types.Panel):
             op.sg_objects_changer = 'HIDE_WIRE'
 
             row = layout.row(align=True)
-            op = row.operator(
-                "super_grouper.change_grouped_objects", text="", emboss=False, icon='LOCKED')
-            op.sg_group_changer = 'LOCKED'
+            if scene.super_groups and scene.super_groups[scene.super_groups_index].use_toggle:
+                op = row.operator(
+                    "super_grouper.change_grouped_objects", text="", emboss=False, icon='LOCKED')
+                op.sg_group_changer = 'LOCKED'
 
-            op = row.operator(
-                "super_grouper.change_grouped_objects", text="", emboss=False, icon='UNLOCKED')
-            op.sg_group_changer = 'UNLOCKED'
+                op = row.operator(
+                    "super_grouper.change_grouped_objects", text="", emboss=False, icon='UNLOCKED')
+                op.sg_group_changer = 'UNLOCKED'
 
-            op = row.operator(
-                "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_GREEN')
-            op.sg_group_changer = 'COLOR_WIRE'
+                op = row.operator(
+                    "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_GREEN')
+                op.sg_group_changer = 'COLOR_WIRE'
 
-            op = row.operator(
-                "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_RED')
-            op.sg_group_changer = 'DEFAULT_COLOR_WIRE'
+                op = row.operator(
+                    "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_RED')
+                op.sg_group_changer = 'DEFAULT_COLOR_WIRE'
 
             if scene.super_groups:
                 row.prop(scene.super_groups[scene.super_groups_index], "wire_color", text='')
@@ -421,8 +422,13 @@ class SG_change_grouped_objects(bpy.types.Operator):
         scene = context.scene
         if scene.super_groups:
             s_group = scene.super_groups[scene.super_groups_index]
-            if s_group.use_toggle is True:
-                for obj in scene.objects:
+            scene_parse = scene
+
+            # if s_group.use_toggle is False:
+            #     scene_parse = SGR_get_group_scene(context)
+
+            if scene_parse is not None:
+                for obj in scene_parse.objects:
                     if sg_is_object_in_s_groups([s_group.unique_id], obj):
                         if self.sg_group_changer == 'COLOR_WIRE':
                             r = s_group.wire_color[0]
