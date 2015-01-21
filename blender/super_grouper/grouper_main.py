@@ -89,18 +89,10 @@ class SG_BasePanel(bpy.types.Panel):
             op.sg_objects_changer = 'SHOW_WIRE'
 
             op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='RETOPO')
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='SOLID')
             op.sg_objects_changer = 'HIDE_WIRE'
 
             row = layout.row(align=True)
-            op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_RED')
-            op.sg_objects_changer = 'COLOR_WIRE'
-
-            op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_GREEN')
-            op.sg_objects_changer = 'DEFAULT_COLOR_WIRE'
-
             op = row.operator(
                 "super_grouper.change_selected_objects", text="", emboss=False, icon='LOCKED')
             op.sg_objects_changer = 'LOCKED'
@@ -108,6 +100,14 @@ class SG_BasePanel(bpy.types.Panel):
             op = row.operator(
                 "super_grouper.change_selected_objects", text="", emboss=False, icon='UNLOCKED')
             op.sg_objects_changer = 'UNLOCKED'
+
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_RED')
+            op.sg_objects_changer = 'COLOR_WIRE'
+
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_GREEN')
+            op.sg_objects_changer = 'DEFAULT_COLOR_WIRE'
 
             row = layout.row()
             row.template_list(
