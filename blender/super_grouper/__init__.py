@@ -39,51 +39,54 @@ from bpy.props import *
 
 
 def register():
-    #bpy.miraTool = dict()
+    # bpy.miraTool = dict()
 
-    #class MRProperties(bpy.types.PropertyGroup):
+    # class MRProperties(bpy.types.PropertyGroup):
 
-        ## Output Settings
-        #outputFolder = StringProperty(
-            #name="outputFolder",
-            #subtype="NONE",
-            #default="seq"
+        # Output Settings
+        # outputFolder = StringProperty(
+            # name="outputFolder",
+            # subtype="NONE",
+            # default="seq"
         #)
 
-        ## Curve Animator Settings
-        #doUseSceneFrames = BoolProperty(
-            #name="do use scene frames",
-            #description="do use scene frames...",
-            #default=False
+        # Curve Animator Settings
+        # doUseSceneFrames = BoolProperty(
+            # name="do use scene frames",
+            # description="do use scene frames...",
+            # default=False
         #)
 
-        #curveAniStartFrame = IntProperty(
-            #default=1,
-            #min=1,
-            #max=10000
+        # curveAniStartFrame = IntProperty(
+            # default=1,
+            # min=1,
+            # max=10000
         #)
 
     bpy.utils.register_module(__name__)
 
-    bpy.types.Scene.super_groups = CollectionProperty(type=grouper_main.SG_Group)
-    bpy.types.Object.sg_belong_id = CollectionProperty(type=grouper_main.SG_Object_Id)
-    bpy.types.Scene.sg_settings = PointerProperty(type=grouper_main.SG_Other_Settings)
+    bpy.types.Scene.super_groups = CollectionProperty(
+        type=grouper_main.SG_Group)
+    bpy.types.Object.sg_belong_id = CollectionProperty(
+        type=grouper_main.SG_Object_Id)
+    bpy.types.Scene.sg_settings = PointerProperty(
+        type=grouper_main.SG_Other_Settings)
 
     # Unused, but this is needed for the TemplateList to work...
     bpy.types.Scene.super_groups_index = IntProperty(default=-1)
 
-    #bpy.types.Scene.miraTool = PointerProperty(
-        #name="Mira Tool Variables",
-        #type=MFTProperties,
-        #description="Mira Tool Properties"
+    # bpy.types.Scene.miraTool = PointerProperty(
+        # name="Mira Tool Variables",
+        # type=MFTProperties,
+        # description="Mira Tool Properties"
     #)
 
 
 def unregister():
     import bpy
 
-    #del bpy.types.Scene.super_grouper
-    #del bpy.miraTool
+    # del bpy.types.Scene.super_grouper
+    # del bpy.miraTool
     del bpy.types.Scene.super_groups
     del bpy.types.Object.sg_belong_id
     del bpy.types.Scene.sg_settings

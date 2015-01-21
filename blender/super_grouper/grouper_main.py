@@ -32,6 +32,7 @@ NUM_LAYERS = 20
 SCENE_SGR = '#SGR'
 UNIQUE_ID_NAME = 'sg_belong_id'
 
+
 class SG_Group(PropertyGroup):
     use_toggle = BoolProperty(name="", default=True)
     use_wire = BoolProperty(name="", default=False)
@@ -56,7 +57,6 @@ class SG_BasePanel(bpy.types.Panel):
     bl_context = "objectmode"
     bl_category = 'Relations'
 
-
     def draw(self, context):
         layout = self.layout
 
@@ -66,46 +66,58 @@ class SG_BasePanel(bpy.types.Panel):
             sg_settings = scene.sg_settings
 
             row = layout.row(align=True)
-            row.operator("super_grouper.super_group_add", icon='ZOOMIN', text="")
-            row.operator("super_grouper.super_group_remove", icon='ZOOMOUT', text="")
+            row.operator(
+                "super_grouper.super_group_add", icon='ZOOMIN', text="")
+            row.operator(
+                "super_grouper.super_group_remove", icon='ZOOMOUT', text="")
 
             row = layout.row(align=True)
-            op = row.operator("super_grouper.change_selected_objects", text="", emboss=False, icon='BBOX')
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='BBOX')
             op.sg_objects_changer = 'BOUND_SHADE'
 
-            op = row.operator("super_grouper.change_selected_objects", text="", emboss=False, icon='WIRE')
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='WIRE')
             op.sg_objects_changer = 'WIRE_SHADE'
 
-            op = row.operator("super_grouper.change_selected_objects", text="", emboss=False, icon='MATERIAL')
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='MATERIAL')
             op.sg_objects_changer = 'MATERIAL_SHADE'
 
-            op = row.operator("super_grouper.change_selected_objects", text="", emboss=False, icon='RETOPO')
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='RETOPO')
             op.sg_objects_changer = 'SHOW_WIRE'
 
-            op = row.operator("super_grouper.change_selected_objects", text="", emboss=False, icon='RETOPO')
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='RETOPO')
             op.sg_objects_changer = 'HIDE_WIRE'
 
             row = layout.row(align=True)
-            op = row.operator("super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_RED')
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_RED')
             op.sg_objects_changer = 'COLOR_WIRE'
 
-            op = row.operator("super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_GREEN')
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_GREEN')
             op.sg_objects_changer = 'DEFAULT_COLOR_WIRE'
 
-            op = row.operator("super_grouper.change_selected_objects", text="", emboss=False, icon='LOCKED')
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='LOCKED')
             op.sg_objects_changer = 'LOCKED'
 
-            op = row.operator("super_grouper.change_selected_objects", text="", emboss=False, icon='UNLOCKED')
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='UNLOCKED')
             op.sg_objects_changer = 'UNLOCKED'
 
-
             row = layout.row()
-            row.template_list("SG_named_super_groups", "", scene, "super_groups", scene, "super_groups_index")
+            row.template_list(
+                "SG_named_super_groups", "", scene, "super_groups", scene, "super_groups_index")
 
             row = layout.row()
             row.operator("super_grouper.add_to_group", text="Add")
-            row.operator("super_grouper.super_remove_from_group", text="Remove")
-            #layout.separator()
+            row.operator(
+                "super_grouper.super_remove_from_group", text="Remove")
+            # layout.separator()
             layout.label(text="Selection Settings:")
             row = layout.row(align=True)
             row.prop(sg_settings, "select_all_layers", text='L')
@@ -114,29 +126,32 @@ class SG_BasePanel(bpy.types.Panel):
 
 
 class SG_named_super_groups(UIList):
+
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         super_group = item
 
         # check for lock camera and layer is active
-        #view_3d = context.area.spaces.active  # Ensured it is a 'VIEW_3D' in panel's poll(), weak... :/
-        #use_spacecheck = False if view_3d.lock_camera_and_layers else True
+        # view_3d = context.area.spaces.active  # Ensured it is a 'VIEW_3D' in panel's poll(), weak... :/
+        # use_spacecheck = False if view_3d.lock_camera_and_layers else True
 
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             layout.prop(super_group, "name", text="", emboss=False)
 
-            # # select operator
+            # select operator
             # icon = 'LOCKED'
             # op = layout.operator("super_grouper.toggle_select", text="", emboss=False, icon=icon)
             # op.group_idx = index
 
             # select operator
             icon = 'RESTRICT_SELECT_OFF' if super_group.use_toggle else 'RESTRICT_SELECT_ON'
-            op = layout.operator("super_grouper.toggle_select", text="", emboss=False, icon=icon)
+            op = layout.operator(
+                "super_grouper.toggle_select", text="", emboss=False, icon=icon)
             op.group_idx = index
 
             # view operator
             icon = 'RESTRICT_VIEW_OFF' if super_group.use_toggle else 'RESTRICT_VIEW_ON'
-            op = layout.operator("super_grouper.toggle_visibility", text="", emboss=False, icon=icon)
+            op = layout.operator(
+                "super_grouper.toggle_visibility", text="", emboss=False, icon=icon)
             op.group_idx = index
 
         elif self.layout_type in {'GRID'}:
@@ -144,12 +159,14 @@ class SG_named_super_groups(UIList):
 
 
 class SG_super_group_add(bpy.types.Operator):
+
     """Add and select a new layer group"""
     bl_idname = "super_grouper.super_group_add"
     bl_label = "Add Layer Group"
     bl_options = {'REGISTER', 'UNDO'}
 
-    #layers = BoolVectorProperty(name="Layers", default=([False] * NUM_LAYERS), size=NUM_LAYERS)
+    # layers = BoolVectorProperty(name="Layers", default=([False] *
+    # NUM_LAYERS), size=NUM_LAYERS)
 
     @classmethod
     def poll(cls, context):
@@ -158,12 +175,13 @@ class SG_super_group_add(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         super_groups = scene.super_groups
-        #layers = self.layers
+        # layers = self.layers
 
         # Generate unique id
         uni_numb = None
         while True:
-            uniq_id_temp = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+            uniq_id_temp = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                                   for _ in range(10))
             is_un = True
             for gp in super_groups:
                 if gp.unique_id == uniq_id_temp:
@@ -175,7 +193,7 @@ class SG_super_group_add(bpy.types.Operator):
         group_idx = len(super_groups)
         s_group = super_groups.add()
         s_group.name = "SG.%.3d" % group_idx
-        #s_group.layers = layers
+        # s_group.layers = layers
         s_group.unique_id = uni_numb
         scene.super_groups_index = group_idx
 
@@ -187,12 +205,13 @@ class SG_super_group_add(bpy.types.Operator):
 
 
 class SG_super_group_remove(bpy.types.Operator):
+
     """Remove selected layer group"""
     bl_idname = "super_grouper.super_group_remove"
     bl_label = "Remove Layer Group"
     bl_options = {'REGISTER', 'UNDO'}
 
-    #group_idx = bpy.props.IntProperty()
+    # group_idx = bpy.props.IntProperty()
 
     @classmethod
     def poll(cls, context):
@@ -215,12 +234,13 @@ class SG_super_group_remove(bpy.types.Operator):
                 SG_del_properties_from_obj(UNIQUE_ID_NAME, [s_group_id], obj)
 
             # clear SGR scene
-            sgr_scene_name = scene.name+SCENE_SGR
+            sgr_scene_name = scene.name + SCENE_SGR
             if sgr_scene_name in bpy.data.scenes:
-                sgr_scene = bpy.data.scenes[scene.name+SCENE_SGR]
+                sgr_scene = bpy.data.scenes[scene.name + SCENE_SGR]
                 for obj in sgr_scene.objects:
                     SGR_switch_object(obj, sgr_scene, scene, s_group_id)
-                    SG_del_properties_from_obj(UNIQUE_ID_NAME, [s_group_id], obj)
+                    SG_del_properties_from_obj(
+                        UNIQUE_ID_NAME, [s_group_id], obj)
 
                 # remove group_scene if it's empty
                 if len(sgr_scene.objects) == 0:
@@ -254,6 +274,7 @@ def SGR_create_group_scene(context):
 
     return None
 
+
 def SGR_select_objects(scene, ids):
     for obj in scene.objects:
         if len(obj.sg_belong_id.values()) > 0:
@@ -272,7 +293,8 @@ def SGR_select_objects(scene, ids):
                                 # select
                                 obj.select = True
 
-                                # break if we need to select only visible layers
+                                # break if we need to select only visible
+                                # layers
                                 if scene.sg_settings.select_all_layers is False:
                                     break
                                 else:
@@ -280,6 +302,7 @@ def SGR_select_objects(scene, ids):
 
 
 class SG_toggle_select(bpy.types.Operator):
+
     """Draw a line with the mouse"""
     bl_idname = "super_grouper.toggle_select"
     bl_label = "Toggle Visibility"
@@ -300,6 +323,7 @@ class SG_toggle_select(bpy.types.Operator):
 
 
 class SG_toggle_visibility(bpy.types.Operator):
+
     """Draw a line with the mouse"""
     bl_idname = "super_grouper.toggle_visibility"
     bl_label = "Toggle Visibility"
@@ -322,10 +346,12 @@ class SG_toggle_visibility(bpy.types.Operator):
             if group_scene is not None:
                 if s_group.use_toggle is True:
                     for obj in scene.objects:
-                        SGR_switch_object(obj, scene, group_scene, s_group.unique_id)
+                        SGR_switch_object(
+                            obj, scene, group_scene, s_group.unique_id)
                 else:
                     for obj in group_scene.objects:
-                        SGR_switch_object(obj, group_scene, scene, s_group.unique_id)
+                        SGR_switch_object(
+                            obj, group_scene, scene, s_group.unique_id)
                     if len(group_scene.objects) == 0:
                         bpy.data.scenes.remove(group_scene)
 
@@ -378,17 +404,21 @@ class SG_change_selected_objects(bpy.types.Operator):
             if self.sg_objects_changer == 'BOUND_SHADE':
                 obj.draw_type = 'BOUNDS'
             elif self.sg_objects_changer == 'WIRE_SHADE':
-                obj.draw_type ='WIRE'
+                obj.draw_type = 'WIRE'
             elif self.sg_objects_changer == 'MATERIAL_SHADE':
-                obj.draw_type ='TEXTURED'
+                obj.draw_type = 'TEXTURED'
             elif self.sg_objects_changer == 'SHOW_WIRE':
                 obj.show_wire = True
             elif self.sg_objects_changer == 'HIDE_WIRE':
                 obj.show_wire = False
             elif self.sg_objects_changer == 'COLOR_WIRE':
-                pass
+                r = random.uniform(0.0, 1.0)
+                g = random.uniform(0.0, 1.0)
+                b = random.uniform(0.0, 1.0)
+                obj.color = (r, g, b, 1)
+                obj.show_wire_color = True
             elif self.sg_objects_changer == 'DEFAULT_COLOR_WIRE':
-                pass
+                obj.show_wire_color = False
             elif self.sg_objects_changer == 'LOCKED':
                     obj.hide_select = True
             elif self.sg_objects_changer == 'UNLOCKED':
@@ -403,7 +433,7 @@ class SG_add_to_group(bpy.types.Operator):
     bl_description = "Add To Group"
     bl_options = {'REGISTER', 'UNDO'}
 
-    #group_idx = bpy.props.IntProperty()
+    # group_idx = bpy.props.IntProperty()
 
     def execute(self, context):
         scene = context.scene
@@ -412,7 +442,8 @@ class SG_add_to_group(bpy.types.Operator):
             s_group = scene.super_groups[scene.super_groups_index]
             for obj in context.selected_objects:
                 # add the unique id of selected group
-                SG_add_property_to_obj(scene.super_groups, s_group.unique_id, obj)
+                SG_add_property_to_obj(
+                    scene.super_groups, s_group.unique_id, obj)
 
                 # check if the group is hidden
                 if s_group.use_toggle is False:
@@ -435,7 +466,7 @@ class SG_remove_from_group(bpy.types.Operator):
     bl_description = "Add To Group"
     bl_options = {'REGISTER', 'UNDO'}
 
-    #group_idx = bpy.props.IntProperty()
+    # group_idx = bpy.props.IntProperty()
 
     def execute(self, context):
         scene = context.scene
