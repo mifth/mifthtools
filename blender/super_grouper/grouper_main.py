@@ -39,6 +39,14 @@ class SG_Group(PropertyGroup):
     use_lock = BoolProperty(name="", default=False)
     unique_id = StringProperty(default="")
 
+    wire_color = FloatVectorProperty(
+       name="wire",
+       subtype='COLOR',
+       default=(0.2, 0.2, 0.2),
+       min=0.0, max=1.0,
+       description="wire color af the group"
+       )
+
 
 class SG_Object_Id(PropertyGroup):
     unique_id_object = StringProperty(default="")
@@ -94,20 +102,23 @@ class SG_BasePanel(bpy.types.Panel):
 
             row = layout.row(align=True)
             op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='LOCKED')
-            op.sg_objects_changer = 'LOCKED'
+                "super_grouper.change_grouped_objects", text="", emboss=False, icon='LOCKED')
+            op.sg_group_changer = 'LOCKED'
 
             op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='UNLOCKED')
-            op.sg_objects_changer = 'UNLOCKED'
+                "super_grouper.change_grouped_objects", text="", emboss=False, icon='UNLOCKED')
+            op.sg_group_changer = 'UNLOCKED'
 
             op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_RED')
-            op.sg_objects_changer = 'COLOR_WIRE'
+                "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_GREEN')
+            op.sg_group_changer = 'COLOR_WIRE'
 
             op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='COLOR_GREEN')
-            op.sg_objects_changer = 'DEFAULT_COLOR_WIRE'
+                "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_RED')
+            op.sg_group_changer = 'DEFAULT_COLOR_WIRE'
+
+            if scene.super_groups:
+                row.prop(scene.super_groups[scene.super_groups_index], "wire_color", text='')
 
             row = layout.row()
             row.template_list(
@@ -378,6 +389,56 @@ def SGR_switch_object(obj, scene_source, scene_terget, s_group_id):
 
             scene_source.objects.unlink(obj)
 
+def sg_is_object_in_s_groups(groups_prop_values, obj):
+    is_in_group = False
+    for prop in obj.sg_belong_id:
+        if prop.unique_id_object in groups_prop_values:
+            is_in_group = True
+            break
+
+    if is_in_group:
+        return True
+    else:
+        return False
+
+
+class SG_change_grouped_objects(bpy.types.Operator):
+    bl_idname = "super_grouper.change_grouped_objects"
+    bl_label = "Change Grouped"
+    bl_description = "Change Grouped"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    sg_group_changer = EnumProperty(
+        items=(('COLOR_WIRE', 'COLOR_WIRE', ''),
+               ('DEFAULT_COLOR_WIRE', 'DEFAULT_COLOR_WIRE', ''),
+               ('LOCKED', 'LOCKED', ''),
+               ('UNLOCKED', 'UNLOCKED', '')
+               ),
+        default = 'DEFAULT_COLOR_WIRE'
+    )
+
+    def execute(self, context):
+        scene = context.scene
+        if scene.super_groups:
+            s_group = scene.super_groups[scene.super_groups_index]
+            if s_group.use_toggle is True:
+                for obj in scene.objects:
+                    if sg_is_object_in_s_groups([s_group.unique_id], obj):
+                        if self.sg_group_changer == 'COLOR_WIRE':
+                            r = s_group.wire_color[0]
+                            g = s_group.wire_color[1]
+                            b = s_group.wire_color[2]
+                            obj.color = (r, g, b, 1)
+                            obj.show_wire_color = True
+                        elif self.sg_group_changer == 'DEFAULT_COLOR_WIRE':
+                            obj.show_wire_color = False
+                        elif self.sg_group_changer == 'LOCKED':
+                                obj.hide_select = True
+                        elif self.sg_group_changer == 'UNLOCKED':
+                                obj.hide_select = False
+
+        return {'FINISHED'}
+
 
 class SG_change_selected_objects(bpy.types.Operator):
     bl_idname = "super_grouper.change_selected_objects"
@@ -390,14 +451,11 @@ class SG_change_selected_objects(bpy.types.Operator):
                ('WIRE_SHADE', 'WIRE_SHADE', ''),
                ('MATERIAL_SHADE', 'MATERIAL_SHADE', ''),
                ('SHOW_WIRE', 'SHOW_WIRE', ''),
-               ('HIDE_WIRE', 'HIDE_WIRE', ''),
-               ('COLOR_WIRE', 'COLOR_WIRE', ''),
-               ('DEFAULT_COLOR_WIRE', 'DEFAULT_COLOR_WIRE', ''),
-               ('LOCKED', 'LOCKED', ''),
-               ('UNLOCKED', 'UNLOCKED', '')
+               ('HIDE_WIRE', 'HIDE_WIRE', '')
                ),
         default = 'MATERIAL_SHADE'
     )
+    sg_do_with_groups = ['COLOR_WIRE', 'DEFAULT_COLOR_WIRE', 'LOCKED', 'UNLOCKED']
 
     def execute(self, context):
         for obj in context.selected_objects:
@@ -411,18 +469,6 @@ class SG_change_selected_objects(bpy.types.Operator):
                 obj.show_wire = True
             elif self.sg_objects_changer == 'HIDE_WIRE':
                 obj.show_wire = False
-            elif self.sg_objects_changer == 'COLOR_WIRE':
-                r = random.uniform(0.0, 1.0)
-                g = random.uniform(0.0, 1.0)
-                b = random.uniform(0.0, 1.0)
-                obj.color = (r, g, b, 1)
-                obj.show_wire_color = True
-            elif self.sg_objects_changer == 'DEFAULT_COLOR_WIRE':
-                obj.show_wire_color = False
-            elif self.sg_objects_changer == 'LOCKED':
-                    obj.hide_select = True
-            elif self.sg_objects_changer == 'UNLOCKED':
-                    obj.hide_select = False
 
         return {'FINISHED'}
 
