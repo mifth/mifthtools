@@ -44,7 +44,7 @@ class SG_Group(PropertyGroup):
        subtype='COLOR',
        default=(0.2, 0.2, 0.2),
        min=0.0, max=1.0,
-       description="wire color af the group"
+       description="wire color of the group"
        )
 
 
@@ -78,6 +78,14 @@ class SG_BasePanel(bpy.types.Panel):
                 "super_grouper.super_group_add", icon='ZOOMIN', text="")
             row.operator(
                 "super_grouper.super_group_remove", icon='ZOOMOUT', text="")
+
+            op = row.operator(
+                "super_grouper.super_group_move", icon='TRIA_UP', text="")
+            op.do_move = 'UP'
+
+            op = row.operator(
+                "super_grouper.super_group_move", icon='TRIA_DOWN', text="")
+            op.do_move = 'DOWN'
 
             row = layout.row(align=True)
             op = row.operator(
@@ -174,7 +182,7 @@ class SG_super_group_add(bpy.types.Operator):
 
     """Add and select a new layer group"""
     bl_idname = "super_grouper.super_group_add"
-    bl_label = "Add Layer Group"
+    bl_label = "Add Super Group"
     bl_options = {'REGISTER', 'UNDO'}
 
     # layers = BoolVectorProperty(name="Layers", default=([False] *
@@ -207,6 +215,7 @@ class SG_super_group_add(bpy.types.Operator):
         s_group.name = "SG.%.3d" % group_idx
         # s_group.layers = layers
         s_group.unique_id = uni_numb
+        # s_group.wire_color = (random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0))
         scene.super_groups_index = group_idx
 
         for obj in context.selected_objects:
@@ -220,7 +229,7 @@ class SG_super_group_remove(bpy.types.Operator):
 
     """Remove selected layer group"""
     bl_idname = "super_grouper.super_group_remove"
-    bl_label = "Remove Layer Group"
+    bl_label = "Remove Super Group"
     bl_options = {'REGISTER', 'UNDO'}
 
     # group_idx = bpy.props.IntProperty()
@@ -262,6 +271,44 @@ class SG_super_group_remove(bpy.types.Operator):
             scene.super_groups.remove(scene.super_groups_index)
             if scene.super_groups_index > len(scene.super_groups) - 1:
                 scene.super_groups_index = len(scene.super_groups) - 1
+
+        return {'FINISHED'}
+
+class SG_super_group_move(bpy.types.Operator):
+
+    """Remove selected layer group"""
+    bl_idname = "super_grouper.super_group_move"
+    bl_label = "Move Super Group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    do_move = EnumProperty(
+        items=(('UP', 'UP', ''),
+               ('DOWN', 'DOWN', '')
+               ),
+        default = 'UP'
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return bool(context.scene)
+
+    def execute(self, context):
+        scene = context.scene
+
+        # if a scene contains goups
+        if scene.super_groups and len(scene.super_groups) > 1:
+            s_group_id = scene.super_groups[scene.super_groups_index].unique_id
+            if scene.super_groups:
+                move_id = None
+                if self.do_move == 'UP' and scene.super_groups_index > 0:
+                    move_id = scene.super_groups_index - 1
+                    scene.super_groups.move(scene.super_groups_index,move_id )
+                elif self.do_move == 'DOWN' and scene.super_groups_index < len(scene.super_groups)-1:
+                    move_id = scene.super_groups_index + 1
+                    scene.super_groups.move(scene.super_groups_index, move_id)
+
+                if move_id is not None:
+                    scene.super_groups_index = move_id
 
         return {'FINISHED'}
 
@@ -317,8 +364,8 @@ class SG_toggle_select(bpy.types.Operator):
 
     """Draw a line with the mouse"""
     bl_idname = "super_grouper.toggle_select"
-    bl_label = "Toggle Visibility"
-    bl_description = "Toggle Visibility"
+    bl_label = "Toggle Select"
+    bl_description = "Toggle Select"
     bl_options = {'REGISTER', 'UNDO'}
 
     group_idx = IntProperty()
@@ -482,7 +529,7 @@ class SG_change_selected_objects(bpy.types.Operator):
 class SG_add_to_group(bpy.types.Operator):
     bl_idname = "super_grouper.add_to_group"
     bl_label = "Add"
-    bl_description = "Add To Group"
+    bl_description = "Add To Super Group"
     bl_options = {'REGISTER', 'UNDO'}
 
     # group_idx = bpy.props.IntProperty()
@@ -515,7 +562,7 @@ class SG_add_to_group(bpy.types.Operator):
 class SG_remove_from_group(bpy.types.Operator):
     bl_idname = "super_grouper.super_remove_from_group"
     bl_label = "Add"
-    bl_description = "Add To Group"
+    bl_description = "Remove from Super Group"
     bl_options = {'REGISTER', 'UNDO'}
 
     # group_idx = bpy.props.IntProperty()
