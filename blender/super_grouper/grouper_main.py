@@ -137,12 +137,14 @@ class SG_BasePanel(bpy.types.Panel):
             row.operator("super_grouper.add_to_group", text="Add")
             row.operator(
                 "super_grouper.super_remove_from_group", text="Remove")
+            row.operator("super_grouper.clean_object_ids", text="Clean")
             # layout.separator()
             layout.label(text="Selection Settings:")
             row = layout.row(align=True)
             row.prop(sg_settings, "select_all_layers", text='L')
             row.prop(sg_settings, "unlock_obj", text='L')
             row.prop(sg_settings, "unhide_obj", text='H')
+            row = layout.row(align=True)
 
 
 class SG_named_super_groups(UIList):
@@ -252,7 +254,7 @@ class SG_super_group_remove(bpy.types.Operator):
 
             # clear context scene
             for obj in scene.objects:
-                SG_del_properties_from_obj(UNIQUE_ID_NAME, [s_group_id], obj)
+                SG_del_properties_from_obj(UNIQUE_ID_NAME, [s_group_id], obj, True)
 
             # clear SGR scene
             sgr_scene_name = scene.name + SCENE_SGR
@@ -261,7 +263,7 @@ class SG_super_group_remove(bpy.types.Operator):
                 for obj in sgr_scene.objects:
                     SGR_switch_object(obj, sgr_scene, scene, s_group_id)
                     SG_del_properties_from_obj(
-                        UNIQUE_ID_NAME, [s_group_id], obj)
+                        UNIQUE_ID_NAME, [s_group_id], obj, True)
 
                 # remove group_scene if it's empty
                 if len(sgr_scene.objects) == 0:
@@ -273,6 +275,7 @@ class SG_super_group_remove(bpy.types.Operator):
                 scene.super_groups_index = len(scene.super_groups) - 1
 
         return {'FINISHED'}
+
 
 class SG_super_group_move(bpy.types.Operator):
 
@@ -309,6 +312,32 @@ class SG_super_group_move(bpy.types.Operator):
 
                 if move_id is not None:
                     scene.super_groups_index = move_id
+
+        return {'FINISHED'}
+
+
+class SG_clean_object_ids(bpy.types.Operator):
+
+    """Remove selected layer group"""
+    bl_idname = "super_grouper.clean_object_ids"
+    bl_label = "Clean Objects IDs if the objects were imported from other blend files"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    # group_idx = bpy.props.IntProperty()
+
+    @classmethod
+    def poll(cls, context):
+        return bool(context.scene)
+
+    def execute(self, context):
+        scenes_ids = []
+        for scene in bpy.data.scenes:
+            if scene.super_groups:
+                for s_group in scene.super_groups:
+                    scenes_ids.append(s_group.unique_id)
+
+        for obj in bpy.data.objects:
+            SG_del_properties_from_obj(UNIQUE_ID_NAME, scenes_ids, obj, False)
 
         return {'FINISHED'}
 
@@ -578,7 +607,7 @@ class SG_remove_from_group(bpy.types.Operator):
 
             # remove s_groups
             for obj in context.selected_objects:
-                SG_del_properties_from_obj(UNIQUE_ID_NAME, s_groups, obj)
+                SG_del_properties_from_obj(UNIQUE_ID_NAME, s_groups, obj, True)
             s_groups = None  # clear
 
         return {'FINISHED'}
@@ -617,7 +646,7 @@ def SG_add_property_to_obj(s_groups, prop_value, obj):
     # print(obj.sg_belong_id.values().index(obj.sg_belong_id.values()[0]))
 
 
-def SG_del_properties_from_obj(prop_name, s_groups, obj):
+def SG_del_properties_from_obj(prop_name, s_groups, obj, delete_in_s_groups=True):
     prop = obj.sg_belong_id
 
     if len(prop.values()) > 0:
@@ -628,7 +657,10 @@ def SG_del_properties_from_obj(prop_name, s_groups, obj):
         for i in range(prop_len):
             prop_obj = prop[index_prop]
             is_removed = False
-            if prop_obj.unique_id_object in s_groups:
+            if prop_obj.unique_id_object in s_groups and delete_in_s_groups == True:
+                prop.remove(index_prop)
+                is_removed = True
+            elif prop_obj.unique_id_object not in s_groups and delete_in_s_groups == False:
                 prop.remove(index_prop)
                 is_removed = True
 
