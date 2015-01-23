@@ -364,11 +364,12 @@ def SGR_create_group_scene(context):
 
 
 def SGR_select_objects(scene, ids):
+    temp_scene_layers = list(scene.layers[:])  # copy layers of the scene
     for obj in scene.objects:
-        if len(obj.sg_belong_id.values()) > 0:
+        if obj.sg_belong_id:
             for prop in obj.sg_belong_id:
                 if prop.unique_id_object in ids:
-                    for i in range(len(scene.layers)):
+                    for i in range(20):
                         if obj.layers[i] is True:
                             if scene.layers[i] is True or scene.sg_settings.select_all_layers:
                                 # unlock
@@ -386,7 +387,10 @@ def SGR_select_objects(scene, ids):
                                 if scene.sg_settings.select_all_layers is False:
                                     break
                                 else:
-                                    scene.layers[i] = obj.layers[i]
+                                    temp_scene_layers[i] = obj.layers[i]
+
+    if scene.sg_settings.select_all_layers:
+        scene.layers = temp_scene_layers
 
 
 class SG_toggle_select(bpy.types.Operator):
