@@ -180,6 +180,17 @@ class SG_named_super_groups(UIList):
             layout.alignment = 'CENTER'
 
 
+def generate_id(other_ids):
+    # Generate unique id
+    while True:
+        uni_numb = None
+        uniq_id_temp = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+        if uniq_id_temp not in other_ids:
+            uni_numb = uniq_id_temp
+            break
+
+    return uni_numb
+
 class SG_super_group_add(bpy.types.Operator):
 
     """Add and select a new layer group"""
@@ -199,30 +210,35 @@ class SG_super_group_add(bpy.types.Operator):
         super_groups = scene.super_groups
         # layers = self.layers
 
-        # Generate unique id
-        uni_numb = None
-        while True:
-            uniq_id_temp = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                                   for _ in range(10))
-            is_un = True
-            for gp in super_groups:
-                if gp.unique_id == uniq_id_temp:
-                    is_un = False
-            if is_un is True:
-                uni_numb = uniq_id_temp
-                break
+        check_same_ids()  # check scene ids
+
+        # get all ids
+        all_ids = []
+        for s_group in super_groups:
+            if s_group.unique_id not in all_ids:
+                all_ids.append(s_group.unique_id)
+
+        # remove s_groups
+        for obj in context.selected_objects:
+            for s_group in super_groups:
+                SG_del_properties_from_obj(UNIQUE_ID_NAME, all_ids, obj, True)
+
+        # generate new id
+        uni_numb = generate_id(all_ids)
+        all_ids = None
 
         group_idx = len(super_groups)
-        s_group = super_groups.add()
-        s_group.name = "SG.%.3d" % group_idx
-        # s_group.layers = layers
-        s_group.unique_id = uni_numb
-        # s_group.wire_color = (random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0))
+        new_s_group = super_groups.add()
+        new_s_group.name = "SG.%.3d" % group_idx
+        new_s_group.unique_id = uni_numb
+        # new_s_group.wire_color = (random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0))
         scene.super_groups_index = group_idx
 
+
+
+        # add the unique id of selected objects
         for obj in context.selected_objects:
-            # add the unique id of selected objects
-            SG_add_property_to_obj(scene.super_groups, s_group.unique_id, obj)
+            SG_add_property_to_obj(new_s_group.unique_id, obj)
 
         return {'FINISHED'}
 
@@ -245,6 +261,8 @@ class SG_super_group_remove(bpy.types.Operator):
 
         # if a scene contains goups
         if scene.super_groups:
+            check_same_ids()  # check scene ids
+
             s_group_id = scene.super_groups[scene.super_groups_index].unique_id
 
             # get all ids
@@ -334,10 +352,13 @@ class SG_clean_object_ids(bpy.types.Operator):
         for scene in bpy.data.scenes:
             if scene.super_groups:
                 for s_group in scene.super_groups:
-                    scenes_ids.append(s_group.unique_id)
+                    if s_group.unique_id not in scenes_ids:
+                        scenes_ids.append(s_group.unique_id)
 
         for obj in bpy.data.objects:
             SG_del_properties_from_obj(UNIQUE_ID_NAME, scenes_ids, obj, False)
+
+        scenes_ids = None  # clean
 
         return {'FINISHED'}
 
@@ -364,12 +385,11 @@ def SGR_create_group_scene(context):
 
 
 def SGR_select_objects(scene, ids):
-    temp_scene_layers = list(scene.layers[:])  # copy layers of the scene
     for obj in scene.objects:
-        if obj.sg_belong_id:
+        if len(obj.sg_belong_id.values()) > 0:
             for prop in obj.sg_belong_id:
                 if prop.unique_id_object in ids:
-                    for i in range(20):
+                    for i in range(len(scene.layers)):
                         if obj.layers[i] is True:
                             if scene.layers[i] is True or scene.sg_settings.select_all_layers:
                                 # unlock
@@ -387,10 +407,7 @@ def SGR_select_objects(scene, ids):
                                 if scene.sg_settings.select_all_layers is False:
                                     break
                                 else:
-                                    temp_scene_layers[i] = obj.layers[i]
-
-    if scene.sg_settings.select_all_layers:
-        scene.layers = temp_scene_layers
+                                    scene.layers[i] = obj.layers[i]
 
 
 class SG_toggle_select(bpy.types.Operator):
@@ -406,6 +423,8 @@ class SG_toggle_select(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         if self.group_idx < len(scene.super_groups):
+            # check_same_ids()  # check scene ids
+
             s_group = scene.super_groups[self.group_idx]
 
             if s_group.use_toggle is True:
@@ -427,6 +446,8 @@ class SG_toggle_visibility(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         if self.group_idx < len(scene.super_groups):
+            check_same_ids()  # check scene ids
+
             s_group = scene.super_groups[self.group_idx]
 
             # Try to get or create new GroupScene
@@ -454,7 +475,7 @@ class SG_toggle_visibility(bpy.types.Operator):
 
 def SGR_switch_object(obj, scene_source, scene_terget, s_group_id):
     do_switch = False
-    if len(obj.sg_belong_id.values()) > 0:
+    if obj.sg_belong_id:
         for prop in obj.sg_belong_id:
             if prop.unique_id_object == s_group_id:
                 do_switch = True
@@ -501,6 +522,8 @@ class SG_change_grouped_objects(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         if scene.super_groups:
+            check_same_ids()  # check scene ids
+
             s_group = scene.super_groups[scene.super_groups_index]
             scene_parse = scene
 
@@ -570,12 +593,22 @@ class SG_add_to_group(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
 
-        if len(scene.super_groups) > 0:
+        if scene.super_groups:
+            check_same_ids()  # check ids
+
+            # remove s_groups
+            ids = []
+            for s_group in scene.super_groups:
+                ids.append(s_group.unique_id)
+            for obj in context.selected_objects:
+                for s_group in scene.super_groups:
+                    SG_del_properties_from_obj(UNIQUE_ID_NAME, ids, obj, True)
+            ids = None
+
             s_group = scene.super_groups[scene.super_groups_index]
             for obj in context.selected_objects:
                 # add the unique id of selected group
-                SG_add_property_to_obj(
-                    scene.super_groups, s_group.unique_id, obj)
+                SG_add_property_to_obj(s_group.unique_id, obj)
 
                 # check if the group is hidden
                 if s_group.use_toggle is False:
@@ -603,7 +636,9 @@ class SG_remove_from_group(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
 
-        if len(scene.super_groups) > 0:
+        if scene.super_groups:
+            check_same_ids()  # check ids
+
             # get all ids
             s_groups = []
             for s_group in scene.super_groups:
@@ -617,59 +652,92 @@ class SG_remove_from_group(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def SG_add_property_to_obj(s_groups, prop_value, obj):
-    prop = obj.sg_belong_id
+def SG_add_property_to_obj(prop_name, obj):
+    props = obj.sg_belong_id
 
-    if len(prop.values()) > 0:
+    has_value = False
+    if props:
+        for prop in props:
+            if prop.unique_id_object == prop_name:
+                has_value = True
+                break
 
-        has_value = False
-        for s_group in s_groups:
-            prop_len = len(prop)
-            index_prop = 0
-            for i in range(prop_len):
-                prop_obj = prop[index_prop]
-                is_removed = False
-                if prop_obj.unique_id_object != prop_value:
-                    if prop_obj.unique_id_object == s_group.unique_id:
-                        prop.remove(index_prop)
-                        is_removed = True
-                else:
-                    has_value = True
-
-                if is_removed is False:
-                    index_prop += 1
-
-        # add the value if it does not exist
-        if has_value == False:
-            added_prop = prop.add()
-            added_prop.unique_id_object = prop_value
-    else:
-        added_prop = prop.add()
-        added_prop.unique_id_object = prop_value
-    # print(added_prop.unique_id_object)
-    # print(obj.sg_belong_id.values().index(obj.sg_belong_id.values()[0]))
+    # add the value if it does not exist
+    if has_value == False:
+        added_prop = props.add()
+        added_prop.unique_id_object = prop_name
 
 
-def SG_del_properties_from_obj(prop_name, s_groups, obj, delete_in_s_groups=True):
-    prop = obj.sg_belong_id
+def SG_del_properties_from_obj(prop_name, s_groups_ids, obj, delete_in_s_groups=True):
+    props = obj.sg_belong_id
 
-    if len(prop.values()) > 0:
+    if len(props.values()) > 0:
 
         # remove item
-        prop_len = len(prop)
+        prop_len = len(props)
         index_prop = 0
         for i in range(prop_len):
-            prop_obj = prop[index_prop]
+            prop_obj = props[index_prop]
             is_removed = False
-            if prop_obj.unique_id_object in s_groups and delete_in_s_groups == True:
-                prop.remove(index_prop)
+            if prop_obj.unique_id_object in s_groups_ids and delete_in_s_groups == True:
+                props.remove(index_prop)
                 is_removed = True
-            elif prop_obj.unique_id_object not in s_groups and delete_in_s_groups == False:
-                prop.remove(index_prop)
+            elif prop_obj.unique_id_object not in s_groups_ids and delete_in_s_groups == False:
+                props.remove(index_prop)
                 is_removed = True
 
             if is_removed is False:
                 index_prop += 1
 
-        if len(prop.values()) == 0:
+        if len(props.values()) == 0:
             del bpy.data.objects[obj.name][prop_name]
+
+
+def check_same_ids():
+    scenes = bpy.data.scenes
+    current_scene = bpy.context.scene
+
+    check_scenes = []
+    for scene in scenes:
+        if scene.name.endswith(SCENE_SGR) is False and scene != current_scene:
+            check_scenes.append(scene)
+
+    if check_scenes:
+        other_ids = []
+        for scene in check_scenes:
+            for s_group in scene.super_groups:
+                if s_group.unique_id not in other_ids:
+                    other_ids.append(s_group.unique_id)
+
+        all_obj_list = None
+
+        if other_ids:
+            for i in range(len(current_scene.super_groups)):
+                current_s_group = current_scene.super_groups[i]
+                current_id = current_s_group.unique_id
+                if current_id in other_ids:
+                    new_id = generate_id(other_ids)
+
+                    if all_obj_list is None:
+                        all_obj_list = []
+                        all_obj_list += current_scene.objects
+                        group_scene = SGR_get_group_scene(bpy.context)
+                        if group_scene is not None:
+                            all_obj_list += group_scene.objects
+
+                    for obj in all_obj_list:
+                        has_id = False
+                        for prop in obj.sg_belong_id:
+                            if prop.unique_id_object == current_s_group.unique_id:
+                                has_id = True
+                                break
+                        if has_id == True:
+                            SG_add_property_to_obj(new_id, obj)
+
+                    # set new id
+                    current_s_group.unique_id = new_id
+
+    # clean
+    check_scenes = None
+    all_obj_list = None
+    other_ids = None
