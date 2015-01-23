@@ -304,7 +304,7 @@ def prepare_drawing(self, context):
         obj.select = False
     self.obj_Active_True = context.scene.objects.active
 
-    self.dupliList = mft_selected_objects_and_duplis(self)
+    self.dupliList = mft_selected_objects_and_duplis(self, context)
     self.allStrokesList = []
 
 
@@ -328,7 +328,7 @@ def finish_drawing(self, context):
     self.currentStrokeList = None
 
 
-def mft_selected_objects_and_duplis(self):
+def mft_selected_objects_and_duplis(self, context):
     """Loop over (object, matrix) pairs (mesh only)"""
 
     listObjMatrix = []
@@ -337,7 +337,7 @@ def mft_selected_objects_and_duplis(self):
             listObjMatrix.append((obj, obj.matrix_world.copy()))
 
         if obj.dupli_type != 'NONE':
-            obj.dupli_list_create(scene)
+            obj.dupli_list_create(context.scene)
             for dob in obj.dupli_list:
                 obj_dupli = dob.object
                 if obj_dupli.type == 'MESH':
