@@ -556,6 +556,7 @@ class SG_change_grouped_objects(bpy.types.Operator):
                             obj.show_wire_color = False
                         elif self.sg_group_changer == 'LOCKED':
                                 obj.hide_select = True
+                                obj.select = False
                         elif self.sg_group_changer == 'UNLOCKED':
                                 obj.hide_select = False
 
