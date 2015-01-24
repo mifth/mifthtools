@@ -180,8 +180,14 @@ class SG_named_super_groups(UIList):
             layout.alignment = 'CENTER'
 
 
-def generate_id(other_ids):
+def generate_id():
     # Generate unique id
+    other_ids = []
+    for scene in bpy.data.scenes:
+        if scene != bpy.context.scene and scene.name.endswith(SCENE_SGR) is False:
+            for s_group in scene.super_groups:
+                other_ids.append(s_group.unique_id)
+
     while True:
         uni_numb = None
         uniq_id_temp = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
@@ -189,6 +195,7 @@ def generate_id(other_ids):
             uni_numb = uniq_id_temp
             break
 
+    other_ids = None  # clean
     return uni_numb
 
 class SG_super_group_add(bpy.types.Operator):
@@ -224,7 +231,7 @@ class SG_super_group_add(bpy.types.Operator):
                 SG_del_properties_from_obj(UNIQUE_ID_NAME, all_ids, obj, True)
 
         # generate new id
-        uni_numb = generate_id(all_ids)
+        uni_numb = generate_id()
         all_ids = None
 
         group_idx = len(super_groups)
@@ -451,27 +458,27 @@ class SG_toggle_visibility(bpy.types.Operator):
         if self.group_idx < len(scene.super_groups):
             check_same_ids()  # check scene ids
 
-            s_group = scene.super_groups[self.group_idx]
+            current_s_group = scene.super_groups[self.group_idx]
 
             # Try to get or create new GroupScene
             group_scene = SGR_get_group_scene(context)
-            if group_scene is None and s_group.use_toggle is True:
+            if group_scene is None and current_s_group.use_toggle is True:
                 group_scene = SGR_create_group_scene(context)
 
             # if GroupScene exists now we can switch objects
             if group_scene is not None:
-                if s_group.use_toggle is True:
+                if current_s_group.use_toggle is True:
                     for obj in scene.objects:
                         SGR_switch_object(
-                            obj, scene, group_scene, s_group.unique_id)
+                            obj, scene, group_scene, current_s_group.unique_id)
                 else:
                     for obj in group_scene.objects:
                         SGR_switch_object(
-                            obj, group_scene, scene, s_group.unique_id)
+                            obj, group_scene, scene, current_s_group.unique_id)
                     if len(group_scene.objects) == 0:
                         bpy.data.scenes.remove(group_scene)
 
-            s_group.use_toggle = not s_group.use_toggle  # switch visibility
+            current_s_group.use_toggle = not current_s_group.use_toggle  # switch visibility
 
         return {'FINISHED'}
 
@@ -482,6 +489,7 @@ def SGR_switch_object(obj, scene_source, scene_terget, s_group_id):
         for prop in obj.sg_belong_id:
             if prop.unique_id_object == s_group_id:
                 do_switch = True
+                break
 
         if do_switch is True:
             layers = obj.layers[:]  # copy layers
@@ -493,6 +501,8 @@ def SGR_switch_object(obj, scene_source, scene_terget, s_group_id):
                 obj2.layers = layers  # paste layers
 
             scene_source.objects.unlink(obj)
+            layers = None  # clean
+
 
 def sg_is_object_in_s_groups(groups_prop_values, obj):
     is_in_group = False
@@ -525,7 +535,7 @@ class SG_change_grouped_objects(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         if scene.super_groups:
-            check_same_ids()  # check scene ids
+            # check_same_ids()  # check scene ids
 
             s_group = scene.super_groups[scene.super_groups_index]
             scene_parse = scene
@@ -719,7 +729,7 @@ def check_same_ids():
                 current_s_group = current_scene.super_groups[i]
                 current_id = current_s_group.unique_id
                 if current_id in other_ids:
-                    new_id = generate_id(other_ids)
+                    new_id = generate_id()
 
                     if all_obj_list is None:
                         all_obj_list = []
