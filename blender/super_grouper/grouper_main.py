@@ -35,8 +35,9 @@ UNIQUE_ID_NAME = 'sg_belong_id'
 
 class SG_Group(PropertyGroup):
     use_toggle = BoolProperty(name="", default=True)
-    use_wire = BoolProperty(name="", default=False)
-    use_lock = BoolProperty(name="", default=False)
+    #is_wire = BoolProperty(name="", default=False)
+    is_locked = BoolProperty(name="", default=False)
+    is_selected = BoolProperty(name="", default=False)  # this is just a temporary value as a user can select/deselect
     unique_id = StringProperty(default="")
 
     wire_color = FloatVectorProperty(
@@ -54,7 +55,7 @@ class SG_Object_Id(PropertyGroup):
 
 class SG_Other_Settings(PropertyGroup):
     select_all_layers = BoolProperty(name="SelectVisibleLayers", default=True)
-    unlock_obj = BoolProperty(name="UnlockObj", default=True)
+    unlock_obj = BoolProperty(name="UnlockObj", default=False)
     unhide_obj = BoolProperty(name="UnhideObj", default=True)
 
 
@@ -110,13 +111,9 @@ class SG_BasePanel(bpy.types.Panel):
 
             row = layout.row(align=True)
             if scene.super_groups and scene.super_groups[scene.super_groups_index].use_toggle:
-                op = row.operator(
-                    "super_grouper.change_grouped_objects", text="", emboss=False, icon='LOCKED')
-                op.sg_group_changer = 'LOCKED'
-
-                op = row.operator(
-                    "super_grouper.change_grouped_objects", text="", emboss=False, icon='UNLOCKED')
-                op.sg_group_changer = 'UNLOCKED'
+                #op = row.operator(
+                    #"super_grouper.change_grouped_objects", text="", emboss=False, icon='UNLOCKED')
+                #op.sg_group_changer = 'UNLOCKED'
 
                 op = row.operator(
                     "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_GREEN')
@@ -170,6 +167,13 @@ class SG_named_super_groups(UIList):
                 "super_grouper.toggle_select", text="", emboss=False, icon=icon)
             op.group_idx = index
 
+            # lock operator
+            icon = 'LOCKED' if super_group.is_locked else 'UNLOCKED'
+            op = layout.operator(
+                "super_grouper.change_grouped_objects", text="", emboss=False, icon=icon)
+            op.sg_group_changer = 'LOCKING'
+            op.group_idx = index
+
             # view operator
             icon = 'RESTRICT_VIEW_OFF' if super_group.use_toggle else 'RESTRICT_VIEW_ON'
             op = layout.operator(
@@ -214,10 +218,11 @@ class SG_super_group_add(bpy.types.Operator):
 
     def execute(self, context):
         scene = context.scene
-        super_groups = scene.super_groups
-        # layers = self.layers
 
         check_same_ids()  # check scene ids
+
+        super_groups = scene.super_groups
+        # layers = self.layers
 
         # get all ids
         all_ids = []
@@ -240,8 +245,6 @@ class SG_super_group_add(bpy.types.Operator):
         new_s_group.unique_id = uni_numb
         # new_s_group.wire_color = (random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0))
         scene.super_groups_index = group_idx
-
-
 
         # add the unique id of selected objects
         for obj in context.selected_objects:
@@ -379,7 +382,7 @@ def SGR_get_group_scene(context):
     return None
 
 
-def SGR_create_group_scene(context):
+def SG_create_group_scene(context):
     group_scene_name = context.scene.name + SCENE_SGR
 
     if context.scene.name.endswith(SCENE_SGR) is False:
@@ -391,7 +394,7 @@ def SGR_create_group_scene(context):
     return None
 
 
-def SGR_select_objects(scene, ids):
+def SG_select_objects(scene, ids):
     temp_scene_layers = list(scene.layers[:])  # copy layers of the scene
     for obj in scene.objects:
         if obj.sg_belong_id:
@@ -417,8 +420,11 @@ def SGR_select_objects(scene, ids):
                                 else:
                                     temp_scene_layers[i] = obj.layers[i]
 
+    # set layers switching to a scene
     if scene.sg_settings.select_all_layers:
         scene.layers = temp_scene_layers
+        
+
 
 class SG_toggle_select(bpy.types.Operator):
 
@@ -438,7 +444,9 @@ class SG_toggle_select(bpy.types.Operator):
             s_group = scene.super_groups[self.group_idx]
 
             if s_group.use_toggle is True:
-                SGR_select_objects(scene, [s_group.unique_id])
+                SG_select_objects(scene, [s_group.unique_id])
+                if scene.sg_settings.unlock_obj:
+                    s_group.is_locked = False
 
         return {'FINISHED'}
 
@@ -463,7 +471,7 @@ class SG_toggle_visibility(bpy.types.Operator):
             # Try to get or create new GroupScene
             group_scene = SGR_get_group_scene(context)
             if group_scene is None and current_s_group.use_toggle is True:
-                group_scene = SGR_create_group_scene(context)
+                group_scene = SG_create_group_scene(context)
 
             # if GroupScene exists now we can switch objects
             if group_scene is not None:
@@ -526,24 +534,32 @@ class SG_change_grouped_objects(bpy.types.Operator):
     sg_group_changer = EnumProperty(
         items=(('COLOR_WIRE', 'COLOR_WIRE', ''),
                ('DEFAULT_COLOR_WIRE', 'DEFAULT_COLOR_WIRE', ''),
-               ('LOCKED', 'LOCKED', ''),
-               ('UNLOCKED', 'UNLOCKED', '')
+               ('LOCKING', 'LOCKING', '')
                ),
         default = 'DEFAULT_COLOR_WIRE'
     )
 
+    list_objects = ['LOCKING']
+
+    group_idx = IntProperty()
+
     def execute(self, context):
-        scene = context.scene
-        if scene.super_groups:
+        scene_parse = context.scene
+        if scene_parse.super_groups:
             # check_same_ids()  # check scene ids
 
-            s_group = scene.super_groups[scene.super_groups_index]
-            scene_parse = scene
+            s_group = None
+            if self.sg_group_changer not in self.list_objects:
+                s_group = scene_parse.super_groups[scene_parse.super_groups_index]
+            else:
+                if self.group_idx < len(scene_parse.super_groups):
+                    s_group = scene_parse.super_groups[self.group_idx]
+                    
 
             # if s_group.use_toggle is False:
             #     scene_parse = SGR_get_group_scene(context)
 
-            if scene_parse is not None:
+            if s_group is not None and s_group.use_toggle is True:
                 for obj in scene_parse.objects:
                     if sg_is_object_in_s_groups([s_group.unique_id], obj):
                         if self.sg_group_changer == 'COLOR_WIRE':
@@ -554,11 +570,19 @@ class SG_change_grouped_objects(bpy.types.Operator):
                             obj.show_wire_color = True
                         elif self.sg_group_changer == 'DEFAULT_COLOR_WIRE':
                             obj.show_wire_color = False
-                        elif self.sg_group_changer == 'LOCKED':
+                        elif self.sg_group_changer == 'LOCKING':
+                            if s_group.is_locked is False:
                                 obj.hide_select = True
                                 obj.select = False
-                        elif self.sg_group_changer == 'UNLOCKED':
+                            else:
                                 obj.hide_select = False
+
+                # switch locking for the group
+                if self.sg_group_changer == 'LOCKING':
+                    if s_group.is_locked is False:
+                        s_group.is_locked = True
+                    else:
+                        s_group.is_locked = False
 
         return {'FINISHED'}
 
@@ -624,12 +648,19 @@ class SG_add_to_group(bpy.types.Operator):
                 # add the unique id of selected group
                 SG_add_property_to_obj(s_group.unique_id, obj)
 
+                # switch locking for obj
+                if s_group.is_locked is True:
+                    obj.hide_select = True
+                    obj.select = False
+                else:
+                    obj.hide_select = False
+
                 # check if the group is hidden
                 if s_group.use_toggle is False:
                     # Try to get or create new GroupScene
                     group_scene = SGR_get_group_scene(context)
                     if group_scene is None:
-                        group_scene = SGR_create_group_scene(context)
+                        group_scene = SG_create_group_scene(context)
 
                     # Unlink object
                     if group_scene is not None:
