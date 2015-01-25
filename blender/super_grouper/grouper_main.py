@@ -35,18 +35,20 @@ UNIQUE_ID_NAME = 'sg_belong_id'
 
 class SG_Group(PropertyGroup):
     use_toggle = BoolProperty(name="", default=True)
-    #is_wire = BoolProperty(name="", default=False)
+    # is_wire = BoolProperty(name="", default=False)
     is_locked = BoolProperty(name="", default=False)
-    is_selected = BoolProperty(name="", default=False)  # this is just a temporary value as a user can select/deselect
+    is_selected = BoolProperty(name="", default=False)
+                               # this is just a temporary value as a user can
+                               # select/deselect
     unique_id = StringProperty(default="")
 
     wire_color = FloatVectorProperty(
-       name="wire",
-       subtype='COLOR',
-       default=(0.2, 0.2, 0.2),
-       min=0.0, max=1.0,
-       description="wire color of the group"
-       )
+        name="wire",
+        subtype='COLOR',
+        default=(0.2, 0.2, 0.2),
+        min=0.0, max=1.0,
+        description="wire color of the group"
+    )
 
 
 class SG_Object_Id(PropertyGroup):
@@ -111,9 +113,9 @@ class SG_BasePanel(bpy.types.Panel):
 
             row = layout.row(align=True)
             if scene.super_groups and scene.super_groups[scene.super_groups_index].use_toggle:
-                #op = row.operator(
+                # op = row.operator(
                     #"super_grouper.change_grouped_objects", text="", emboss=False, icon='UNLOCKED')
-                #op.sg_group_changer = 'UNLOCKED'
+                # op.sg_group_changer = 'UNLOCKED'
 
                 op = row.operator(
                     "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_GREEN')
@@ -124,7 +126,8 @@ class SG_BasePanel(bpy.types.Panel):
                 op.sg_group_changer = 'DEFAULT_COLOR_WIRE'
 
             if scene.super_groups:
-                row.prop(scene.super_groups[scene.super_groups_index], "wire_color", text='')
+                row.prop(
+                    scene.super_groups[scene.super_groups_index], "wire_color", text='')
 
             row = layout.row()
             row.template_list(
@@ -194,13 +197,15 @@ def generate_id():
 
     while True:
         uni_numb = None
-        uniq_id_temp = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+        uniq_id_temp = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                               for _ in range(10))
         if uniq_id_temp not in other_ids:
             uni_numb = uniq_id_temp
             break
 
     other_ids = None  # clean
     return uni_numb
+
 
 class SG_super_group_add(bpy.types.Operator):
 
@@ -243,7 +248,8 @@ class SG_super_group_add(bpy.types.Operator):
         new_s_group = super_groups.add()
         new_s_group.name = "SG.%.3d" % group_idx
         new_s_group.unique_id = uni_numb
-        # new_s_group.wire_color = (random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0))
+        # new_s_group.wire_color = (random.uniform(0.0 , 1.0),
+        # random.uniform(0.0 , 1.0), random.uniform(0.0 , 1.0))
         scene.super_groups_index = group_idx
 
         # add the unique id of selected objects
@@ -282,7 +288,8 @@ class SG_super_group_remove(bpy.types.Operator):
 
             # clear context scene
             for obj in scene.objects:
-                SG_del_properties_from_obj(UNIQUE_ID_NAME, [s_group_id], obj, True)
+                SG_del_properties_from_obj(
+                    UNIQUE_ID_NAME, [s_group_id], obj, True)
 
             # clear SGR scene
             sgr_scene_name = scene.name + SCENE_SGR
@@ -333,8 +340,8 @@ class SG_super_group_move(bpy.types.Operator):
                 move_id = None
                 if self.do_move == 'UP' and scene.super_groups_index > 0:
                     move_id = scene.super_groups_index - 1
-                    scene.super_groups.move(scene.super_groups_index,move_id )
-                elif self.do_move == 'DOWN' and scene.super_groups_index < len(scene.super_groups)-1:
+                    scene.super_groups.move(scene.super_groups_index, move_id)
+                elif self.do_move == 'DOWN' and scene.super_groups_index < len(scene.super_groups) - 1:
                     move_id = scene.super_groups_index + 1
                     scene.super_groups.move(scene.super_groups_index, move_id)
 
@@ -423,7 +430,6 @@ def SG_select_objects(scene, ids):
     # set layers switching to a scene
     if scene.sg_settings.select_all_layers:
         scene.layers = temp_scene_layers
-        
 
 
 class SG_toggle_select(bpy.types.Operator):
@@ -464,7 +470,7 @@ class SG_toggle_visibility(bpy.types.Operator):
     def execute(self, context):
         scene = context.scene
         if self.group_idx < len(scene.super_groups):
-            check_same_ids()  # check scene ids
+            # check_same_ids()  # check scene ids
 
             current_s_group = scene.super_groups[self.group_idx]
 
@@ -550,15 +556,14 @@ class SG_change_grouped_objects(bpy.types.Operator):
 
             s_group = None
             if self.sg_group_changer not in self.list_objects:
-                s_group = scene_parse.super_groups[scene_parse.super_groups_index]
+                s_group = scene_parse.super_groups[
+                    scene_parse.super_groups_index]
             else:
                 if self.group_idx < len(scene_parse.super_groups):
                     s_group = scene_parse.super_groups[self.group_idx]
-                    
 
             # if s_group.use_toggle is False:
             #     scene_parse = SGR_get_group_scene(context)
-
             if s_group is not None and s_group.use_toggle is True:
                 for obj in scene_parse.objects:
                     if sg_is_object_in_s_groups([s_group.unique_id], obj):
@@ -602,7 +607,8 @@ class SG_change_selected_objects(bpy.types.Operator):
                ),
         default = 'MATERIAL_SHADE'
     )
-    sg_do_with_groups = ['COLOR_WIRE', 'DEFAULT_COLOR_WIRE', 'LOCKED', 'UNLOCKED']
+    sg_do_with_groups = [
+        'COLOR_WIRE', 'DEFAULT_COLOR_WIRE', 'LOCKED', 'UNLOCKED']
 
     def execute(self, context):
         for obj in context.selected_objects:
