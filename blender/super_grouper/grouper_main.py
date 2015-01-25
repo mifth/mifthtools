@@ -365,6 +365,8 @@ class SG_clean_object_ids(bpy.types.Operator):
         return bool(context.scene)
 
     def execute(self, context):
+        check_same_ids()  # check scene ids
+
         scenes_ids = []
         for scene in bpy.data.scenes:
             if scene.super_groups:
