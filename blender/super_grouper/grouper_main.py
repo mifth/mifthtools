@@ -79,8 +79,9 @@ class SG_BasePanel(bpy.types.Panel):
             row = layout.row(align=True)
             row.operator(
                 "super_grouper.super_group_add", icon='ZOOMIN', text="")
-            row.operator(
+            op = row.operator(
                 "super_grouper.super_group_remove", icon='ZOOMOUT', text="")
+            op.group_idx = scene.super_groups_index
 
             op = row.operator(
                 "super_grouper.super_group_move", icon='TRIA_UP', text="")
@@ -134,7 +135,9 @@ class SG_BasePanel(bpy.types.Panel):
                 "SG_named_super_groups", "", scene, "super_groups", scene, "super_groups_index")
 
             row = layout.row()
-            row.operator("super_grouper.add_to_group", text="Add")
+            op = row.operator("super_grouper.add_to_group", text="Add")
+            op.group_idx = scene.super_groups_index
+
             row.operator(
                 "super_grouper.super_remove_from_group", text="Remove")
             row.operator("super_grouper.clean_object_ids", text="Clean")
@@ -185,6 +188,70 @@ class SG_named_super_groups(UIList):
 
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
+
+
+# master menu
+class SG_Specials_Main_Menu(bpy.types.Menu):
+    bl_idname = "super_grouper.super_grouper_main_menu"
+    bl_label = "SuperGrouper"
+    bl_description = "Super Grouper Menu"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator(SG_super_group_add.bl_idname)
+        #layout.operator(SG_super_group_remove.bl_idname)
+        layout.menu(SG_Remove_SGroup_Sub_Menu.bl_idname)
+
+        #self.layout.operator(SG_toggle_select.bl_idname)
+        #self.layout.operator(SG_toggle_visibility.bl_idname)
+
+        layout.separator()
+        #layout.operator(SG_add_to_group.bl_idname)
+        layout.menu(SG_Add_Objects_Sub_Menu.bl_idname)
+        layout.operator(SG_remove_from_group.bl_idname)
+
+        layout.separator()
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Bound Shade")
+        op.sg_objects_changer = 'BOUND_SHADE'
+
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Wire Shade")
+        op.sg_objects_changer = 'WIRE_SHADE'
+
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Material Shade")
+        op.sg_objects_changer = 'MATERIAL_SHADE'
+
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Show Wire")
+        op.sg_objects_changer = 'SHOW_WIRE'
+
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Hide Wire")
+        op.sg_objects_changer = 'HIDE_WIRE'
+
+
+class SG_Add_Objects_Sub_Menu(bpy.types.Menu):
+    bl_idname = "super_grouper.add_objects_sub_menu"
+    bl_label = "Add Selected Objects"
+    bl_description = "Add Objects Menu"
+
+    def draw(self, context):
+        layout = self.layout
+
+        for i, s_group in enumerate(context.scene.super_groups):
+            op = layout.operator(SG_add_to_group.bl_idname, text=s_group.name)
+            op.group_idx = i
+
+
+class SG_Remove_SGroup_Sub_Menu(bpy.types.Menu):
+    bl_idname = "super_grouper.remove_s_group_sub_menu"
+    bl_label = "Remove Super Group"
+    bl_description = "Remove Super Group Menu"
+
+    def draw(self, context):
+        layout = self.layout
+
+        for i, s_group in enumerate(context.scene.super_groups):
+            op = layout.operator(SG_super_group_remove.bl_idname, text=s_group.name)
+            op.group_idx = i
 
 
 def generate_id():
@@ -266,48 +333,52 @@ class SG_super_group_remove(bpy.types.Operator):
     bl_label = "Remove Super Group"
     bl_options = {'REGISTER', 'UNDO'}
 
-    # group_idx = bpy.props.IntProperty()
+    group_idx = IntProperty()
 
     @classmethod
     def poll(cls, context):
         return bool(context.scene)
 
     def execute(self, context):
-        scene = context.scene
+        scene_parse = context.scene
 
         # if a scene contains goups
-        if scene.super_groups:
+        if scene_parse.super_groups:
             check_same_ids()  # check scene ids
 
-            s_group_id = scene.super_groups[scene.super_groups_index].unique_id
+            get_s_group = scene_parse.super_groups[self.group_idx]
+            if get_s_group is not None and self.group_idx < len(scene_parse.super_groups):
+                s_group_id = get_s_group.unique_id
 
-            # get all ids
-            s_groups = []
-            for s_group in scene.super_groups:
-                s_groups.append(s_group.unique_id)
+                # get all ids
+                s_groups = []
+                for s_group in scene_parse.super_groups:
+                    s_groups.append(s_group.unique_id)
 
-            # clear context scene
-            for obj in scene.objects:
-                SG_del_properties_from_obj(
-                    UNIQUE_ID_NAME, [s_group_id], obj, True)
-
-            # clear SGR scene
-            sgr_scene_name = scene.name + SCENE_SGR
-            if sgr_scene_name in bpy.data.scenes:
-                sgr_scene = bpy.data.scenes[scene.name + SCENE_SGR]
-                for obj in sgr_scene.objects:
-                    SGR_switch_object(obj, sgr_scene, scene, s_group_id)
+                # clear context scene
+                for obj in scene_parse.objects:
                     SG_del_properties_from_obj(
                         UNIQUE_ID_NAME, [s_group_id], obj, True)
 
-                # remove group_scene if it's empty
-                if len(sgr_scene.objects) == 0:
-                    bpy.data.scenes.remove(sgr_scene)
+                # clear SGR scene
+                sgr_scene_name = scene_parse.name + SCENE_SGR
+                if sgr_scene_name in bpy.data.scenes:
+                    sgr_scene = bpy.data.scenes[scene_parse.name + SCENE_SGR]
+                    for obj in sgr_scene.objects:
+                        SGR_switch_object(obj, sgr_scene, scene_parse, s_group_id)
+                        SG_del_properties_from_obj(
+                            UNIQUE_ID_NAME, [s_group_id], obj, True)
 
-            # finally remove s_group
-            scene.super_groups.remove(scene.super_groups_index)
-            if scene.super_groups_index > len(scene.super_groups) - 1:
-                scene.super_groups_index = len(scene.super_groups) - 1
+                    # remove group_scene if it's empty
+                    if len(sgr_scene.objects) == 0:
+                        bpy.data.scenes.remove(sgr_scene)
+
+                # finally remove s_group
+                scene_parse.super_groups.remove(self.group_idx)
+                if len(scene_parse.super_groups) > 0:
+                    scene_parse.super_groups_index = len(scene_parse.super_groups) - 1
+                else:
+                    scene_parse.super_groups_index = -1
 
         return {'FINISHED'}
 
@@ -630,57 +701,58 @@ class SG_change_selected_objects(bpy.types.Operator):
 
 class SG_add_to_group(bpy.types.Operator):
     bl_idname = "super_grouper.add_to_group"
-    bl_label = "Add"
+    bl_label = "Add Selected Objects"
     bl_description = "Add To Super Group"
     bl_options = {'REGISTER', 'UNDO'}
 
-    # group_idx = bpy.props.IntProperty()
+    group_idx = IntProperty()
 
     def execute(self, context):
-        scene = context.scene
+        scene_parse = context.scene
 
-        if scene.super_groups:
+        if scene_parse.super_groups:
             check_same_ids()  # check ids
 
             # remove s_groups
             ids = []
-            for s_group in scene.super_groups:
+            for s_group in scene_parse.super_groups:
                 ids.append(s_group.unique_id)
             for obj in context.selected_objects:
-                for s_group in scene.super_groups:
+                for s_group in scene_parse.super_groups:
                     SG_del_properties_from_obj(UNIQUE_ID_NAME, ids, obj, True)
             ids = None
 
-            s_group = scene.super_groups[scene.super_groups_index]
-            for obj in context.selected_objects:
-                # add the unique id of selected group
-                SG_add_property_to_obj(s_group.unique_id, obj)
+            s_group = scene_parse.super_groups[self.group_idx]
+            if s_group is not None and self.group_idx < len(scene_parse.super_groups):
+                for obj in context.selected_objects:
+                    # add the unique id of selected group
+                    SG_add_property_to_obj(s_group.unique_id, obj)
 
-                # switch locking for obj
-                if s_group.is_locked is True:
-                    obj.hide_select = True
-                    obj.select = False
-                else:
-                    obj.hide_select = False
+                    # switch locking for obj
+                    if s_group.is_locked is True:
+                        obj.hide_select = True
+                        obj.select = False
+                    else:
+                        obj.hide_select = False
 
-                # check if the group is hidden
-                if s_group.use_toggle is False:
-                    # Try to get or create new GroupScene
-                    group_scene = SGR_get_group_scene(context)
-                    if group_scene is None:
-                        group_scene = SG_create_group_scene(context)
+                    # check if the group is hidden
+                    if s_group.use_toggle is False:
+                        # Try to get or create new GroupScene
+                        group_scene = SGR_get_group_scene(context)
+                        if group_scene is None:
+                            group_scene = SG_create_group_scene(context)
 
-                    # Unlink object
-                    if group_scene is not None:
-                        group_scene.objects.link(obj)
-                        context.scene.objects.unlink(obj)
+                        # Unlink object
+                        if group_scene is not None:
+                            group_scene.objects.link(obj)
+                            context.scene_parse.objects.unlink(obj)
 
         return {'FINISHED'}
 
 
 class SG_remove_from_group(bpy.types.Operator):
     bl_idname = "super_grouper.super_remove_from_group"
-    bl_label = "Add"
+    bl_label = "Remove Selected Objects"
     bl_description = "Remove from Super Group"
     bl_options = {'REGISTER', 'UNDO'}
 

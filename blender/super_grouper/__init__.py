@@ -38,31 +38,13 @@ import bpy
 from bpy.props import *
 
 
+# registration
+def menu_func(self, context):
+    self.layout.separator()
+    self.layout.menu(grouper_main.SG_Specials_Main_Menu.bl_idname)
+
+
 def register():
-    # bpy.miraTool = dict()
-
-    # class MRProperties(bpy.types.PropertyGroup):
-
-        # Output Settings
-        # outputFolder = StringProperty(
-            # name="outputFolder",
-            # subtype="NONE",
-            # default="seq"
-        #)
-
-        # Curve Animator Settings
-        # doUseSceneFrames = BoolProperty(
-            # name="do use scene frames",
-            # description="do use scene frames...",
-            # default=False
-        #)
-
-        # curveAniStartFrame = IntProperty(
-            # default=1,
-            # min=1,
-            # max=10000
-        #)
-
     bpy.utils.register_module(__name__)
 
     bpy.types.Scene.super_groups = CollectionProperty(
@@ -75,11 +57,7 @@ def register():
     # Unused, but this is needed for the TemplateList to work...
     bpy.types.Scene.super_groups_index = IntProperty(default=-1)
 
-    # bpy.types.Scene.miraTool = PointerProperty(
-        # name="Mira Tool Variables",
-        # type=MFTProperties,
-        # description="Mira Tool Properties"
-    #)
+    bpy.types.VIEW3D_MT_object_specials.append(menu_func)
 
 
 def unregister():
@@ -92,6 +70,8 @@ def unregister():
     del bpy.types.Scene.sg_settings
 
     del bpy.types.Scene.super_groups_index
+
+    bpy.types.VIEW3D_MT_object_specials.remove(menu_func)
 
     bpy.utils.unregister_module(__name__)
 
