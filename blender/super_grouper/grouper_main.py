@@ -745,7 +745,7 @@ class SG_add_to_group(bpy.types.Operator):
                         # Unlink object
                         if group_scene is not None:
                             group_scene.objects.link(obj)
-                            context.scene_parse.objects.unlink(obj)
+                            context.scene.objects.unlink(obj)
 
         return {'FINISHED'}
 
