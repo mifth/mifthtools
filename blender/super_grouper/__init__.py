@@ -18,7 +18,7 @@
 
 bl_info = {
     "name": "Super Grouper",
-    "author": "Paul Geraskin",
+    "author": "Paul Geraskin, Aleksey Juravlev, BA Community",
     "version": (0, 1, 0),
     "blender": (2, 73, 0),
     "location": "Toolshelf > Relations Tab",
