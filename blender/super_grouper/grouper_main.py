@@ -33,6 +33,28 @@ SCENE_SGR = '#SGR'
 UNIQUE_ID_NAME = 'sg_belong_id'
 
 
+class Coat3DAddonPreferences(AddonPreferences):
+    # this must match the addon name, use '__package__'
+    # when defining this in a submodule of a python package.
+    # bl_idname = __name__
+    bl_idname = __package__
+
+    sg_icons_style = EnumProperty(
+        name = "Icons Style",
+        items = (('ORIGINAL', 'ORIGINAL', ''),
+                ('OUTLINER', 'OUTLINER', '')
+                ),
+        default = 'ORIGINAL'
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.label(text="Icons style")
+        row = layout.row()
+        row.prop(self, "sg_icons_style")
+
+
 class SG_Group(PropertyGroup):
     use_toggle = BoolProperty(name="", default=True)
     # is_wire = BoolProperty(name="", default=False)
@@ -154,6 +176,9 @@ class SG_named_super_groups(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         super_group = item
+        user_preferences = context.user_preferences
+        addon_prefs = user_preferences.addons[__package__].preferences
+        icons_style = addon_prefs.sg_icons_style
 
         # check for lock camera and layer is active
         # view_3d = context.area.spaces.active  # Ensured it is a 'VIEW_3D' in panel's poll(), weak... :/
@@ -162,19 +187,20 @@ class SG_named_super_groups(UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             layout.prop(super_group, "name", text="", emboss=False)
 
-            # select operator
-            # icon = 'LOCKED'
-            # op = layout.operator("super_grouper.toggle_select", text="", emboss=False, icon=icon)
-            # op.group_idx = index
+            
 
             # select operator
             icon = 'RESTRICT_SELECT_OFF' if super_group.use_toggle else 'RESTRICT_SELECT_ON'
+            if icons_style == 'OUTLINER':
+                icon = 'VIEWZOOM' if super_group.use_toggle else 'VIEWZOOM'
             op = layout.operator(
                 "super_grouper.toggle_select", text="", emboss=False, icon=icon)
             op.group_idx = index
 
             # lock operator
             icon = 'LOCKED' if super_group.is_locked else 'UNLOCKED'
+            if icons_style == 'OUTLINER':
+                icon = 'RESTRICT_SELECT_ON' if super_group.is_locked else 'RESTRICT_SELECT_OFF'
             op = layout.operator(
                 "super_grouper.change_grouped_objects", text="", emboss=False, icon=icon)
             op.sg_group_changer = 'LOCKING'
