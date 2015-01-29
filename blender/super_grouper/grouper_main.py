@@ -81,9 +81,9 @@ class SG_Object_Id(PropertyGroup):
 
 
 class SG_Other_Settings(PropertyGroup):
-    select_all_layers = BoolProperty(name="SelectVisibleLayers", default=True)
-    unlock_obj = BoolProperty(name="UnlockObj", default=False)
-    unhide_obj = BoolProperty(name="UnhideObj", default=True)
+    select_all_layers = BoolProperty(name="Select Visible Layers", default=True)
+    unlock_obj = BoolProperty(name="Unlock Objects", default=False)
+    unhide_obj = BoolProperty(name="Unhide Objects", default=True)
 
 
 class SG_BasePanel(bpy.types.Panel):
@@ -169,9 +169,9 @@ class SG_BasePanel(bpy.types.Panel):
             # layout.separator()
             layout.label(text="Selection Settings:")
             row = layout.row(align=True)
-            row.prop(sg_settings, "select_all_layers", text='L')
-            row.prop(sg_settings, "unlock_obj", text='L')
-            row.prop(sg_settings, "unhide_obj", text='H')
+            row.prop(sg_settings, "select_all_layers", text='Layers')
+            row.prop(sg_settings, "unlock_obj", text='UnLock')
+            row.prop(sg_settings, "unhide_obj", text='Unhide')
             row = layout.row(align=True)
 
 
