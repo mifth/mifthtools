@@ -47,12 +47,15 @@ class Coat3DAddonPreferences(AddonPreferences):
         default = 'ORIGINAL'
     )
 
+    sg_color_wire = BoolProperty(name="Color Wire", default=False)
+
     def draw(self, context):
         layout = self.layout
         row = layout.row()
         row.label(text="Icons style")
         row = layout.row()
         row.prop(self, "sg_icons_style")
+        row.prop(self, "sg_color_wire")
 
 
 class SG_Group(PropertyGroup):
@@ -95,8 +98,47 @@ class SG_BasePanel(bpy.types.Panel):
 
         scene = context.scene
 
+        user_preferences = context.user_preferences
+        addon_prefs = user_preferences.addons[__package__].preferences
+
         if context.scene.name.endswith(SCENE_SGR) is False:
             sg_settings = scene.sg_settings
+
+
+            row = layout.row(align=True)
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='BBOX')
+            op.sg_objects_changer = 'BOUND_SHADE'
+
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='WIRE')
+            op.sg_objects_changer = 'WIRE_SHADE'
+
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='SOLID')
+            op.sg_objects_changer = 'MATERIAL_SHADE'
+
+            op = row.operator(
+                "super_grouper.change_selected_objects", text="", emboss=False, icon='RETOPO')
+            op.sg_objects_changer = 'SHOW_WIRE'
+
+            #op = row.operator(
+                #"super_grouper.change_selected_objects", text="", emboss=False, icon='SOLID')
+            #op.sg_objects_changer = 'HIDE_WIRE'
+
+            row = layout.row(align=True)
+            if scene.super_groups and scene.super_groups[scene.super_groups_index].use_toggle:
+                if addon_prefs.sg_color_wire is True:
+                    op = row.operator(
+                        "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_GREEN')
+                    op.sg_group_changer = 'COLOR_WIRE'
+
+                    op = row.operator(
+                        "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_RED')
+                    op.sg_group_changer = 'DEFAULT_COLOR_WIRE'
+
+                    row.prop(
+                        scene.super_groups[scene.super_groups_index], "wire_color", text='')
 
             row = layout.row(align=True)
             row.operator(
@@ -112,45 +154,6 @@ class SG_BasePanel(bpy.types.Panel):
             op = row.operator(
                 "super_grouper.super_group_move", icon='TRIA_DOWN', text="")
             op.do_move = 'DOWN'
-
-            row = layout.row(align=True)
-            op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='BBOX')
-            op.sg_objects_changer = 'BOUND_SHADE'
-
-            op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='WIRE')
-            op.sg_objects_changer = 'WIRE_SHADE'
-
-            op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='MATERIAL')
-            op.sg_objects_changer = 'MATERIAL_SHADE'
-
-            op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='RETOPO')
-            op.sg_objects_changer = 'SHOW_WIRE'
-
-            op = row.operator(
-                "super_grouper.change_selected_objects", text="", emboss=False, icon='SOLID')
-            op.sg_objects_changer = 'HIDE_WIRE'
-
-            row = layout.row(align=True)
-            if scene.super_groups and scene.super_groups[scene.super_groups_index].use_toggle:
-                # op = row.operator(
-                    #"super_grouper.change_grouped_objects", text="", emboss=False, icon='UNLOCKED')
-                # op.sg_group_changer = 'UNLOCKED'
-
-                op = row.operator(
-                    "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_GREEN')
-                op.sg_group_changer = 'COLOR_WIRE'
-
-                op = row.operator(
-                    "super_grouper.change_grouped_objects", text="", emboss=False, icon='COLOR_RED')
-                op.sg_group_changer = 'DEFAULT_COLOR_WIRE'
-
-            if scene.super_groups:
-                row.prop(
-                    scene.super_groups[scene.super_groups_index], "wire_color", text='')
 
             row = layout.row()
             row.template_list(
@@ -250,8 +253,8 @@ class SG_Specials_Main_Menu(bpy.types.Menu):
         op = layout.operator(SG_change_selected_objects.bl_idname, text="Show Wire")
         op.sg_objects_changer = 'SHOW_WIRE'
 
-        op = layout.operator(SG_change_selected_objects.bl_idname, text="Hide Wire")
-        op.sg_objects_changer = 'HIDE_WIRE'
+        #op = layout.operator(SG_change_selected_objects.bl_idname, text="Hide Wire")
+        #op.sg_objects_changer = 'HIDE_WIRE'
 
 
 class SG_Add_Objects_Sub_Menu(bpy.types.Menu):
@@ -701,8 +704,7 @@ class SG_change_selected_objects(bpy.types.Operator):
         items=(('BOUND_SHADE', 'BOUND_SHADE', ''),
                ('WIRE_SHADE', 'WIRE_SHADE', ''),
                ('MATERIAL_SHADE', 'MATERIAL_SHADE', ''),
-               ('SHOW_WIRE', 'SHOW_WIRE', ''),
-               ('HIDE_WIRE', 'HIDE_WIRE', '')
+               ('SHOW_WIRE', 'SHOW_WIRE', '')
                ),
         default = 'MATERIAL_SHADE'
     )
@@ -713,14 +715,15 @@ class SG_change_selected_objects(bpy.types.Operator):
         for obj in context.selected_objects:
             if self.sg_objects_changer == 'BOUND_SHADE':
                 obj.draw_type = 'BOUNDS'
+                obj.show_wire = False
             elif self.sg_objects_changer == 'WIRE_SHADE':
                 obj.draw_type = 'WIRE'
+                obj.show_wire = False
             elif self.sg_objects_changer == 'MATERIAL_SHADE':
                 obj.draw_type = 'TEXTURED'
+                obj.show_wire = False
             elif self.sg_objects_changer == 'SHOW_WIRE':
                 obj.show_wire = True
-            elif self.sg_objects_changer == 'HIDE_WIRE':
-                obj.show_wire = False
 
         return {'FINISHED'}
 
