@@ -16,7 +16,10 @@ class MFTVertexPaintMenu(bpy.types.Menu):
 
         layout.separator()
         op = layout.operator(MFTSetColorToSelected.bl_idname)
-        op.strength = context.tool_settings.vertex_paint.brush.color
+        if context.scene.tool_settings.unified_paint_settings.use_unified_color is True:
+            op.strength = context.scene.tool_settings.unified_paint_settings.color
+        else:
+            op.strength = context.tool_settings.vertex_paint.brush.color
 
 
 class MFTSetColorToSelected(bpy.types.Operator):
