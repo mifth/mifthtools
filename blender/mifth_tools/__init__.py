@@ -32,9 +32,11 @@ bl_info = {
 if "bpy" in locals():
     import imp
     imp.reload(mifth_tools_cloning)
+    imp.reload(mifth_vertex_paint)
     imp.reload(mifth_tools)
 else:
     from . import mifth_tools_cloning
+    from . import mifth_vertex_paint
     from . import mifth_tools
 
 
@@ -42,9 +44,15 @@ import bpy
 from bpy.props import *
 
 
+# registration
+def menu_vertex_paint_func(self, context):
+    self.layout.separator()
+    self.layout.menu(mifth_vertex_paint.MFTVertexPaintMenu.bl_idname)
+
+
 def register():
-    #bpy.mifthTools = dict()
-    # bpy.mifthCloneTools = dict()
+    bpy.types.VIEW3D_MT_paint_vertex.append(menu_vertex_paint_func)
+
 
     class MFTProperties(bpy.types.PropertyGroup):
 
@@ -146,6 +154,8 @@ def register():
 
 def unregister():
     import bpy
+
+    bpy.types.VIEW3D_MT_object_specials.remove(menu_vertex_paint_func)
 
     del bpy.types.Scene.mifthTools
     del bpy.types.Scene.mifthCloneTools
