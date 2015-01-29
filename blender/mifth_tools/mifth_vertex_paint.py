@@ -16,7 +16,7 @@ class MFTVertexPaintMenu(bpy.types.Menu):
 
         layout.separator()
         op = layout.operator(MFTSetColorToSelected.bl_idname)
-        op.strength = bpy.context.tool_settings.vertex_paint.brush.color
+        op.strength = context.tool_settings.vertex_paint.brush.color
 
 
 class MFTSetColorToSelected(bpy.types.Operator):
@@ -27,7 +27,7 @@ class MFTSetColorToSelected(bpy.types.Operator):
 
 
     strength = FloatVectorProperty(
-        name="wire",
+        name="Color",
         subtype='COLOR',
         default=(0.5, 0.5, 0.5),
         min=0.0, max=1.0,
