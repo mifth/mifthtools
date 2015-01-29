@@ -723,6 +723,7 @@ class SG_change_selected_objects(bpy.types.Operator):
                 obj.draw_type = 'TEXTURED'
                 obj.show_wire = False
             elif self.sg_objects_changer == 'SHOW_WIRE':
+                obj.draw_type = 'TEXTURED'
                 obj.show_wire = True
 
         return {'FINISHED'}
