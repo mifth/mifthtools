@@ -30,7 +30,6 @@ class MFTSetColorToSelected(bpy.types.Operator):
     bl_description = "Set Colors to Selected"
     bl_options = {'REGISTER', 'UNDO'}
 
-
     strength = FloatVectorProperty(
         name="Color",
         subtype='COLOR',
@@ -38,7 +37,8 @@ class MFTSetColorToSelected(bpy.types.Operator):
         min=0.0, max=1.0,
         description="wire color of the group"
     )
-    selected_faces_only = BoolProperty(name="Selected Faces Only", default=False)
+    selected_faces_only = BoolProperty(
+        name="Selected Faces Only", default=False)
 
     def execute(self, context):
 
@@ -69,8 +69,8 @@ class MFTInvertColors(bpy.types.Operator):
     bl_description = "Invert Colors"
     bl_options = {'REGISTER', 'UNDO'}
 
-
-    selected_faces_only = BoolProperty(name="Selected Faces Only", default=False)
+    selected_faces_only = BoolProperty(
+        name="Selected Faces Only", default=False)
     split_points = BoolProperty(name="Split Points", default=False)
 
     def execute(self, context):
@@ -82,20 +82,29 @@ class MFTInvertColors(bpy.types.Operator):
         for poly in obj.data.polygons:
             for vert_idx in poly.vertices:
                 if self.selected_faces_only is False:
-                    color_layer.data[i].color[0] = 1.0 - color_layer.data[i].color[0]
-                    color_layer.data[i].color[1] = 1.0 - color_layer.data[i].color[1]
-                    color_layer.data[i].color[2] = 1.0 - color_layer.data[i].color[2]
+                    color_layer.data[i].color[
+                        0] = 1.0 - color_layer.data[i].color[0]
+                    color_layer.data[i].color[
+                        1] = 1.0 - color_layer.data[i].color[1]
+                    color_layer.data[i].color[
+                        2] = 1.0 - color_layer.data[i].color[2]
                 else:
                     if obj.data.vertices[vert_idx].select is True:
                         if self.split_points is True:
                             if poly.select is True:
-                                color_layer.data[i].color[0] = 1.0 - color_layer.data[i].color[0]
-                                color_layer.data[i].color[1] = 1.0 - color_layer.data[i].color[1]
-                                color_layer.data[i].color[2] = 1.0 - color_layer.data[i].color[2]
+                                color_layer.data[i].color[
+                                    0] = 1.0 - color_layer.data[i].color[0]
+                                color_layer.data[i].color[
+                                    1] = 1.0 - color_layer.data[i].color[1]
+                                color_layer.data[i].color[
+                                    2] = 1.0 - color_layer.data[i].color[2]
                         else:
-                            color_layer.data[i].color[0] = 1.0 - color_layer.data[i].color[0]
-                            color_layer.data[i].color[1] = 1.0 - color_layer.data[i].color[1]
-                            color_layer.data[i].color[2] = 1.0 - color_layer.data[i].color[2]
+                            color_layer.data[i].color[
+                                0] = 1.0 - color_layer.data[i].color[0]
+                            color_layer.data[i].color[
+                                1] = 1.0 - color_layer.data[i].color[1]
+                            color_layer.data[i].color[
+                                2] = 1.0 - color_layer.data[i].color[2]
                 i += 1
 
             obj.data.update()

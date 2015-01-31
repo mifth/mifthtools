@@ -53,7 +53,6 @@ def menu_vertex_paint_func(self, context):
 def register():
     bpy.types.VIEW3D_MT_paint_vertex.append(menu_vertex_paint_func)
 
-
     class MFTProperties(bpy.types.PropertyGroup):
 
         # Output Settings
@@ -159,7 +158,7 @@ def unregister():
 
     del bpy.types.Scene.mifthTools
     del bpy.types.Scene.mifthCloneTools
-    #del bpy.mifthTools
+    # del bpy.mifthTools
     # del bpy.mifthCloneTools
     bpy.utils.unregister_module(__name__)
 
