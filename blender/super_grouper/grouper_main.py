@@ -199,6 +199,7 @@ class SG_named_super_groups(UIList):
             op = layout.operator(
                 "super_grouper.toggle_select", text="", emboss=False, icon=icon)
             op.group_idx = index
+            op.is_menu = False
 
             # lock operator
             icon = 'LOCKED' if super_group.is_locked else 'UNLOCKED'
@@ -241,6 +242,9 @@ class SG_Specials_Main_Menu(bpy.types.Menu):
         layout.operator(SG_remove_from_group.bl_idname)
 
         layout.separator()
+        layout.menu(SG_Select_SGroup_Sub_Menu.bl_idname, text="Select SGroup")
+
+        layout.separator()
         op = layout.operator(SG_change_selected_objects.bl_idname, text="Bound Shade")
         op.sg_objects_changer = 'BOUND_SHADE'
 
@@ -252,9 +256,6 @@ class SG_Specials_Main_Menu(bpy.types.Menu):
 
         op = layout.operator(SG_change_selected_objects.bl_idname, text="Show Wire")
         op.sg_objects_changer = 'SHOW_WIRE'
-
-        #op = layout.operator(SG_change_selected_objects.bl_idname, text="Hide Wire")
-        #op.sg_objects_changer = 'HIDE_WIRE'
 
 
 class SG_Add_Objects_Sub_Menu(bpy.types.Menu):
@@ -280,6 +281,19 @@ class SG_Remove_SGroup_Sub_Menu(bpy.types.Menu):
 
         for i, s_group in enumerate(context.scene.super_groups):
             op = layout.operator(SG_super_group_remove.bl_idname, text=s_group.name)
+            op.group_idx = i
+
+
+class SG_Select_SGroup_Sub_Menu(bpy.types.Menu):
+    bl_idname = "super_grouper.select_s_group_sub_menu"
+    bl_label = "Select SGroup"
+    bl_description = "Select SGroup Menu"
+
+    def draw(self, context):
+        layout = self.layout
+
+        for i, s_group in enumerate(context.scene.super_groups):
+            op = layout.operator(SG_toggle_select.bl_idname, text=s_group.name)
             op.group_idx = i
 
 
@@ -549,6 +563,7 @@ class SG_toggle_select(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     group_idx = IntProperty()
+    is_menu = BoolProperty(name="Is Menu?", default=True)
 
     def invoke(self, context, event):
         scene = context.scene
@@ -563,7 +578,8 @@ class SG_toggle_select(bpy.types.Operator):
                     if scene.sg_settings.unlock_obj:
                         s_group.is_locked = False
                 else:
-                    SG_select_objects(context, [s_group.unique_id], False)
+                    if self.is_menu is False:
+                        SG_select_objects(context, [s_group.unique_id], False)
 
         return {'FINISHED'}
 
