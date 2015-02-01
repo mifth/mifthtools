@@ -503,40 +503,46 @@ def SG_create_group_scene(context):
     return None
 
 
-def SG_select_objects(scene, ids):
-    temp_scene_layers = list(scene.layers[:])  # copy layers of the scene
-    for obj in scene.objects:
-        if obj.sg_belong_id:
-            for prop in obj.sg_belong_id:
-                if prop.unique_id_object in ids:
-                    for i in range(20):
-                        if obj.layers[i] is True:
-                            if scene.layers[i] is True or scene.sg_settings.select_all_layers:
-                                # unlock
-                                if scene.sg_settings.unlock_obj:
-                                    obj.hide_select = False
-                                # unhide
-                                if scene.sg_settings.unhide_obj:
-                                    obj.hide = False
+def SG_select_objects(context, ids, do_select):
+    if do_select:
+        scene = context.scene
+        temp_scene_layers = list(scene.layers[:])  # copy layers of the scene
+        for obj in scene.objects:
+            if obj.sg_belong_id:
+                for prop in obj.sg_belong_id:
+                    if prop.unique_id_object in ids:
+                        for i in range(20):
+                            if obj.layers[i] is True:
+                                if scene.layers[i] is True or scene.sg_settings.select_all_layers:
+                                    # unlock
+                                    if scene.sg_settings.unlock_obj:
+                                        obj.hide_select = False
+                                    # unhide
+                                    if scene.sg_settings.unhide_obj:
+                                        obj.hide = False
 
-                                # select
-                                obj.select = True
+                                    # select
+                                    obj.select = True
 
-                                # break if we need to select only visible
-                                # layers
-                                if scene.sg_settings.select_all_layers is False:
-                                    break
-                                else:
-                                    temp_scene_layers[i] = obj.layers[i]
+                                    # break if we need to select only visible
+                                    # layers
+                                    if scene.sg_settings.select_all_layers is False:
+                                        break
+                                    else:
+                                        temp_scene_layers[i] = obj.layers[i]
 
-    # set layers switching to a scene
-    if scene.sg_settings.select_all_layers:
-        scene.layers = temp_scene_layers
+        # set layers switching to a scene
+        if scene.sg_settings.select_all_layers:
+            scene.layers = temp_scene_layers
+    else:
+        for obj in context.selected_objects:
+            if obj.sg_belong_id:
+                for prop in obj.sg_belong_id:
+                    if prop.unique_id_object in ids:
+                        obj.select = False
 
 
 class SG_toggle_select(bpy.types.Operator):
-
-    """Draw a line with the mouse"""
     bl_idname = "super_grouper.toggle_select"
     bl_label = "Toggle Select"
     bl_description = "Toggle Select"
@@ -544,7 +550,7 @@ class SG_toggle_select(bpy.types.Operator):
 
     group_idx = IntProperty()
 
-    def execute(self, context):
+    def invoke(self, context, event):
         scene = context.scene
         if self.group_idx < len(scene.super_groups):
             # check_same_ids()  # check scene ids
@@ -552,9 +558,12 @@ class SG_toggle_select(bpy.types.Operator):
             s_group = scene.super_groups[self.group_idx]
 
             if s_group.use_toggle is True:
-                SG_select_objects(scene, [s_group.unique_id])
-                if scene.sg_settings.unlock_obj:
-                    s_group.is_locked = False
+                if event.ctrl is False:
+                    SG_select_objects(context, [s_group.unique_id], True)
+                    if scene.sg_settings.unlock_obj:
+                        s_group.is_locked = False
+                else:
+                    SG_select_objects(context, [s_group.unique_id], False)
 
         return {'FINISHED'}
 

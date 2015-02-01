@@ -264,6 +264,12 @@ class MFTDrawClones(bpy.types.Operator):
             self.report({'WARNING'}, "Pick Objects to Clone")
             return {'CANCELLED'}
 
+        for obj_name in drawForClonesObj:
+            if obj_name not in context.scene.objects:
+                self.report({'WARNING'}, "Picked Object was Deleted!")
+                return {'CANCELLED'}
+                break
+
         if context.space_data.type == 'VIEW_3D':
             context.window_manager.modal_handler_add(self)
             prepare_drawing(self, context)
@@ -363,6 +369,10 @@ def copy_settings_clones(newObj, oldObj):
     if oldObj.dupli_group is not None:
         newObj.dupli_type = oldObj.dupli_type
         newObj.dupli_group = oldObj.dupli_group
+
+    # copy custom settings of the old object
+    for prop in oldObj.keys():
+        newObj[prop] = oldObj[prop]
 
 
 def get_obj_axis(obj, axis):
