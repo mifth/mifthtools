@@ -673,9 +673,10 @@ class MFTCloneToSelected(bpy.types.Operator):
 
             for obj in bpy.context.selected_objects:
                 if obj != objToClone:
-                    objectsToClone.append(obj)
+                    objectsToClone.append(obj.name)
 
-            for obj in objectsToClone:
+            for name in objectsToClone:
+                obj = context.scene.objects[name]
                 bpy.ops.object.select_all(action='DESELECT')
                 objToClone.select = True
 
@@ -687,8 +688,8 @@ class MFTCloneToSelected(bpy.types.Operator):
                 newDup.scale = obj.scale
 
             bpy.ops.object.select_all(action='DESELECT')
-            for obj3 in objectsToClone:
-                obj3.select = True
+            for name in objectsToClone:
+                context.scene.objects[name].select = True
             bpy.ops.object.delete(use_global=False)
 
             objectsToClone = None
@@ -703,6 +704,12 @@ class MFTRadialClone(bpy.types.Operator):
     bl_label = "Radial Clone"
     bl_description = "Radial Clone"
     bl_options = {'REGISTER', 'UNDO'}
+
+    create_last_clone = BoolProperty(
+        name="Create Last Clone",
+        description="create last clone...",
+        default=False
+    )
 
     radialClonesAngle = FloatProperty(
         default=360.0,
@@ -725,7 +732,11 @@ class MFTRadialClone(bpy.types.Operator):
 
             activeObjMatrix = activeObj.matrix_world
 
-            for i in range(self.clonez - 1):
+            clones_count = self.clonez
+            if self.create_last_clone is False:
+                clones_count = self.clonez - 1
+
+            for i in range(clones_count):
                 bpy.ops.object.duplicate(linked=True, mode='DUMMY')
                 # newObj = bpy.context.selected_objects[0]
                 # print(newObj)
