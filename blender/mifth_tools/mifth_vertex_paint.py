@@ -14,13 +14,8 @@ class MFTVertexPaintMenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
 
-        layout.separator()
-        op = layout.operator(MFTSetColorToSelected.bl_idname)
-        #if context.scene.tool_settings.unified_paint_settings.use_unified_color is True:
-            #op.strength = context.scene.tool_settings.unified_paint_settings.color
-        #else:
-            #op.strength = context.tool_settings.vertex_paint.brush.color
-
+        #layout.separator()
+        layout.operator(MFTSetColorToSelected.bl_idname)
         layout.operator(MFTInvertColors.bl_idname)
 
 
@@ -81,7 +76,7 @@ class MFTInvertColors(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     selected_faces_only = BoolProperty(
-        name="Selected Faces Only", default=False)
+        name="Selected Vertices Only", default=True)
     split_points = BoolProperty(name="Split Points", default=False)
 
     def execute(self, context):
