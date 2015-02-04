@@ -16,10 +16,10 @@ class MFTVertexPaintMenu(bpy.types.Menu):
 
         layout.separator()
         op = layout.operator(MFTSetColorToSelected.bl_idname)
-        if context.scene.tool_settings.unified_paint_settings.use_unified_color is True:
-            op.strength = context.scene.tool_settings.unified_paint_settings.color
-        else:
-            op.strength = context.tool_settings.vertex_paint.brush.color
+        #if context.scene.tool_settings.unified_paint_settings.use_unified_color is True:
+            #op.strength = context.scene.tool_settings.unified_paint_settings.color
+        #else:
+            #op.strength = context.tool_settings.vertex_paint.brush.color
 
         layout.operator(MFTInvertColors.bl_idname)
 
@@ -37,13 +37,24 @@ class MFTSetColorToSelected(bpy.types.Operator):
         min=0.0, max=1.0,
         description="wire color of the group"
     )
+
     selected_faces_only = BoolProperty(
         name="Selected Faces Only", default=False)
+
+    ch_col = False
 
     def execute(self, context):
 
         obj = context.scene.objects.active
         color_layer = obj.data.vertex_colors.active
+
+        if self.ch_col is False:
+            if context.scene.tool_settings.unified_paint_settings.use_unified_color is True:
+                self.strength = context.scene.tool_settings.unified_paint_settings.color
+            else:
+                self.strength = context.tool_settings.vertex_paint.brush.color
+            self.ch_col = True
+
 
         i = 0
         for poly in obj.data.polygons:
