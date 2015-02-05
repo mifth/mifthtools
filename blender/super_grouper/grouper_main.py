@@ -244,6 +244,11 @@ class SG_Specials_Main_Menu(bpy.types.Menu):
         layout.separator()
         layout.menu(SG_Select_SGroup_Sub_Menu.bl_idname, text="Select SGroup")
 
+
+        layout.separator()
+        layout.menu(SG_Toggle_Visible_SGroup_Sub_Menu.bl_idname, text="SGroup Visibility")
+
+
         layout.separator()
         op = layout.operator(SG_change_selected_objects.bl_idname, text="Bound Shade")
         op.sg_objects_changer = 'BOUND_SHADE'
@@ -294,6 +299,19 @@ class SG_Select_SGroup_Sub_Menu(bpy.types.Menu):
 
         for i, s_group in enumerate(context.scene.super_groups):
             op = layout.operator(SG_toggle_select.bl_idname, text=s_group.name)
+            op.group_idx = i
+
+
+class SG_Toggle_Visible_SGroup_Sub_Menu(bpy.types.Menu):
+    bl_idname = "super_grouper.toggle_s_group_sub_menu"
+    bl_label = "Toggle SGroup"
+    bl_description = "Toggle SGroup Menu"
+
+    def draw(self, context):
+        layout = self.layout
+
+        for i, s_group in enumerate(context.scene.super_groups):
+            op = layout.operator(SG_toggle_visibility.bl_idname, text=s_group.name)
             op.group_idx = i
 
 
@@ -620,6 +638,11 @@ class SG_toggle_visibility(bpy.types.Operator):
                         bpy.data.scenes.remove(group_scene)
 
             current_s_group.use_toggle = not current_s_group.use_toggle  # switch visibility
+
+            # set active object so that WMenu worked
+            if current_s_group.use_toggle is False and scene.objects.active is None:
+                if scene.objects:
+                    scene.objects.active = scene.objects[0]
 
         return {'FINISHED'}
 
