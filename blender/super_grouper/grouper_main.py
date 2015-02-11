@@ -200,6 +200,7 @@ class SG_named_super_groups(UIList):
                 "super_grouper.toggle_select", text="", emboss=False, icon=icon)
             op.group_idx = index
             op.is_menu = False
+            op.is_select = True
 
             # lock operator
             icon = 'LOCKED' if super_group.is_locked else 'UNLOCKED'
@@ -244,6 +245,7 @@ class SG_Specials_Main_Menu(bpy.types.Menu):
         layout.separator()
         layout.menu(SG_Select_SGroup_Sub_Menu.bl_idname, text="Select SGroup")
 
+        layout.menu(SG_Deselect_SGroup_Sub_Menu.bl_idname, text="Deselect SGroup")
 
         layout.separator()
         layout.menu(SG_Toggle_Visible_SGroup_Sub_Menu.bl_idname, text="SGroup Visibility")
@@ -300,6 +302,23 @@ class SG_Select_SGroup_Sub_Menu(bpy.types.Menu):
         for i, s_group in enumerate(context.scene.super_groups):
             op = layout.operator(SG_toggle_select.bl_idname, text=s_group.name)
             op.group_idx = i
+            op.is_select = True
+            op.is_menu = True
+
+
+class SG_Deselect_SGroup_Sub_Menu(bpy.types.Menu):
+    bl_idname = "super_grouper.deselect_s_group_sub_menu"
+    bl_label = "Deselect SGroup"
+    bl_description = "Deselect SGroup Menu"
+
+    def draw(self, context):
+        layout = self.layout
+
+        for i, s_group in enumerate(context.scene.super_groups):
+            op = layout.operator(SG_toggle_select.bl_idname, text=s_group.name)
+            op.group_idx = i
+            op.is_select = False
+            op.is_menu = True
 
 
 class SG_Toggle_Visible_SGroup_Sub_Menu(bpy.types.Menu):
@@ -582,6 +601,7 @@ class SG_toggle_select(bpy.types.Operator):
 
     group_idx = IntProperty()
     is_menu = BoolProperty(name="Is Menu?", default=True)
+    is_select = BoolProperty(name="Is Select?", default=True)
 
     def invoke(self, context, event):
         scene = context.scene
@@ -590,14 +610,16 @@ class SG_toggle_select(bpy.types.Operator):
 
             s_group = scene.super_groups[self.group_idx]
 
+            if event.ctrl is True and self.is_menu is False:
+                self.is_select = False
+
             if s_group.use_toggle is True:
-                if event.ctrl is False:
+                if self.is_select is True:
                     SG_select_objects(context, [s_group.unique_id], True)
                     if scene.sg_settings.unlock_obj:
                         s_group.is_locked = False
                 else:
-                    if self.is_menu is False:
-                        SG_select_objects(context, [s_group.unique_id], False)
+                    SG_select_objects(context, [s_group.unique_id], False)
 
         return {'FINISHED'}
 
