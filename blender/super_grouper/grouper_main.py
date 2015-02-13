@@ -615,9 +615,20 @@ class SG_toggle_select(bpy.types.Operator):
 
             if s_group.use_toggle is True:
                 if self.is_select is True:
+
+                    # add active object if no selection
+                    has_selection = False
+                    if context.selected_objects:
+                        has_selection = True
+
                     SG_select_objects(context, [s_group.unique_id], True)
                     if scene.sg_settings.unlock_obj:
                         s_group.is_locked = False
+
+                    # set last active object if no selection was before
+                    if has_selection is False and context.selected_objects:
+                        scene.objects.active = context.selected_objects[-1]
+
                 else:
                     SG_select_objects(context, [s_group.unique_id], False)
 
