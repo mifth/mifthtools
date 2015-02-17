@@ -33,7 +33,7 @@ SCENE_SGR = '#SGR'
 UNIQUE_ID_NAME = 'sg_belong_id'
 
 
-class Coat3DAddonPreferences(AddonPreferences):
+class SG_GrouperPreferences(AddonPreferences):
     # this must match the addon name, use '__package__'
     # when defining this in a submodule of a python package.
     # bl_idname = __name__
