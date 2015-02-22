@@ -17,7 +17,7 @@
 # END GPL LICENSE BLOCK #####
 
 bl_info = {
-    "name": "Mira Tool",
+    "name": "Mira Tools",
     "author": "Paul Geraskin",
     "version": (0, 1, 0),
     "blender": (2, 73, 0),
@@ -31,9 +31,9 @@ bl_info = {
 
 if "bpy" in locals():
     import imp
-    imp.reload(mira_tool)
+    imp.reload(mi_base)
 else:
-    from . import mira_tool
+    from . import mi_base
 
 
 import bpy
@@ -69,13 +69,13 @@ def register():
 
     # bpy.types.Scene.mira_curve_points = PointerProperty(
     #     name="Mira Tool Variables",
-    #     type=mira_tool.MR_CurvePoint,
+    #     type=mi_base.MR_CurvePoint,
     #     description="Mira Curve"
     # )
 
     bpy.types.Object.mi_curves = CollectionProperty(
         name="Mira Tool Variables",
-        type=mira_tool.MI_CurveObject,
+        type=mi_base.MI_CurveObject,
         description="Mira Curve"
     )
 

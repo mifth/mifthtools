@@ -230,9 +230,13 @@ class MFTDrawClones(bpy.types.Operator):
     currentStrokeList = None  # this is a stroke
     allStrokesList = None  # this is all strokes
 
+    pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
+                 'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
+                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE']
+
     def modal(self, context, event):
         mifthCloneTools = bpy.context.scene.mifthCloneTools
-        if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+        if event.type in self.pass_keys:
             # allow navigation
             return {'PASS_THROUGH'}
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
@@ -510,14 +514,21 @@ def mft_pick_and_clone(self, context, event, ray_max=5000.0):
 
         # clone object
         newDup = bpy.data.objects.new(objToClone.name, objToClone.data)
-        context.scene.objects.link(newDup)
-        newDup.select = True
-        context.scene.objects.active = newDup
+
+        # copy draw type
+        newDup.draw_type = objToClone.draw_type
+        newDup.show_wire = objToClone.show_wire
+
+        # copy transformation
         newDup.matrix_world = objToClone.matrix_world
         newDup.location = best_obj_pos
         newDup.scale = objToClone.scale
         newDup.rotation_euler = objToClone.rotation_euler
         # bpy.ops.object.rotation_clear()
+
+        context.scene.objects.link(newDup)
+        newDup.select = True
+        context.scene.objects.active = newDup
 
         # Rotation To Normal
         if mifthCloneTools.drawClonesNormalRotate is True:
