@@ -60,7 +60,7 @@ class MI_BasePanel(bpy.types.Panel):
     bl_label = "Mira"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
-    bl_context = "objectmode"
+    bl_context = "mesh_edit"
     bl_category = 'Mira'
 
 
@@ -78,12 +78,14 @@ class MRStartDraw(bpy.types.Operator):
 
     pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
                  'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE']
+                 'NUMPAD_9', 'LEFTMOUSE', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
+                 'SELECTMOUSE', 'MOUSEMOVE']
+    select_mouse_mode = None
 
     display_bezier = {}  # display bezier curves dictionary
 
-
     def modal(self, context, event):
+        #print(context.active_operator)
         context.area.tag_redraw()
 
         if event.type in {'RIGHTMOUSE', 'ESC'}:
@@ -92,8 +94,9 @@ class MRStartDraw(bpy.types.Operator):
 
             # clear
             display_bezier = None
+            context.user_preferences.inputs.select_mouse = self.select_mouse_mode
 
-            return {'CANCELLED'}
+            return {'FINISHED'}
 
         elif event.type in self.pass_keys:
             # allow navigation
@@ -111,10 +114,12 @@ class MRStartDraw(bpy.types.Operator):
             self.mi_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_draw_3d, args, 'WINDOW', 'POST_VIEW')
             self.mi_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_draw_2d, args, 'WINDOW', 'POST_PIXEL')
 
+            # change startup
+            self.select_mouse_mode = context.user_preferences.inputs.select_mouse
+            context.user_preferences.inputs.select_mouse = 'RIGHT'
+
             # test test test
             if context.selected_objects:
-
-
                 cur = context.scene.objects.active.mi_curves.add()
 
                 # points
@@ -126,7 +131,7 @@ class MRStartDraw(bpy.types.Operator):
                 point.position = (0.0, 1.0, 0.0)
                 point = cur.curve_points.add()
                 point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (10.0, 0.0, 0.0)
+                point.position = (10.0, 10.0, 0.0)
                 point = cur.curve_points.add()
                 point.point_id = mi_generate_point_id(cur.curve_points)
                 point.position = (0.0, -1.0, 0.0)
