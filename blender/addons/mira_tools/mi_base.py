@@ -126,7 +126,7 @@ class MRStartDraw(bpy.types.Operator):
                 point.position = (0.0, 1.0, 0.0)
                 point = cur.curve_points.add()
                 point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (20.0, 0.0, 0.0)
+                point.position = (10.0, 0.0, 0.0)
                 point = cur.curve_points.add()
                 point.point_id = mi_generate_point_id(cur.curve_points)
                 point.position = (0.0, -1.0, 0.0)
@@ -218,7 +218,7 @@ def mi_draw_curve(curves, context):
                 mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 4, (0.0,0.5,1.0,0.7))
             if curve.curve_points.values().index(cu_point) > 0:
                 point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
-                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 4, (0.0,0.5,1.0,0.7))
+                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 4, (1.0,0.5,0.0,0.7))
 
 
 def mi_generate_bezier(curve, display_bezier):
