@@ -122,23 +122,37 @@ class MRStartDraw(bpy.types.Operator):
             if context.selected_objects:
                 cur = context.scene.objects.active.mi_curves.add()
 
-                # points
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (-1.0, 0.0, 0.0)
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (0.0, 1.0, 0.0)
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (10.0, 10.0, 0.0)
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (0.0, -1.0, 0.0)
+                for i in range(8):
+                    point = cur.curve_points.add()
+                    point.point_id = mi_generate_point_id(cur.curve_points)
+                    vec = Vector((-1.0, 0.0, 0.0))
 
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (-1.0, 0.0, 0.0)
+                    beta = math.radians((360.0 /8.0)*i )
+
+                    eul = mathu.Euler((0.0, 0.0, beta), 'XYZ')
+                    vec.rotate(eul)
+                    point.position = (vec.x, vec.y, vec.z)
+                    if i == 4:
+                        point.position = (vec.x+10.0, vec.y, vec.z)
+
+
+                ## points
+                #point = cur.curve_points.add()
+                #point.point_id = mi_generate_point_id(cur.curve_points)
+                #point.position = (-1.0, 0.0, 0.0)
+                #point = cur.curve_points.add()
+                #point.point_id = mi_generate_point_id(cur.curve_points)
+                #point.position = (0.0, 1.0, 0.0)
+                #point = cur.curve_points.add()
+                #point.point_id = mi_generate_point_id(cur.curve_points)
+                #point.position = (1.0, 0.0, 0.0)
+                #point = cur.curve_points.add()
+                #point.point_id = mi_generate_point_id(cur.curve_points)
+                #point.position = (0.0, -1.0, 0.0)
+
+                #point = cur.curve_points.add()
+                #point.point_id = mi_generate_point_id(cur.curve_points)
+                #point.position = (-1.0, 0.0, 0.0)
 
                 # add to display
                 mi_generate_bezier(cur, self.display_bezier)
@@ -254,16 +268,23 @@ def mi_generate_bezier(curve, display_bezier):
                 # Make common interpolation for handles
                 if i > 1:
                     dist1 = (Vector(curve.curve_points[i].position) - Vector(curve.curve_points[two_back_point].position))
+                    dl1 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position))
+                    dl1_2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[forward_point].position))
                     h1_len_back = (Vector(curve.curve_points[two_back_point].position) - Vector(curve.curve_points[back_point].position)).length
                     h1_len_forward = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position)).length
-                    handle1_len = dist1.length * 0.5 * (h1_len_forward / (h1_len_back + h1_len_forward)) * 1.1042  # 1.1042 is smooth coefficient
+                    h1_final = (h1_len_forward / (h1_len_back + h1_len_forward))
+                    handle1_len = min(( dl1.length  ) * (dl1.length/(dl1.length+dl1_2.length)) ,dist1.length* h1_final*0.5)  # 1.1042 is smooth coefficient
                     handle1 = knot1 + (dist1.normalized() * handle1_len)
+                    #print((dl1.length/(dl1.length+dl1_2.length)))
 
                 if i < p_len-1:
                     dist2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[forward_point].position))
+                    dl2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position))
+                    dl2_2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[forward_point].position))
                     h2_len_back = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position)).length
                     h2_len_forward = (Vector(curve.curve_points[forward_point].position) - Vector(curve.curve_points[i].position)).length
-                    handle2_len = dist2.length * 0.5 * (h2_len_back / (h2_len_back + h2_len_forward)) * 1.1042  # 1.1042 is smooth coefficient
+                    h2_final = (h2_len_back / (h2_len_back + h2_len_forward))
+                    handle2_len = min((dl2.length  ) * (dl2.length/(dl2.length+dl2_2.length)), dist2.length* h2_final*0.5) # 1.1042 is smooth coefficient
                     handle2 = knot2 + (dist2.normalized() * handle2_len)
 
                 # Make end points
@@ -273,7 +294,7 @@ def mi_generate_bezier(curve, display_bezier):
                     handle1 = knot1 + (handle1.normalized() * handle1_len)
                 if handle2 is None:
                     handle2 = (handle1 - knot2)
-                    handle2_len = handle1.length * 0.4
+                    handle2_len = handle2.length * 0.4
                     handle2 = knot2 + (handle2.normalized() * handle2_len)
 
                 curve.curve_points[i-1].handle1 = handle1  # save handle
