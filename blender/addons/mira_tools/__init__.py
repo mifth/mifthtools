@@ -32,8 +32,10 @@ bl_info = {
 if "bpy" in locals():
     import imp
     imp.reload(mi_base)
+    imp.reload(mi_deform)
 else:
     from . import mi_base
+    from . import mi_deform
 
 
 import bpy
