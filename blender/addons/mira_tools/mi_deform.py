@@ -71,14 +71,14 @@ class MI_Deform(bpy.types.Operator):
                ),
         default = 'X'
     )
-    deform_direction = EnumProperty(
-        items=(('Top', 'Top', ''),
-               ('Bottom', 'Bottom', ''),
-               ('Left', 'Left', ''),
-               ('Right', 'Right', ''),
-               ),
-        default = 'Top'
-    )
+    #deform_direction = EnumProperty(
+        #items=(('Top', 'Top', ''),
+               #('Bottom', 'Bottom', ''),
+               #('Left', 'Left', ''),
+               #('Right', 'Right', ''),
+               #),
+        #default = 'Top'
+    #)
 
     def execute(self, context):
 
@@ -123,90 +123,112 @@ def deform_obj(obj, context, self):
         if self.selected_verts:
             verts = [v for v in verts if v.select]
 
-    bm.verts.ensure_lookup_table()
-    x_min = verts[0].co.x
-    x_max = verts[0].co.x
-    y_min = verts[0].co.y
-    y_max = verts[0].co.y
-    z_min = verts[0].co.z
-    z_max = verts[0].co.z
+    if verts:
+        if obj.mode == 'EDIT':
+            bm.verts.ensure_lookup_table()
+        x_min = verts[0].co.x
+        x_max = verts[0].co.x
+        y_min = verts[0].co.y
+        y_max = verts[0].co.y
+        z_min = verts[0].co.z
+        z_max = verts[0].co.z
 
-    for vert in verts:
-        if vert.co.x > x_max:
-            x_max = vert.co.x
-        if vert.co.x < x_min:
-            x_min = vert.co.x
-        if vert.co.y > y_max:
-            y_max = vert.co.y
-        if vert.co.y < y_min:
-            y_min = vert.co.y
-        if vert.co.z > z_max:
-            z_max = vert.co.z
-        if vert.co.z < z_min:
-            z_min = vert.co.z
+        for vert in verts:
+            if vert.co.x > x_max:
+                x_max = vert.co.x
+            if vert.co.x < x_min:
+                x_min = vert.co.x
+            if vert.co.y > y_max:
+                y_max = vert.co.y
+            if vert.co.y < y_min:
+                y_min = vert.co.y
+            if vert.co.z > z_max:
+                z_max = vert.co.z
+            if vert.co.z < z_min:
+                z_min = vert.co.z
 
-    x_orig = ((x_max-x_min) / 2.0) + x_min
-    y_orig = ((y_max-y_min) / 2.0) + y_min
-    z_orig = z_min
-    rot_origin = Vector((x_orig, y_orig, z_orig))
+        x_orig = ((x_max-x_min) / 2.0) + x_min
+        y_orig = ((y_max-y_min) / 2.0) + y_min
+        z_orig = z_min
+        if self.deform_axis == 'Z':
+            y_orig = y_min
+            z_orig = ((z_max-z_min) / 2.0) + z_min
 
-    visual_max = z_max-z_min
+        rot_origin = Vector((x_orig, y_orig, z_orig))
 
-    for vert in verts:
-        vec = vert.co.copy()
-        visual_up_pos = vec.z - z_min
+        visual_max = z_max-z_min
+        if self.deform_axis == 'Z':
+            visual_max = y_max-y_min
 
-        # TAPER CODE
-        # scale the vert
-        if self.taper_value != 0:
-            taper_value = ((self.taper_value) * (visual_up_pos / visual_max))
-            vert.co.xy -= (vert.co.xy-rot_origin.xy)*taper_value
+        for vert in verts:
+            vec = vert.co.copy()
+            visual_up_pos = None
+            if self.deform_axis != 'Z':
+                visual_up_pos = vec.z - z_min
+            else:
+                visual_up_pos = vec.y - y_min
 
-        # TWIST CODE
-        # rotate the vert
-        if self.twist_angle != 0:
-            twist_angle = self.twist_angle * (visual_up_pos / visual_max)
-            #if self.deform_axis == 'X':
-                #rot_angle = -rot_angle
-            rot_mat = Matrix.Rotation(twist_angle, 3, 'Z')
-            vert.co = rot_mat * (vert.co - rot_origin) + rot_origin
+            # TAPER CODE
+            # scale the vert
+            if self.taper_value != 0:
+                taper_value = ((self.taper_value) * (visual_up_pos / visual_max))
+                if self.deform_axis != 'Z':
+                    vert.co.xy -= (vert.co.xy-rot_origin.xy)*taper_value
+                else:
+                    vert.co.xz -= (vert.co.xz-rot_origin.xz)*taper_value
 
-        # BEND CODE
-        beta = math.radians(self.bend_angle * (visual_up_pos/visual_max) )
-        if beta != 0:
-            final_offset = visual_up_pos * self.offset_rotation
-            if beta < 0:
-                final_offset = -final_offset
-
-            move_to_rotate = ((visual_up_pos / beta) + final_offset) * self.bend_scale
-            if self.deform_axis == 'X':
-                vert.co.y -= move_to_rotate
-            elif self.deform_axis == 'Y':
-                vert.co.x -= move_to_rotate
-
-            vert.co.z = rot_origin.z
-
+            # TWIST CODE
             # rotate the vert
-            rot_angle = beta
-            if self.deform_axis == 'X':
-                rot_angle = -rot_angle
-            rot_mat = Matrix.Rotation(rot_angle, 3, self.deform_axis)
-            vert.co = rot_mat * (vert.co - rot_origin) + rot_origin
+            if self.twist_angle != 0:
+                twist_angle = self.twist_angle * (visual_up_pos / visual_max)
+                #if self.deform_axis == 'X':
+                    #rot_angle = -rot_angle
+                rot_mat = None
+                if self.deform_axis != 'Z':
+                    rot_mat = Matrix.Rotation(twist_angle, 3, 'Z')
+                else:
+                    rot_mat = Matrix.Rotation(twist_angle, 3, 'Y')
+                vert.co = rot_mat * (vert.co - rot_origin) + rot_origin
 
-            # back the rotation offset
-            back_offset = (visual_up_pos / (beta)) * self.bend_scale
-            if self.deform_axis == 'X':
-                vert.co.y += back_offset
-            elif self.deform_axis == 'Y':
-                vert.co.x += back_offset
+            # BEND CODE
+            beta = math.radians(self.bend_angle * (visual_up_pos/visual_max) )
+            if beta != 0:
+                final_offset = visual_up_pos * self.offset_rotation
+                if beta < 0:
+                    final_offset = -final_offset
 
-            # offset axys
-            move_offset = self.offset_axis * (visual_up_pos/visual_max)
-            if self.deform_axis == 'X':
-                vert.co.x += move_offset
-            if self.deform_axis == 'Y':
-                vert.co.y += move_offset
-            if self.deform_axis == 'Z':
-                vert.co.z += move_offset
+                move_to_rotate = ((visual_up_pos / beta) + final_offset) * self.bend_scale
+                if self.deform_axis == 'X':
+                    vert.co.y -= move_to_rotate
+                elif self.deform_axis == 'Y' or self.deform_axis == 'Z':
+                    vert.co.x -= move_to_rotate
+
+                if self.deform_axis != 'Z':
+                    vert.co.z = rot_origin.z
+                else:
+                    vert.co.y = rot_origin.y
+
+                # rotate the vert
+                rot_angle = beta
+                if self.deform_axis == 'X' or self.deform_axis == 'Z':
+                    rot_angle = -rot_angle
+                rot_mat = Matrix.Rotation(rot_angle, 3, self.deform_axis)
+                vert.co = rot_mat * (vert.co - rot_origin) + rot_origin
+
+                # back the rotation offset
+                back_offset = (visual_up_pos / (beta)) * self.bend_scale
+                if self.deform_axis == 'X':
+                    vert.co.y += back_offset
+                elif self.deform_axis == 'Y' or self.deform_axis == 'Z':
+                    vert.co.x += back_offset
+
+                # offset axys
+                move_offset = self.offset_axis * (visual_up_pos/visual_max)
+                if self.deform_axis == 'X':
+                    vert.co.x += move_offset
+                elif self.deform_axis == 'Y':
+                    vert.co.y += move_offset
+                elif self.deform_axis == 'Z':
+                    vert.co.z += move_offset
 
     obj.data.update()
