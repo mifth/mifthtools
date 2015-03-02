@@ -54,6 +54,7 @@ class MI_CurveObject(bpy.types.PropertyGroup):
     curve_points = CollectionProperty(
         type=MI_CurvePoint
     )
+    active_point = StringProperty(default="")
 
 
 class MI_BasePanel(bpy.types.Panel):
@@ -84,10 +85,44 @@ class MRStartDraw(bpy.types.Operator):
 
     display_bezier = {}  # display bezier curves dictionary
 
+    # curve tool mode
+    curve_tool_modes = ('IDLE', 'MOVE')
+    curve_tool_mode = 'IDLE'
+
+    active_curve = None
+
     def modal(self, context, event):
         #print(context.active_operator)
         context.area.tag_redraw()
 
+        # make picking
+        if self.curve_tool_mode == 'IDLE':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
+                # pick point test
+                m_coords = event.mouse_region_x, event.mouse_region_y
+                active_obj = context.scene.objects.active
+                if active_obj.mi_curves:
+                    picked_point = mi_pick_curve_point(self.active_curve, context, m_coords)
+                    if picked_point is not None:
+                        self.active_curve.active_point = picked_point.point_id
+                        self.curve_tool_mode = 'MOVE'
+                        print(picked_point)
+
+                return {'RUNNING_MODAL'}
+        else:
+            if event.value == 'RELEASE':
+                self.curve_tool_mode = 'IDLE'
+                return {'RUNNING_MODAL'}
+            else:
+                m_coords = event.mouse_region_x, event.mouse_region_y
+                #view_vector_mouse = view3d_utils.region_2d_to_vector_3d(
+                    #region, rv3d, coord)
+                #ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(
+                    #region, rv3d, coord)
+                return {'RUNNING_MODAL'}
+
+
+        # main stuff
         if event.type in {'RIGHTMOUSE', 'ESC'}:
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_handle_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_handle_2d, 'WINDOW')
@@ -119,8 +154,9 @@ class MRStartDraw(bpy.types.Operator):
             context.user_preferences.inputs.select_mouse = 'RIGHT'
 
             # test test test
-            if context.selected_objects:
+            if context.scene.objects.active:
                 cur = context.scene.objects.active.mi_curves.add()
+                self.active_curve = cur  # set active curve
 
                 # for i in range(8):
                 #     point = cur.curve_points.add()
@@ -180,6 +216,19 @@ def mi_generate_point_id(points):
 
     other_ids = None  # clean
     return uniq_numb
+
+
+def mi_pick_curve_point(curve, context, mouse_coords):
+    region = context.region
+    rv3d = context.region_data
+
+    for cu_point in curve.curve_points:
+        point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
+        length = (point_pos_2d - Vector(mouse_coords)).length
+        if length <= 7.0:
+            return cu_point
+
+    return None
 
 
 def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
