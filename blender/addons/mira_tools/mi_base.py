@@ -86,7 +86,7 @@ class MRStartDraw(bpy.types.Operator):
     display_bezier = {}  # display bezier curves dictionary
 
     # curve tool mode
-    curve_tool_modes = ('IDLE', 'MOVE')
+    curve_tool_modes = ('IDLE', 'MOVE_POINT')
     curve_tool_mode = 'IDLE'
 
     active_curve = None
@@ -100,25 +100,44 @@ class MRStartDraw(bpy.types.Operator):
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
                 # pick point test
                 m_coords = event.mouse_region_x, event.mouse_region_y
-                active_obj = context.scene.objects.active
-                if active_obj.mi_curves:
-                    picked_point = mi_pick_curve_point(self.active_curve, context, m_coords)
-                    if picked_point is not None:
-                        self.active_curve.active_point = picked_point.point_id
-                        self.curve_tool_mode = 'MOVE'
-                        print(picked_point)
+                picked_point = mi_pick_curve_point(self.active_curve, context, m_coords)
+                if picked_point:
+                    self.active_curve.active_point = picked_point.point_id
+                    self.curve_tool_mode = 'MOVE_POINT'
+                    #print(picked_point)
+                else:
+                    # add point
+                    point = self.active_curve.curve_points.add()
+                    point.point_id = mi_generate_point_id(self.active_curve.curve_points)
+                    new_point_pos = get_mouse_on_plane(context, point.position, m_coords)
+                    if new_point_pos:
+                        point.position = new_point_pos
+                        self.active_curve.active_point = point.point_id
+                        self.curve_tool_mode = 'MOVE_POINT'
+
+                    # add to display
+                    mi_generate_bezier(self.active_curve, self.display_bezier)
+
+                return {'RUNNING_MODAL'}
+
+        elif self.curve_tool_mode == 'MOVE_POINT':
+            if event.value == 'RELEASE':
+                self.curve_tool_mode = 'IDLE'
+                return {'RUNNING_MODAL'}
+            else:
+                # move point
+                m_coords = event.mouse_region_x, event.mouse_region_y
+                for point in self.active_curve.curve_points:
+                    if point.point_id == self.active_curve.active_point:
+                        new_point_pos = get_mouse_on_plane(context, point.position, m_coords)
+                        if new_point_pos:
+                            point.position = new_point_pos
+                        mi_generate_bezier(self.active_curve, self.display_bezier)
 
                 return {'RUNNING_MODAL'}
         else:
             if event.value == 'RELEASE':
                 self.curve_tool_mode = 'IDLE'
-                return {'RUNNING_MODAL'}
-            else:
-                m_coords = event.mouse_region_x, event.mouse_region_y
-                #view_vector_mouse = view3d_utils.region_2d_to_vector_3d(
-                    #region, rv3d, coord)
-                #ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(
-                    #region, rv3d, coord)
                 return {'RUNNING_MODAL'}
 
 
@@ -216,6 +235,20 @@ def mi_generate_point_id(points):
 
     other_ids = None  # clean
     return uniq_numb
+
+
+def get_mouse_on_plane(context, plane_pos, mouse_coords):
+    region = context.region
+    rv3d = context.region_data
+    cam_dir = rv3d.view_rotation * Vector((0.0, 0.0, -1.0))
+    #cam_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d, (region.width/2.0, region.height/2.0))
+    mouse_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d, mouse_coords)
+    mouse_dir = view3d_utils.region_2d_to_vector_3d(region, rv3d, mouse_coords)
+    new_pos = mathu.geometry.intersect_line_plane(mouse_pos, mouse_pos+(mouse_dir*10000.0), plane_pos, cam_dir, False)
+    if new_pos:
+        return new_pos
+
+    return None
 
 
 def mi_pick_curve_point(curve, context, mouse_coords):
@@ -319,15 +352,13 @@ def mi_generate_bezier(curve, display_bezier):
                     dist1 = (Vector(curve.curve_points[i].position) - Vector(curve.curve_points[two_back_point].position))
                     dl1 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position))
                     dl1_2 = (Vector(curve.curve_points[two_back_point].position) - Vector(curve.curve_points[i].position))
-                    # h1_len_back = (Vector(curve.curve_points[two_back_point].position) - Vector(curve.curve_points[back_point].position)).length
-                    # h1_len_forward = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position)).length
-                    # h1_final = (h1_len_forward / (h1_len_back + h1_len_forward))
+
                     handle1_len = ( dl1.length  ) * (dl1.length/(dl1.length+dl1_2.length))  # 1.1042 is smooth coefficient
 
                     if dl1.length > dl1_2.length and dl1.length != 0:
-                        handle1_len *= (dl1_2.length/dl1.length) * 0.5
+                        handle1_len *= (dl1_2.length/dl1.length) *(dl1_2.length/dl1.length) 
                     elif dl1.length < dl1_2.length/2.0 and dl1.length != 0:
-                        handle1_len *= (dl1_2.length/2.0)/dl1.length * 0.5
+                        handle1_len *= (dl1_2.length/2.0)/dl1.length
 
                     # handle1_len = min(( dl1.length  ) * (dl1.length/(dl1.length+dl1_2.length)) ,dist1.length* h1_final*0.5)  # 1.1042 is smooth coefficient
                     handle1 = knot1 + (dist1.normalized() * handle1_len)
@@ -336,15 +367,13 @@ def mi_generate_bezier(curve, display_bezier):
                     dist2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[forward_point].position))
                     dl2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position))
                     dl2_2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[forward_point].position))
-                    # h2_len_back = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position)).length
-                    # h2_len_forward = (Vector(curve.curve_points[forward_point].position) - Vector(curve.curve_points[i].position)).length
-                    # h2_final = (h2_len_back / (h2_len_back + h2_len_forward))
+
                     handle2_len = (dl2.length  ) * (dl2.length/(dl2.length+dl2_2.length)) # 1.1042 is smooth coefficient
 
                     if dl2.length > dl2_2.length and dl2.length != 0:
-                        handle2_len *= (dl2_2.length/dl2.length) * 0.5
+                        handle2_len *= (dl2_2.length/dl2.length) * (dl2_2.length/dl2.length)
                     elif dl2.length < dl2_2.length/2.0 and dl2.length != 0:
-                        handle2_len *= (dl2_2.length/2.0)/dl2.length * 0.5
+                        handle2_len *= (dl2_2.length/2.0)/dl2.length
 
                     # handle2_len = min((dl2.length  ) * (dl2.length/(dl2.length+dl2_2.length)), dist2.length* h2_final*0.5) # 1.1042 is smooth coefficient
                     handle2 = knot2 + (dist2.normalized() * handle2_len)
