@@ -86,7 +86,7 @@ class MRStartDraw(bpy.types.Operator):
     display_bezier = {}  # display bezier curves dictionary
 
     # curve tool mode
-    curve_tool_modes = ('IDLE', 'MOVE_POINT')
+    curve_tool_modes = ('IDLE', 'MOVE_POINT', 'ADD_POINT')
     curve_tool_mode = 'IDLE'
 
     active_curve = None
@@ -113,7 +113,7 @@ class MRStartDraw(bpy.types.Operator):
                     if new_point_pos:
                         point.position = new_point_pos
                         self.active_curve.active_point = point.point_id
-                        self.curve_tool_mode = 'MOVE_POINT'
+                        self.curve_tool_mode = 'ADD_POINT'
 
                     # add to display
                     mi_generate_bezier(self.active_curve, self.display_bezier)
@@ -135,6 +135,10 @@ class MRStartDraw(bpy.types.Operator):
                         mi_generate_bezier(self.active_curve, self.display_bezier)
 
                 return {'RUNNING_MODAL'}
+
+        elif self.curve_tool_mode == 'ADD_POINT':
+            self.curve_tool_mode = 'MOVE_POINT'
+
         else:
             if event.value == 'RELEASE':
                 self.curve_tool_mode = 'IDLE'
@@ -355,8 +359,8 @@ def mi_generate_bezier(curve, display_bezier):
 
                     handle1_len = ( dl1.length  ) * (dl1.length/(dl1.length+dl1_2.length))  # 1.1042 is smooth coefficient
 
-                    if dl1.length > dl1_2.length and dl1.length != 0:
-                        handle1_len *= (dl1_2.length/dl1.length) *(dl1_2.length/dl1.length) 
+                    if dl1.length > dl1_2.length/1.5 and dl1.length != 0:
+                        handle1_len *= ((dl1_2.length/1.5)/dl1.length)
                     elif dl1.length < dl1_2.length/2.0 and dl1.length != 0:
                         handle1_len *= (dl1_2.length/2.0)/dl1.length
 
@@ -370,8 +374,8 @@ def mi_generate_bezier(curve, display_bezier):
 
                     handle2_len = (dl2.length  ) * (dl2.length/(dl2.length+dl2_2.length)) # 1.1042 is smooth coefficient
 
-                    if dl2.length > dl2_2.length and dl2.length != 0:
-                        handle2_len *= (dl2_2.length/dl2.length) * (dl2_2.length/dl2.length)
+                    if dl2.length > dl2_2.length/1.5 and dl2.length != 0:
+                        handle2_len *= ((dl2_2.length/1.5)/dl2.length)
                     elif dl2.length < dl2_2.length/2.0 and dl2.length != 0:
                         handle2_len *= (dl2_2.length/2.0)/dl2.length
 
