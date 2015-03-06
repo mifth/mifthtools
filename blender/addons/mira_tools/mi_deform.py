@@ -113,7 +113,7 @@ def deform_obj(obj, context, self):
 
         verts = [v for v in bm.verts if v.select]
         if len(verts) == 0:
-            verts = bm.verts       
+            verts = bm.verts
 
     else:
         # this works only in object mode,
@@ -122,6 +122,7 @@ def deform_obj(obj, context, self):
             verts = obj.data.vertices
             
 
+    # TODO Move it into utilities method. As Extrude class has the same method.
     if verts:
         if obj.mode == 'EDIT':
             bm.verts.ensure_lookup_table()

@@ -147,8 +147,8 @@ class MRStartDraw(bpy.types.Operator):
 
         # main stuff
         if event.type in {'RIGHTMOUSE', 'ESC'}:
-            bpy.types.SpaceView3D.draw_handler_remove(self.mi_handle_3d, 'WINDOW')
-            bpy.types.SpaceView3D.draw_handler_remove(self.mi_handle_2d, 'WINDOW')
+            bpy.types.SpaceView3D.draw_handler_remove(self.mi_deform_handle_3d, 'WINDOW')
+            bpy.types.SpaceView3D.draw_handler_remove(self.mi_deform_handle_2d, 'WINDOW')
 
             # clear
             display_bezier = None
@@ -169,8 +169,8 @@ class MRStartDraw(bpy.types.Operator):
             args = (self, context)
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-            self.mi_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_draw_3d, args, 'WINDOW', 'POST_VIEW')
-            self.mi_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+            self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_deform_draw_3d, args, 'WINDOW', 'POST_VIEW')
+            self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_deform_draw_2d, args, 'WINDOW', 'POST_PIXEL')
 
             # change startup
             self.select_mouse_mode = context.user_preferences.inputs.select_mouse
@@ -223,6 +223,24 @@ class MRStartDraw(bpy.types.Operator):
             return {'CANCELLED'}
 
 
+def mi_deform_draw_2d(self, context):
+    active_obj = context.scene.objects.active
+    if active_obj.mi_curves:
+        mi_draw_curve(active_obj.mi_curves, context)
+
+
+def mi_deform_draw_3d(self, context):
+    active_obj = context.scene.objects.active
+    if active_obj.mi_curves:
+        # test1
+        region = context.region
+        rv3d = context.region_data
+        for curve in active_obj.mi_curves:
+            for cur_point in curve.curve_points:
+                if cur_point.point_id in self.display_bezier:
+                    mi_deform_draw_3d_polyline(self.display_bezier[cur_point.point_id], 2, (0.5,0.8,0.9,1.0))
+
+
 def mi_generate_point_id(points):
     # Generate unique id
     other_ids = []
@@ -268,6 +286,7 @@ def mi_pick_curve_point(curve, context, mouse_coords):
     return None
 
 
+# TODO MOVE TO UTILITIES
 def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
     bgl.glEnable(bgl.GL_BLEND)
     #bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
@@ -287,7 +306,8 @@ def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
     bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
 
 
-def mi_draw_3d_polyline(points, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
+# TODO MOVE TO UTILITIES
+def mi_deform_draw_3d_polyline(points, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glLineWidth(1)
 
@@ -406,23 +426,6 @@ def mi_generate_bezier(curve, display_bezier):
                 vecs = mathu.geometry.interpolate_bezier(knot1, handle1, handle2, knot2, 20+1)
                 display_bezier[curve.curve_points[i].point_id] = vecs
 
-
-def mi_draw_2d(self, context):
-    active_obj = context.scene.objects.active
-    if active_obj.mi_curves:
-        mi_draw_curve(active_obj.mi_curves, context)
-
-
-def mi_draw_3d(self, context):
-    active_obj = context.scene.objects.active
-    if active_obj.mi_curves:
-        # test1
-        region = context.region
-        rv3d = context.region_data
-        for curve in active_obj.mi_curves:
-            for cur_point in curve.curve_points:
-                if cur_point.point_id in self.display_bezier:
-                    mi_draw_3d_polyline(self.display_bezier[cur_point.point_id], 2, (0.5,0.8,0.9,1.0))
 
 # ---------------------------------------
 

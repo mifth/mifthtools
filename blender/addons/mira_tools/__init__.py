@@ -33,9 +33,11 @@ if "bpy" in locals():
     import imp
     imp.reload(mi_base)
     imp.reload(mi_deform)
+    imp.reload(mi_extrude)
 else:
     from . import mi_base
     from . import mi_deform
+    from . import mi_extrude
 
 
 import bpy
@@ -43,29 +45,6 @@ from bpy.props import *
 
 
 def register():
-    #bpy.miraTool = dict()
-
-    #class MRProperties(bpy.types.PropertyGroup):
-
-        ## Output Settings
-        #outputFolder = StringProperty(
-            #name="outputFolder",
-            #subtype="NONE",
-            #default="seq"
-        #)
-
-        ## Curve Animator Settings
-        #doUseSceneFrames = BoolProperty(
-            #name="do use scene frames",
-            #description="do use scene frames...",
-            #default=False
-        #)
-
-        #curveAniStartFrame = IntProperty(
-            #default=1,
-            #min=1,
-            #max=10000
-        #)
 
     bpy.utils.register_module(__name__)
 
@@ -85,7 +64,7 @@ def unregister():
     import bpy
 
     del bpy.types.Scene.miraTool
-    #del bpy.miraTool
+    #del bpy.types.Object.mi_curves  # need to investigate if i need to delete it
     bpy.utils.unregister_module(__name__)
 
 
