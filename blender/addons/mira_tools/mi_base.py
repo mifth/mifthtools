@@ -262,7 +262,7 @@ def mi_pick_curve_point(curve, context, mouse_coords):
     for cu_point in curve.curve_points:
         point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
         length = (point_pos_2d - Vector(mouse_coords)).length
-        if length <= 7.0:
+        if length <= 9.0:
             return cu_point
 
     return None
@@ -315,15 +315,19 @@ def mi_draw_curve(curves, context):
     for curve in curves:
         for cu_point in curve.curve_points:
             point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
-            mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, (0.5,0.8,1.0,0.7))
+
+            p_col = (0.5,0.8,1.0,1.0)
+            if cu_point.point_id == curve.active_point:
+                p_col = (0.9,0.7,0.3,1.0)
+            mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
             # Debug
             if curve.curve_points.values().index(cu_point) < len(curve.curve_points)-1:
                 point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
-                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 4, (0.0,0.5,1.0,0.7))
+                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, (0.0,0.5,1.0,0.7))
             if curve.curve_points.values().index(cu_point) > 0:
                 point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
-                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 4, (1.0,0.5,0.0,0.7))
+                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, (1.0,0.5,0.0,0.7))
 
 
 def mi_generate_bezier(curve, display_bezier):
@@ -418,7 +422,7 @@ def mi_draw_3d(self, context):
         for curve in active_obj.mi_curves:
             for cur_point in curve.curve_points:
                 if cur_point.point_id in self.display_bezier:
-                    mi_draw_3d_polyline(self.display_bezier[cur_point.point_id], 2, (0.7,0.9,1.0,0.7))
+                    mi_draw_3d_polyline(self.display_bezier[cur_point.point_id], 2, (0.5,0.8,0.9,1.0))
 
 # ---------------------------------------
 

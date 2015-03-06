@@ -44,12 +44,12 @@ class MI_DeformPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("mira.deform", text="Deform")
+        layout.operator("mira.deformer", text="Deformer")
 
 
 class MI_Deform(bpy.types.Operator):
     """Draw a line with the mouse"""
-    bl_idname = "mira.deform"
+    bl_idname = "mira.deformer"
     bl_label = "Deformer"
     bl_description = "Deformer"
     bl_options = {'REGISTER', 'UNDO'}
