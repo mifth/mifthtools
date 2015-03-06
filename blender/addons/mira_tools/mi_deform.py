@@ -62,7 +62,7 @@ class MI_Deform(bpy.types.Operator):
     bend_scale = FloatProperty(default=1.0)
     
 
-    selected_verts = BoolProperty(default=True)
+    #selected_verts = BoolProperty(default=True)
 
     deform_axis = EnumProperty(
         items=(('X', 'X', ''),
@@ -109,19 +109,18 @@ def deform_obj(obj, context, self):
     verts = None
     if obj.mode == 'EDIT':
         # this works only in edit mode,
-        #bm.verts.ensure_lookup_table()
         bm = bmesh.from_edit_mesh(obj.data)
-        #verts = [vert.co for vert in bm.verts]
-        verts = bm.verts
-        if self.selected_verts:
-            verts = [v for v in verts if v.select]
+
+        verts = [v for v in bm.verts if v.select]
+        if len(verts) == 0:
+            verts = bm.verts       
 
     else:
         # this works only in object mode,
-        #verts = [vert.co for vert in obj.data.vertices]
-        verts = obj.data.vertices
-        if self.selected_verts:
-            verts = [v for v in verts if v.select]
+        verts = [v for v in obj.data.vertices if v.select]
+        if len(verts) == 0:
+            verts = obj.data.vertices
+            
 
     if verts:
         if obj.mode == 'EDIT':

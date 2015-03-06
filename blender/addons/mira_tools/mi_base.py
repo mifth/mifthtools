@@ -361,8 +361,8 @@ def mi_generate_bezier(curve, display_bezier):
 
                     if dl1.length > dl1_2.length/1.5 and dl1.length != 0:
                         handle1_len *= ((dl1_2.length/1.5)/dl1.length)
-                    elif dl1.length < dl1_2.length/2.0 and dl1.length != 0:
-                        handle1_len *= (dl1_2.length/2.0)/dl1.length
+                    elif dl1.length < dl1_2.length/3.0 and dl1.length != 0:
+                        handle1_len *= (dl1_2.length/3.0)/dl1.length
 
                     # handle1_len = min(( dl1.length  ) * (dl1.length/(dl1.length+dl1_2.length)) ,dist1.length* h1_final*0.5)  # 1.1042 is smooth coefficient
                     handle1 = knot1 + (dist1.normalized() * handle1_len)
@@ -376,8 +376,8 @@ def mi_generate_bezier(curve, display_bezier):
 
                     if dl2.length > dl2_2.length/1.5 and dl2.length != 0:
                         handle2_len *= ((dl2_2.length/1.5)/dl2.length)
-                    elif dl2.length < dl2_2.length/2.0 and dl2.length != 0:
-                        handle2_len *= (dl2_2.length/2.0)/dl2.length
+                    elif dl2.length < dl2_2.length/3.0 and dl2.length != 0:
+                        handle2_len *= (dl2_2.length/3.0)/dl2.length
 
                     # handle2_len = min((dl2.length  ) * (dl2.length/(dl2.length+dl2_2.length)), dist2.length* h2_final*0.5) # 1.1042 is smooth coefficient
                     handle2 = knot2 + (dist2.normalized() * handle2_len)
