@@ -89,7 +89,8 @@ class MRStartDraw(bpy.types.Operator):
     manipulator = None
     relative_step_size = None
     extrude_steps = []
-    max_obj_scale = None
+
+    #max_obj_scale = None
 
 
     def invoke(self, context, event):
@@ -103,24 +104,25 @@ class MRStartDraw(bpy.types.Operator):
             self.manipulator = context.space_data.show_manipulator
             context.space_data.show_manipulator = False
 
-            obj = context.scene.objects.active
-            bm = bmesh.from_edit_mesh(obj.data)
+            active_obj = context.scene.objects.active
+            bm = bmesh.from_edit_mesh(active_obj.data)
             sel_verts = [v for v in bm.verts if v.select]
 
             if len(sel_verts) == 0:
                 self.report({'WARNING'}, "No Selection!!!")
                 return {'CANCELLED'}
             else:
-                self.extrude_center = get_vertices_center(sel_verts)
+                self.extrude_center = get_vertices_center(sel_verts, active_obj)
                 if self.extrude_center is not None:
-                    multiply_scale(self.extrude_center, obj.scale)
+                    #multiply_scale(self.extrude_center, active_obj.scale)
+                    self.extrude_center = self.extrude_center
 
-                self.max_obj_scale = obj.scale.x
-                if obj.scale.y > self.max_obj_scale:
-                    self.max_obj_scale = obj.scale.y
-                if obj.scale.z > self.max_obj_scale:
-                    self.max_obj_scale = obj.scale.z
-                self.relative_step_size = get_vertices_size(sel_verts)
+                self.max_obj_scale = active_obj.scale.x
+                if active_obj.scale.y > self.max_obj_scale:
+                    self.max_obj_scale = active_obj.scale.yget_vertices_size
+                if active_obj.scale.z > self.max_obj_scale:
+                    self.max_obj_scale = active_obj.scale.z
+                self.relative_step_size = get_vertices_size(sel_verts, active_obj)
 
             self.mi_extrude_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_extrude_draw_2d, args, 'WINDOW', 'POST_PIXEL')
             context.window_manager.modal_handler_add(self)
@@ -163,7 +165,7 @@ class MRStartDraw(bpy.types.Operator):
 
             extrude_step = None
             if extrude_settings.extrude_step_type == 'Relative':
-                extrude_step = extrude_settings.relative_extrude_step * self.relative_step_size * self.max_obj_scale
+                extrude_step = extrude_settings.relative_extrude_step * self.relative_step_size
             else:
                 extrude_step = extrude_settings.absolute_extrude_step
 
@@ -310,29 +312,35 @@ def mi_pick_extrude_point(point, context, mouse_coords):
 
 
 # TODO Move it into utilities method. As Deform class has the same method.
-def get_vertices_center(verts):
+def get_vertices_center(verts, obj):
     #if obj.mode == 'EDIT':
         #bm.verts.ensure_lookup_table()
-    x_min = verts[0].co.x
-    x_max = verts[0].co.x
-    y_min = verts[0].co.y
-    y_max = verts[0].co.y
-    z_min = verts[0].co.z
-    z_max = verts[0].co.z
+    vert_world_first = obj.matrix_world * verts[0].co
+    #multiply_scale(vert_world_first, obj.scale)
+
+    x_min = vert_world_first.x
+    x_max = vert_world_first.x
+    y_min = vert_world_first.y
+    y_max = vert_world_first.y
+    z_min = vert_world_first.z
+    z_max = vert_world_first.z
 
     for vert in verts:
-        if vert.co.x > x_max:
-            x_max = vert.co.x
-        if vert.co.x < x_min:
-            x_min = vert.co.x
-        if vert.co.y > y_max:
-            y_max = vert.co.y
-        if vert.co.y < y_min:
-            y_min = vert.co.y
-        if vert.co.z > z_max:
-            z_max = vert.co.z
-        if vert.co.z < z_min:
-            z_min = vert.co.z
+        vert_world = obj.matrix_world * vert.co
+        #multiply_scale(vert_world, obj.scale)
+
+        if vert_world.x > x_max:
+            x_max = vert_world.x
+        if vert_world.x < x_min:
+            x_min = vert_world.x
+        if vert_world.y > y_max:
+            y_max = vert_world.y
+        if vert_world.y < y_min:
+            y_min = vert_world.y
+        if vert_world.z > z_max:
+            z_max = vert_world.z
+        if vert_world.z < z_min:
+            z_min = vert_world.z
 
     x_orig = ((x_max-x_min) / 2.0) + x_min
     y_orig = ((y_max-y_min) / 2.0) + y_min
@@ -342,29 +350,35 @@ def get_vertices_center(verts):
 
 
 # TODO Move it into utilities method. As Deform class has the same method.
-def get_vertices_size(verts):
+def get_vertices_size(verts, obj):
     #if obj.mode == 'EDIT':
         #bm.verts.ensure_lookup_table()
-    x_min = verts[0].co.x
-    x_max = verts[0].co.x
-    y_min = verts[0].co.y
-    y_max = verts[0].co.y
-    z_min = verts[0].co.z
-    z_max = verts[0].co.z
+    vert_world_first = obj.matrix_world * verts[0].co
+    #multiply_scale(vert_world_first, obj.scale)
+
+    x_min = vert_world_first.x
+    x_max = vert_world_first.x
+    y_min = vert_world_first.y
+    y_max = vert_world_first.y
+    z_min = vert_world_first.z
+    z_max = vert_world_first.z
 
     for vert in verts:
-        if vert.co.x > x_max:
-            x_max = vert.co.x
-        if vert.co.x < x_min:
-            x_min = vert.co.x
-        if vert.co.y > y_max:
-            y_max = vert.co.y
-        if vert.co.y < y_min:
-            y_min = vert.co.y
-        if vert.co.z > z_max:
-            z_max = vert.co.z
-        if vert.co.z < z_min:
-            z_min = vert.co.z
+        vert_world = obj.matrix_world * vert.co
+        #multiply_scale(vert_world, obj.scale)
+
+        if vert_world.x > x_max:
+            x_max = vert_world.x
+        if vert_world.x < x_min:
+            x_min = vert_world.x
+        if vert_world.y > y_max:
+            y_max = vert_world.y
+        if vert_world.y < y_min:
+            y_min = vert_world.y
+        if vert_world.z > z_max:
+            z_max = vert_world.z
+        if vert_world.z < z_min:
+            z_min = vert_world.z
 
     x_size = (x_max-x_min)
     y_size = (y_max-y_min)
