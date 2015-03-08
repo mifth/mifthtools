@@ -20,7 +20,7 @@ bl_info = {
     "name": "Mira Tools",
     "author": "Paul Geraskin",
     "version": (0, 1, 0),
-    "blender": (2, 73, 0),
+    "blender": (2, 74, 0),
     "location": "3D Viewport",
     "description": "Mira Tool",
     "warning": "",
@@ -60,11 +60,18 @@ def register():
         description="Mira Curve"
     )
 
+    bpy.types.Scene.mi_extrude_settings = PointerProperty(
+        name="Mira Tool Variables",
+        type=mi_extrude.MI_ExtrudeSettings,
+        description="Mira Curve"
+    )
+
 def unregister():
     import bpy
 
-    del bpy.types.Scene.miraTool
-    #del bpy.types.Object.mi_curves  # need to investigate if i need to delete it
+    #del bpy.types.Scene.miraTool
+    del bpy.types.Object.mi_curves  # need to investigate if i need to delete it
+    del bpy.types.Scene.mi_extrude_settings
     bpy.utils.unregister_module(__name__)
 
 

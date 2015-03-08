@@ -267,6 +267,7 @@ def get_mouse_on_plane(context, plane_pos, mouse_coords):
     mouse_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d, mouse_coords)
     mouse_dir = view3d_utils.region_2d_to_vector_3d(region, rv3d, mouse_coords)
     new_pos = mathu.geometry.intersect_line_plane(mouse_pos, mouse_pos+(mouse_dir*10000.0), plane_pos, cam_dir, False)
+
     if new_pos:
         return new_pos
 

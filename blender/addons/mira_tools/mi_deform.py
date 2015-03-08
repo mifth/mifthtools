@@ -173,9 +173,9 @@ def deform_obj(obj, context, self):
             if self.taper_value != 0:
                 taper_value = ((self.taper_value) * (visual_up_pos / visual_max))
                 if self.deform_axis != 'Z':
-                    vert.co.xy -= (vert.co.xy-rot_origin.xy)*taper_value
+                    vert.co.xy -= (vert.co.xy-rot_origin.xy) * taper_value
                 else:
-                    vert.co.xz -= (vert.co.xz-rot_origin.xz)*taper_value
+                    vert.co.xz -= (vert.co.xz-rot_origin.xz) * taper_value
 
             # TWIST CODE
             # rotate the vert
