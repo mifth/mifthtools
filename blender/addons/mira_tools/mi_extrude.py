@@ -33,6 +33,8 @@ import mathutils as mathu
 import random
 from mathutils import Vector
 
+from . import mi_utils_base as ut_base
+
 
 class MI_ExtrudeSettings(bpy.types.PropertyGroup):
     # Extrude Settings
@@ -44,6 +46,7 @@ class MI_ExtrudeSettings(bpy.types.PropertyGroup):
                ),
         default = 'Relative'
     )
+    snap_geometry = BoolProperty(default=False)
 
 
 class MI_ExtrudePanel(bpy.types.Panel):
@@ -59,12 +62,14 @@ class MI_ExtrudePanel(bpy.types.Panel):
         extrude_settings = context.scene.mi_extrude_settings
 
         layout.operator("mira.draw_extrude", text="Draw Extrude")
-        layout.prop(extrude_settings, "extrude_step_type", text='')
+        layout.prop(extrude_settings, "extrude_step_type", text='Step')
 
         if extrude_settings.extrude_step_type == 'Asolute':
             layout.prop(extrude_settings, "absolute_extrude_step", text='')
         else:
             layout.prop(extrude_settings, "relative_extrude_step", text='')
+
+        layout.prop(extrude_settings, "snap_geometry", text='SnapToSelected')
 
 
 class MRStartDraw(bpy.types.Operator):
@@ -90,7 +95,7 @@ class MRStartDraw(bpy.types.Operator):
     relative_step_size = None
     extrude_steps = []
 
-    #max_obj_scale = None
+    pick_meshes = None
 
 
     def invoke(self, context, event):
@@ -101,9 +106,8 @@ class MRStartDraw(bpy.types.Operator):
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
 
             reset_params(self)
-            self.manipulator = context.space_data.show_manipulator
-            context.space_data.show_manipulator = False
 
+            extrude_settings = context.scene.mi_extrude_settings
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
             sel_verts = [v for v in bm.verts if v.select]
@@ -111,7 +115,16 @@ class MRStartDraw(bpy.types.Operator):
             if len(sel_verts) == 0:
                 self.report({'WARNING'}, "No Selection!!!")
                 return {'CANCELLED'}
+
             else:
+                self.manipulator = context.space_data.show_manipulator
+                context.space_data.show_manipulator = False
+
+                # prepare for snapping
+                if extrude_settings.snap_geometry is True:
+                    sel_objects = [obj for obj in context.selected_objects if obj is not active_obj]
+                    self.pick_meshes = ut_base.get_obj_dup_meshes(sel_objects, context)
+
                 self.extrude_center = get_vertices_center(sel_verts, active_obj)
                 if self.extrude_center is not None:
                     #multiply_scale(self.extrude_center, active_obj.scale)
@@ -159,6 +172,8 @@ class MRStartDraw(bpy.types.Operator):
 
         if self.tool_mode == 'DRAW':
             active_obj = context.scene.objects.active
+            rv3d = context.region_data
+
             m_coords = event.mouse_region_x, event.mouse_region_y
             new_pos = get_mouse_on_plane(context, self.extrude_center, m_coords)
             extrude_settings = context.scene.mi_extrude_settings
@@ -169,19 +184,25 @@ class MRStartDraw(bpy.types.Operator):
             else:
                 extrude_step = extrude_settings.absolute_extrude_step
 
+            # EXTRUDE
             if (new_pos-self.extrude_center).length >= extrude_step:
                 bpy.ops.mesh.extrude_region_move()
 
                 bm = bmesh.from_edit_mesh(active_obj.data)
 
-                offset_move = new_pos-self.extrude_center
-                bpy.ops.transform.translate(value=(offset_move.x, offset_move.y, offset_move.z), proportional='DISABLED')
-                self.extrude_center = new_pos
+                # Extrude center
+                offset_dir = None
+                if extrude_settings.snap_geometry is True:
+                    pass
 
-                offset_dir = offset_move.copy().normalized()
+                else:
+                    offset_move = new_pos-self.extrude_center
+                    bpy.ops.transform.translate(value=(offset_move.x, offset_move.y, offset_move.z), proportional='DISABLED')
+                    self.extrude_center = new_pos
+
+                    offset_dir = offset_move.copy().normalized()
 
                 up_vec = None
-                rv3d = context.region_data
                 cam_dir = rv3d.view_rotation * Vector((0.0, 0.0, -1.0))
 
                 # rotate
@@ -196,52 +217,61 @@ class MRStartDraw(bpy.types.Operator):
 
                 # finalize things
                 self.extrude_dir = offset_dir
-                self.extrude_steps.append( [self.extrude_center, self.extrude_dir] )
+                # empty array will be for extruded vertices
+                self.extrude_steps.append( [self.extrude_center, self.extrude_dir, [] ] )
 
                 # fix direction of previous step
                 if len(self.extrude_steps) > 2:
-                    #steps_len = len(self.extrude_steps)
-                    fix_step = self.extrude_steps[-2]
                     fix_dir = (self.extrude_steps[-1][0] - self.extrude_steps[-3][0]).normalized()
                     fix_up_vec = cam_dir.cross(fix_dir).normalized()
+                    fix_step = self.extrude_steps[-2]
                     fix_rot_angle = fix_dir.angle(fix_step[1])
+                    
+                    selected_bmesh = get_selected_bmesh(bm)
+                    previous_extrude_verts = get_previous_extrude_verts(bm, context)
+
+                    # rotate previous extrude
                     if fix_rot_angle > 0.0:
-                        if fix_up_vec.angle( (fix_step[1] - fix_dir).normalized() ) < math.radians(90):
-                            fix_rot_angle = -fix_rot_angle
+                        sel_mode = context.tool_settings.mesh_select_mode
+                        sel_mode = (sel_mode[0], sel_mode[1], sel_mode[2])
 
-                        sel_mode = bm.select_mode
-                        sel_verts = [v for v in bm.verts if v.select]
-                        sel_edges = [e for e in bm.edges if e.select]
-                        sel_faces = [f for f in bm.faces if f.select]
-
-                        bm.select_mode = {'VERT'}
-                        bpy.ops.mesh.select_more()
-                        for vert in sel_verts:
+                        #bpy.ops.mesh.select_all(action='DESELECT')
+                        for vert in selected_bmesh[0]:
                             vert.select = False
-                        for edge in sel_edges:
+                        for edge in selected_bmesh[1]:
                             edge.select = False
-                        for face in sel_faces:
+                        for face in selected_bmesh[2]:
                             face.select = False
 
-                        # change main stuff
-                        bpy.ops.transform.rotate(value=fix_rot_angle, axis=cam_dir, proportional='DISABLED')
-                        fix_step[1] = fix_dir
-                        #fix_step[2] = fix_up_vec
-
-                        #for vert in bm.verts:
-                            #vert.select = False
-                        bpy.ops.mesh.select_all(action='DESELECT')
-                        bm.select_mode = sel_mode
-
-                        for vert in sel_verts:
+                        context.tool_settings.mesh_select_mode = (True, False, False)
+                        #bmesh.update_edit_mesh(active_obj.data)
+                        for vert in previous_extrude_verts:
                             vert.select = True
-                        for edge in sel_edges:
+
+                        # rotate previous extrude to fix rotation
+                        if fix_up_vec.angle( (fix_step[1] - fix_dir).normalized() ) < math.radians(90):
+                            fix_rot_angle = -fix_rot_angle
+                        bpy.ops.transform.rotate(value=fix_rot_angle, axis=cam_dir, proportional='DISABLED')
+
+                        # revert selection
+                        for vert in previous_extrude_verts:
+                            vert.select = False
+
+                        context.tool_settings.mesh_select_mode = (sel_mode[0], sel_mode[1], sel_mode[2])
+
+                        for vert in selected_bmesh[0]:
+                            vert.select = True
+                        for edge in selected_bmesh[1]:
                             edge.select = True
-                        for face in sel_faces:
+                        for face in selected_bmesh[2]:
                             face.select = True
 
-            active_obj.data.update()
+                    # chenge direction of previous extrude
+                    fix_step[1] = fix_dir
+                    # add verts of previos extrude
+                    fix_step[2] = previous_extrude_verts
 
+            active_obj.data.update()
 
             return {'RUNNING_MODAL'}
 
@@ -267,6 +297,7 @@ def reset_params(self):
     self.tool_mode = 'IDLE'
     self.relative_step_size = None
     self.extrude_steps = []
+    self.pick_meshes = None
 
 
 def finish_extrude(self, context):
@@ -284,6 +315,7 @@ def mi_extrude_draw_2d(self, context):
     mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
 
+# TODO move to utilities
 def get_mouse_on_plane(context, plane_pos, mouse_coords):
     region = context.region
     rv3d = context.region_data
@@ -296,6 +328,45 @@ def get_mouse_on_plane(context, plane_pos, mouse_coords):
         return new_pos
 
     return None
+
+
+def get_previous_extrude_verts(bm, context):
+    verts_array = None
+    selected_bmesh = get_selected_bmesh(bm)
+
+    sel_mode = context.tool_settings.mesh_select_mode
+    sel_mode = (sel_mode[0], sel_mode[1], sel_mode[2])
+    context.tool_settings.mesh_select_mode = (True, False, False)
+    bpy.ops.mesh.select_more()
+
+    for vert in selected_bmesh[0]:
+        vert.select = False
+    for edge in selected_bmesh[1]:
+        edge.select = False
+    for face in selected_bmesh[2]:
+        face.select = False
+
+    verts_array = [v for v in bm.verts if v.select]
+
+    bpy.ops.mesh.select_all(action='DESELECT')
+    context.tool_settings.mesh_select_mode = (sel_mode[0], sel_mode[1], sel_mode[2])
+
+    for vert in selected_bmesh[0]:
+        vert.select = True
+    for edge in selected_bmesh[1]:
+        edge.select = True
+    for face in selected_bmesh[2]:
+        face.select = True
+
+    return verts_array
+
+
+def get_selected_bmesh(bm):
+    sel_verts = [v for v in bm.verts if v.select]
+    sel_edges = [e for e in bm.edges if e.select]
+    sel_faces = [f for f in bm.faces if f.select]
+
+    return [sel_verts, sel_edges, sel_faces]
 
 
 def mi_pick_extrude_point(point, context, mouse_coords):

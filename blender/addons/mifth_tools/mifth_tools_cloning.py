@@ -397,7 +397,7 @@ def get_obj_axis(obj, axis):
     return axisResult
 
 
-def mft_pick_and_clone(self, context, event, ray_max=5000.0):
+def mft_pick_and_clone(self, context, event, ray_max=10000.0):
     """Run this function on left mouse, execute the ray cast"""
     # get the context arguments
     scene = context.scene
