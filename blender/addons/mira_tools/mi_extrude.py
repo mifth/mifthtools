@@ -99,7 +99,9 @@ class MRStartDraw(bpy.types.Operator):
     relative_step_size = None
     extrude_steps = []
 
+    # draw on surface settings
     picked_meshes = None
+    raycast_offset = None
 
 
     def invoke(self, context, event):
@@ -124,6 +126,11 @@ class MRStartDraw(bpy.types.Operator):
                 self.manipulator = context.space_data.show_manipulator
                 context.space_data.show_manipulator = False
 
+                self.extrude_center = get_vertices_center(sel_verts, active_obj)
+                #if self.extrude_center is not None:
+                    ##multiply_scale(self.extrude_center, active_obj.scale)
+                    #self.extrude_center = self.extrude_center
+
                 # prepare for snapping
                 if extrude_settings.snap_geometry is True:
                     sel_objects = [obj for obj in context.selected_objects if obj != active_obj]
@@ -132,11 +139,6 @@ class MRStartDraw(bpy.types.Operator):
                     else:
                         self.report({'WARNING'}, "Please, select objects to raycast!!!")
                         return {'CANCELLED'}
-
-                self.extrude_center = get_vertices_center(sel_verts, active_obj)
-                if self.extrude_center is not None:
-                    #multiply_scale(self.extrude_center, active_obj.scale)
-                    self.extrude_center = self.extrude_center
 
                 self.max_obj_scale = active_obj.scale.x
                 if active_obj.scale.y > self.max_obj_scale:
@@ -190,10 +192,17 @@ class MRStartDraw(bpy.types.Operator):
             if extrude_settings.snap_geometry is True:
                 f1, f2, f3 = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords, 10000.0)
                 new_pos = f3
-                #print(f1, f2, f3)
+
+                # set offset for surface normal and extrude_center
+                if new_pos is not None:
+                    if self.raycast_offset is None:
+                        self.raycast_offset = (f3 - self.extrude_center).length
+                    else:
+                        new_pos += f2*self.raycast_offset
+                        #print(f2*self.raycast_offset)
+
             else:
                 new_pos = get_mouse_on_plane(context, self.extrude_center, m_coords)
-
 
             extrude_step = None
             if extrude_settings.extrude_step_type == 'Relative':
@@ -293,7 +302,8 @@ class MRStartDraw(bpy.types.Operator):
                     # add verts of previos extrude
                     fix_step[2] = previous_extrude_verts
 
-            active_obj.data.update()
+            #active_obj.data.update()
+            bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
 
@@ -320,6 +330,7 @@ def reset_params(self):
     self.relative_step_size = None
     self.extrude_steps = []
     self.picked_meshes = None
+    self.raycast_offset = None
 
 
 def finish_extrude(self, context):

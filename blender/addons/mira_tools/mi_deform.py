@@ -122,7 +122,7 @@ def deform_obj(obj, context, self):
             verts = obj.data.vertices
             
 
-    # TODO Move it into utilities method. As Extrude class has the same method.
+    # TODO Move it into utilities method. As Extrude class has the same min/max.
     if verts:
         if obj.mode == 'EDIT':
             bm.verts.ensure_lookup_table()
@@ -231,4 +231,5 @@ def deform_obj(obj, context, self):
                 elif self.deform_axis == 'Z':
                     vert.co.z += move_offset
 
-    obj.data.update()
+    #obj.data.update()
+    bmesh.update_edit_mesh(obj.data)
