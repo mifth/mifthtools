@@ -35,31 +35,29 @@ def get_obj_dup_meshes(objects_array, context):
     return listObjMatrix 
 
 
-def get_picked_point():
-    for obj, matrix in self.dupliList:
-        # get the ray from the viewport and mouse
-        view_vector_mouse = view3d_utils.region_2d_to_vector_3d(
-            region, rv3d, coord)
-        ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(
-            region, rv3d, coord)
+def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
+    region = context.region
+    rv3d = context.region_data
 
-        # if rv3d.view_perspective != 'PERSP':
-        # move origin back for better work
-        #ray_origin_mouse = ray_origin_mouse - \
-            #(view_vector_mouse * (ray_max / 2.0))
+    best_obj, hit_normal, hit_position = None, None, None
+    best_length_squared = ray_max * ray_max
+
+    for obj, matrix in objects_list:
+        # get the ray from the viewport and mouse
+        view_vector = view3d_utils.region_2d_to_vector_3d(
+            region, rv3d, coords_2d)
+        ray_origin = view3d_utils.region_2d_to_origin_3d(
+            region, rv3d, coords_2d)
 
         # Do RayCast! t1,t2,t3,t4 - temp values
-        t1, t2, t3 = obj_ray_cast(
-            obj, matrix, view_vector_mouse, ray_origin_mouse)
+        t1, t2, t3 = obj_ray_cast(obj, matrix, view_vector, ray_origin, ray_max)
         if t1 is not None and t3 < best_length_squared:
-            best_obj = obj
-            best_obj_nor, best_obj_pos = t1, t2
-            #best_obj_hit = t2
+            best_obj, hit_normal, hit_position = obj, t1, t2
 
-    return None
+    return best_obj, hit_normal, hit_position
 
 
-def obj_ray_cast(obj, matrix, view_vector, ray_origin):
+def obj_ray_cast(obj, matrix, view_vector, ray_origin, ray_max):
     """Wrapper for ray casting that moves the ray into object space"""
 
     ray_target = ray_origin + (view_vector * ray_max)
