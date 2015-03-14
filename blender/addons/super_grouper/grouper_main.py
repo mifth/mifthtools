@@ -249,20 +249,7 @@ class SG_Specials_Main_Menu(bpy.types.Menu):
 
         layout.separator()
         layout.menu(SG_Toggle_Visible_SGroup_Sub_Menu.bl_idname, text="SGroup Visibility")
-
-
-        layout.separator()
-        op = layout.operator(SG_change_selected_objects.bl_idname, text="Bound Shade")
-        op.sg_objects_changer = 'BOUND_SHADE'
-
-        op = layout.operator(SG_change_selected_objects.bl_idname, text="Wire Shade")
-        op.sg_objects_changer = 'WIRE_SHADE'
-
-        op = layout.operator(SG_change_selected_objects.bl_idname, text="Material Shade")
-        op.sg_objects_changer = 'MATERIAL_SHADE'
-
-        op = layout.operator(SG_change_selected_objects.bl_idname, text="Show Wire")
-        op.sg_objects_changer = 'SHOW_WIRE'
+        layout.menu(SG_Toggle_Shading_Sub_Menu.bl_idname, text="Shade Selected")
 
 
 class SG_Add_Objects_Sub_Menu(bpy.types.Menu):
@@ -332,6 +319,33 @@ class SG_Toggle_Visible_SGroup_Sub_Menu(bpy.types.Menu):
         for i, s_group in enumerate(context.scene.super_groups):
             op = layout.operator(SG_toggle_visibility.bl_idname, text=s_group.name)
             op.group_idx = i
+
+
+class SG_Toggle_Shading_Sub_Menu(bpy.types.Menu):
+    bl_idname = "super_grouper.toggle_shading_sub_menu"
+    bl_label = "Toggle Shading"
+    bl_description = "Toggle Shading Menu"
+
+    def draw(self, context):
+        layout = self.layout
+
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Bound Shade")
+        op.sg_objects_changer = 'BOUND_SHADE'
+
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Wire Shade")
+        op.sg_objects_changer = 'WIRE_SHADE'
+
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Material Shade")
+        op.sg_objects_changer = 'MATERIAL_SHADE'
+
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Show Wire")
+        op.sg_objects_changer = 'SHOW_WIRE'
+
+        layout.separator()
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="One Side")
+        op.sg_objects_changer = 'ONESIDE_SHADE'
+        op = layout.operator(SG_change_selected_objects.bl_idname, text="Double Side")
+        op.sg_objects_changer = 'TWOSIDE_SHADE'
 
 
 def generate_id():
@@ -785,7 +799,9 @@ class SG_change_selected_objects(bpy.types.Operator):
         items=(('BOUND_SHADE', 'BOUND_SHADE', ''),
                ('WIRE_SHADE', 'WIRE_SHADE', ''),
                ('MATERIAL_SHADE', 'MATERIAL_SHADE', ''),
-               ('SHOW_WIRE', 'SHOW_WIRE', '')
+               ('SHOW_WIRE', 'SHOW_WIRE', ''),
+               ('ONESIDE_SHADE', 'ONESIDE_SHADE', ''),
+               ('TWOSIDE_SHADE', 'TWOSIDE_SHADE', '')
                ),
         default = 'MATERIAL_SHADE'
     )
@@ -794,18 +810,23 @@ class SG_change_selected_objects(bpy.types.Operator):
 
     def execute(self, context):
         for obj in context.selected_objects:
-            if self.sg_objects_changer == 'BOUND_SHADE':
-                obj.draw_type = 'BOUNDS'
-                obj.show_wire = False
-            elif self.sg_objects_changer == 'WIRE_SHADE':
-                obj.draw_type = 'WIRE'
-                obj.show_wire = False
-            elif self.sg_objects_changer == 'MATERIAL_SHADE':
-                obj.draw_type = 'TEXTURED'
-                obj.show_wire = False
-            elif self.sg_objects_changer == 'SHOW_WIRE':
-                obj.draw_type = 'TEXTURED'
-                obj.show_wire = True
+            if obj.type == 'MESH':
+                if self.sg_objects_changer == 'BOUND_SHADE':
+                    obj.draw_type = 'BOUNDS'
+                    obj.show_wire = False
+                elif self.sg_objects_changer == 'WIRE_SHADE':
+                    obj.draw_type = 'WIRE'
+                    obj.show_wire = False
+                elif self.sg_objects_changer == 'MATERIAL_SHADE':
+                    obj.draw_type = 'TEXTURED'
+                    obj.show_wire = False
+                elif self.sg_objects_changer == 'SHOW_WIRE':
+                    obj.draw_type = 'TEXTURED'
+                    obj.show_wire = True
+                elif self.sg_objects_changer == 'ONESIDE_SHADE':
+                    obj.data.show_double_sided = False
+                elif self.sg_objects_changer == 'TWOSIDE_SHADE':
+                    obj.data.show_double_sided = True
 
         return {'FINISHED'}
 
