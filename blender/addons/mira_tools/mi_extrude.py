@@ -253,9 +253,12 @@ class MRStartDraw(bpy.types.Operator):
                     bpy.ops.transform.rotate(value=rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
                     self.extrude_dir = offset_dir
                 else:
+                    # fix first extrude
                     if extrude_settings.snap_geometry is True:
                         fix_first_extrude_dir = get_mouse_on_plane(context, self.extrude_center, m_coords)
                         self.extrude_dir = (fix_first_extrude_dir-self.extrude_center).normalized()
+                    else:
+                        self.extrude_dir = offset_dir
 
                 # finalize things
                 # empty array will be for extruded vertices
