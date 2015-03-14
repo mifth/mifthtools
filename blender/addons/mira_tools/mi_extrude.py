@@ -95,9 +95,11 @@ class MRStartDraw(bpy.types.Operator):
     tool_modes = ('IDLE', 'DRAW', 'ADD_POINT')
     tool_mode = 'IDLE'
 
+    # changed parameters
     manipulator = None
     relative_step_size = None
     extrude_steps = []
+    mesh_automerge = None
 
     # draw on surface settings
     picked_meshes = None
@@ -123,13 +125,13 @@ class MRStartDraw(bpy.types.Operator):
                 return {'CANCELLED'}
 
             else:
+                # change parameters
                 self.manipulator = context.space_data.show_manipulator
                 context.space_data.show_manipulator = False
+                self.mesh_automerge = bpy.context.scene.tool_settings.use_mesh_automerge
+                bpy.context.scene.tool_settings.use_mesh_automerge = False
 
                 self.extrude_center = get_vertices_center(sel_verts, active_obj)
-                #if self.extrude_center is not None:
-                    ##multiply_scale(self.extrude_center, active_obj.scale)
-                    #self.extrude_center = self.extrude_center
 
                 # prepare for snapping
                 if extrude_settings.snap_geometry is True:
@@ -138,14 +140,22 @@ class MRStartDraw(bpy.types.Operator):
                         self.picked_meshes = ut_base.get_obj_dup_meshes(sel_objects, context)
                     else:
                         self.report({'WARNING'}, "Please, select objects to raycast!!!")
+                        finish_extrude(self, context)
                         return {'CANCELLED'}
 
+                # max_obj_scale
                 self.max_obj_scale = active_obj.scale.x
                 if active_obj.scale.y > self.max_obj_scale:
                     self.max_obj_scale = active_obj.scale.yget_vertices_size
                 if active_obj.scale.z > self.max_obj_scale:
                     self.max_obj_scale = active_obj.scale.z
+
+                # relative step
                 self.relative_step_size = get_vertices_size(sel_verts, active_obj)
+                if self.relative_step_size == 0.0 and extrude_settings.extrude_step_type == 'Relative':
+                    self.report({'WARNING'}, "Please, use Absolute step for one point!!!")
+                    finish_extrude(self, context)
+                    return {'CANCELLED'}                    
 
             self.mi_extrude_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_extrude_draw_2d, args, 'WINDOW', 'POST_PIXEL')
             context.window_manager.modal_handler_add(self)
@@ -216,11 +226,8 @@ class MRStartDraw(bpy.types.Operator):
 
                 bm = bmesh.from_edit_mesh(active_obj.data)
 
-                # Extrude center
+                # New Extrude center
                 offset_dir = None
-                #if extrude_settings.snap_geometry is True:
-                    #pass
-                #else:
                 offset_move = new_pos-self.extrude_center
                 bpy.ops.transform.translate(value=(offset_move.x, offset_move.y, offset_move.z), proportional='DISABLED')
                 offset_dir = offset_move.copy().normalized()
@@ -244,9 +251,13 @@ class MRStartDraw(bpy.types.Operator):
                         rot_angle = -rot_angle
 
                     bpy.ops.transform.rotate(value=rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
+                    self.extrude_dir = offset_dir
+                else:
+                    if extrude_settings.snap_geometry is True:
+                        fix_first_extrude_dir = get_mouse_on_plane(context, self.extrude_center, m_coords)
+                        self.extrude_dir = (fix_first_extrude_dir-self.extrude_center).normalized()
 
                 # finalize things
-                self.extrude_dir = offset_dir
                 # empty array will be for extruded vertices
                 self.extrude_steps.append( [new_pos, self.extrude_dir, [] ] )
                 self.extrude_center = new_pos
@@ -335,6 +346,7 @@ def reset_params(self):
 
 def finish_extrude(self, context):
     context.space_data.show_manipulator = self.manipulator
+    bpy.context.scene.tool_settings.use_mesh_automerge = self.mesh_automerge
     self.extrude_steps = []
 
 
