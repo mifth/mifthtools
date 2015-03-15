@@ -212,6 +212,7 @@ class MRStartDraw(bpy.types.Operator):
                 if new_pos is not None:
                     if self.raycast_offset is None:
                         self.raycast_offset = (hit_position - self.extrude_center).length
+                        new_pos += hit_normal*self.raycast_offset
                     else:
                         new_pos += hit_normal*self.raycast_offset
                         #print(hit_normal*self.raycast_offset)
