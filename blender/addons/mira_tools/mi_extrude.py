@@ -50,7 +50,12 @@ class MI_ExtrudeSettings(bpy.types.PropertyGroup):
                ),
         default = 'Relative'
     )
-    snap_geometry = BoolProperty(default=False)
+    extrude_mode = EnumProperty(
+        items=(('Screen', 'Screen', ''),
+               ('Raycast', 'Raycast', '')
+               ),
+        default = 'Screen'
+    )
 
 
 class MI_ExtrudePanel(bpy.types.Panel):
@@ -73,7 +78,7 @@ class MI_ExtrudePanel(bpy.types.Panel):
         else:
             layout.prop(extrude_settings, "relative_extrude_step", text='')
 
-        layout.prop(extrude_settings, "snap_geometry", text='SnapToSelected')
+        layout.prop(extrude_settings, "extrude_mode", text='Mode')
 
 
 class MRStartDraw(bpy.types.Operator):
@@ -132,7 +137,7 @@ class MRStartDraw(bpy.types.Operator):
                 bpy.context.scene.tool_settings.use_mesh_automerge = False
 
                 # prepare for snapping
-                if extrude_settings.snap_geometry is True:
+                if extrude_settings.extrude_mode == 'Raycast':
                     sel_objects = [obj for obj in context.selected_objects if obj != active_obj]
                     if sel_objects:
                         self.picked_meshes = ut_base.get_obj_dup_meshes(sel_objects, context)
@@ -204,7 +209,7 @@ class MRStartDraw(bpy.types.Operator):
             new_pos = None
             best_obj, hit_normal, hit_position = None, None, None
 
-            if extrude_settings.snap_geometry is True:
+            if extrude_settings.extrude_mode == 'Raycast':
                 best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords, 10000.0)
                 new_pos = hit_position
 
@@ -245,7 +250,7 @@ class MRStartDraw(bpy.types.Operator):
                 rotate_dir_vec = None
                 if self.extrude_dir is not None:
                     # ratate direction
-                    if extrude_settings.snap_geometry is True:
+                    if extrude_settings.extrude_mode == 'Raycast':
                         rotate_dir_vec = self.extrude_dir.cross( (hit_position-self.extrude_center).normalized() )
                     else:
                         rotate_dir_vec = cam_dir
@@ -260,7 +265,7 @@ class MRStartDraw(bpy.types.Operator):
                     bpy.ops.transform.rotate(value=rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
 
                     ## Normal Rotate for raycast
-                    #if extrude_settings.snap_geometry is True:
+                    #if extrude_settings.extrude_mode == 'Raycast':
                         #previous_normal_hit = self.extrude_steps[-1][3]
                         #angle_normal_rotate = previous_normal_hit.angle(hit_normal)
 
@@ -275,7 +280,7 @@ class MRStartDraw(bpy.types.Operator):
                     self.extrude_dir = offset_dir
                 else:
                     # fix first extrude
-                    if extrude_settings.snap_geometry is True:
+                    if extrude_settings.extrude_mode == 'Raycast':
                         fix_first_extrude_dir = get_mouse_on_plane(context, self.extrude_center, m_coords)
                         self.extrude_dir = (fix_first_extrude_dir-self.extrude_center).normalized()
                     else:
