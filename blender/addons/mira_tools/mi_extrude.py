@@ -131,8 +131,6 @@ class MRStartDraw(bpy.types.Operator):
                 self.mesh_automerge = bpy.context.scene.tool_settings.use_mesh_automerge
                 bpy.context.scene.tool_settings.use_mesh_automerge = False
 
-                self.extrude_center = get_vertices_center(sel_verts, active_obj)
-
                 # prepare for snapping
                 if extrude_settings.snap_geometry is True:
                     sel_objects = [obj for obj in context.selected_objects if obj != active_obj]
@@ -142,6 +140,12 @@ class MRStartDraw(bpy.types.Operator):
                         self.report({'WARNING'}, "Please, select objects to raycast!!!")
                         finish_extrude(self, context)
                         return {'CANCELLED'}
+
+                self.extrude_center = get_vertices_center(sel_verts, active_obj)
+                rv3d = context.region_data
+                cam_dir_negated = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
+                cam_dir_negated.negate()
+                self.extrude_steps.append( [self.extrude_center, None, [], cam_dir_negated ] )
 
                 # max_obj_scale
                 self.max_obj_scale = active_obj.scale.x
@@ -198,18 +202,19 @@ class MRStartDraw(bpy.types.Operator):
 
             # get new position according to a mouse
             new_pos = None
-            f1, f2, f3 = None, None, None
+            best_obj, hit_normal, hit_position = None, None, None
+
             if extrude_settings.snap_geometry is True:
-                f1, f2, f3 = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords, 10000.0)
-                new_pos = f3
+                best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords, 10000.0)
+                new_pos = hit_position
 
                 # set offset for surface normal and extrude_center
                 if new_pos is not None:
                     if self.raycast_offset is None:
-                        self.raycast_offset = (f3 - self.extrude_center).length
+                        self.raycast_offset = (hit_position - self.extrude_center).length
                     else:
-                        new_pos += f2*self.raycast_offset
-                        #print(f2*self.raycast_offset)
+                        new_pos += hit_normal*self.raycast_offset
+                        #print(hit_normal*self.raycast_offset)
 
             else:
                 new_pos = get_mouse_on_plane(context, self.extrude_center, m_coords)
@@ -233,14 +238,14 @@ class MRStartDraw(bpy.types.Operator):
                 offset_dir = offset_move.copy().normalized()
 
                 up_vec = None
-                cam_dir = rv3d.view_rotation * Vector((0.0, 0.0, -1.0))
+                cam_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
 
                 # rotate
                 rotate_dir_vec = None
                 if self.extrude_dir is not None:
                     # ratate direction
                     if extrude_settings.snap_geometry is True:
-                        rotate_dir_vec = self.extrude_dir.cross( (f3-self.extrude_center).normalized() )
+                        rotate_dir_vec = self.extrude_dir.cross( (hit_position-self.extrude_center).normalized() )
                     else:
                         rotate_dir_vec = cam_dir
 
@@ -250,7 +255,22 @@ class MRStartDraw(bpy.types.Operator):
                     if up_vec.angle(offset_dir) > math.radians(90):
                         rot_angle = -rot_angle
 
+                    # Direction rotate
                     bpy.ops.transform.rotate(value=rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
+
+                    ## Normal Rotate for raycast
+                    #if extrude_settings.snap_geometry is True:
+                        #previous_normal_hit = self.extrude_steps[-1][3]
+                        #angle_normal_rotate = previous_normal_hit.angle(hit_normal)
+
+                        #if angle_normal_rotate > 0:
+                            #normal_rotate_dir = (up_vec.cross(previous_normal_hit)).normalized()
+                            #bpy.ops.transform.rotate(value=-angle_normal_rotate, axis=normal_rotate_dir, proportional='DISABLED')
+
+                            ##if hit_normal.angle(offset_dir) < math.radians(180):
+                                ##rot_angle = -rot_angle
+                            ##bpy.ops.transform.rotate(value=-rot_angle, axis=hit_normal, proportional='DISABLED')
+
                     self.extrude_dir = offset_dir
                 else:
                     # fix first extrude
@@ -262,7 +282,8 @@ class MRStartDraw(bpy.types.Operator):
 
                 # finalize things
                 # empty array will be for extruded vertices
-                self.extrude_steps.append( [new_pos, self.extrude_dir, [] ] )
+                # hit_normal is only for raycast mode
+                self.extrude_steps.append( [new_pos, self.extrude_dir, [], hit_normal ] )
                 self.extrude_center = new_pos
 
                 # fix direction of previous step

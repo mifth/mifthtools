@@ -53,6 +53,7 @@ def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
         t1, t2, t3 = obj_ray_cast(obj, matrix, view_vector, ray_origin, ray_max)
         if t1 is not None and t3 < best_length_squared:
             best_obj, hit_normal, hit_position = obj, t1, t2
+            best_length_squared = t3
 
     return best_obj, hit_normal, hit_position
 
@@ -76,6 +77,7 @@ def obj_ray_cast(obj, matrix, view_vector, ray_origin, ray_max):
         length_squared = (hit_world - ray_origin).length_squared
 
         if face_index != -1:
-            return normal.normalized(), hit_world, length_squared
+            normal_world = matrix * normal
+            return normal_world.normalized(), hit_world, length_squared
 
     return None, None, None
