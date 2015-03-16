@@ -31,7 +31,7 @@ from bpy_extras import view3d_utils
 import math
 import mathutils as mathu
 import random
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 #if "bpy" in locals():
     #import imp
@@ -97,7 +97,7 @@ class MRStartDraw(bpy.types.Operator):
     extrude_dir = None
 
     # curve tool mode
-    tool_modes = ('IDLE', 'DRAW', 'ADD_POINT')
+    tool_modes = ('IDLE', 'DRAW', 'ROTATE', 'SCALE')
     tool_mode = 'IDLE'
 
     # changed parameters
@@ -250,32 +250,20 @@ class MRStartDraw(bpy.types.Operator):
                 rotate_dir_vec = None
                 if self.extrude_dir is not None:
                     # ratate direction
+                    rot_angle = self.extrude_dir.angle(offset_dir)
+
                     if extrude_settings.extrude_mode == 'Raycast':
-                        rotate_dir_vec = self.extrude_dir.cross( (hit_position-self.extrude_center).normalized() )
+                        rotate_dir_vec = self.extrude_dir.cross( offset_dir)
                     else:
                         rotate_dir_vec = cam_dir
 
-                    rot_angle = self.extrude_dir.angle(offset_dir)
+                    # Possibly this does not need for Raycast
                     up_vec = rotate_dir_vec.cross(self.extrude_dir).normalized()
-
                     if up_vec.angle(offset_dir) > math.radians(90):
                         rot_angle = -rot_angle
 
                     # Direction rotate
                     bpy.ops.transform.rotate(value=rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
-
-                    ## Normal Rotate for raycast
-                    #if extrude_settings.extrude_mode == 'Raycast':
-                        #previous_normal_hit = self.extrude_steps[-1][3]
-                        #angle_normal_rotate = previous_normal_hit.angle(hit_normal)
-
-                        #if angle_normal_rotate > 0:
-                            #normal_rotate_dir = (up_vec.cross(previous_normal_hit)).normalized()
-                            #bpy.ops.transform.rotate(value=-angle_normal_rotate, axis=normal_rotate_dir, proportional='DISABLED')
-
-                            ##if hit_normal.angle(offset_dir) < math.radians(180):
-                                ##rot_angle = -rot_angle
-                            ##bpy.ops.transform.rotate(value=-rot_angle, axis=hit_normal, proportional='DISABLED')
 
                     self.extrude_dir = offset_dir
                 else:
@@ -347,6 +335,9 @@ class MRStartDraw(bpy.types.Operator):
             bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
+
+        elif self.tool_mode == 'ROTATE':
+            pass
 
         # main stuff
         if event.type in {'RIGHTMOUSE', 'ESC'}:
@@ -565,3 +556,10 @@ def multiply_scale(vec1, vec2):
     vec1[1] *= vec2[1]
     vec1[2] *= vec2[2]
 
+
+def scale_extrude(extrude_steps):
+    pass
+
+
+def rotate_extrude(extrude_steps):
+    pass
