@@ -90,14 +90,15 @@ class MRStartDraw(bpy.types.Operator):
 
     pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
                  'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'LEFTMOUSE', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-                 'SELECTMOUSE', 'MOUSEMOVE']
+                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
+                 'MOUSEMOVE']
+    # 'SELECTMOUSE' 'LEFTMOUSE'
 
     extrude_center = None
     extrude_dir = None
 
     # curve tool mode
-    tool_modes = ('IDLE', 'DRAW', 'ROTATE', 'SCALE')
+    tool_modes = ('IDLE', 'DRAW', 'ROTATE', 'TWIST', 'SCALE')
     tool_mode = 'IDLE'
 
     # changed parameters
@@ -110,6 +111,9 @@ class MRStartDraw(bpy.types.Operator):
     picked_meshes = None
     raycast_offset = None
 
+    # rotate settings
+    rotate_mouse_pos = None
+    rotate_angle = None
 
     def invoke(self, context, event):
         if context.area.type == 'VIEW_3D':
@@ -180,27 +184,36 @@ class MRStartDraw(bpy.types.Operator):
         #print(context.active_operator)
         context.area.tag_redraw()
 
-        # make picking
-        if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+        active_obj = context.scene.objects.active
+        #print(self.tool_mode)
+
+        # check for main keys
+        if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'R', 'S', 'T'}:
             if event.value == 'PRESS':
                 if self.tool_mode == 'IDLE':
                     m_coords = event.mouse_region_x, event.mouse_region_y
-                    do_pick = mi_pick_extrude_point(self.extrude_center, context, m_coords)
+                    if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+                        do_pick = mi_pick_extrude_point(self.extrude_center, context, m_coords)
 
-                    if do_pick:
-                        self.tool_mode = 'DRAW'
-                        return {'RUNNING_MODAL'}
+                        if do_pick:
+                            self.tool_mode = 'DRAW'
+
+                    elif event.type == 'R':
+                        self.rotate_mouse_pos = m_coords
+                        self.rotate_angle = 0.0
+                        self.tool_mode = 'ROTATE'
+                    elif event.type == 'S':
+                        self.tool_mode = 'SCALE'
+                    elif event.type == 'T':
+                        self.tool_mode = 'TWIST'
 
             elif event.value == 'RELEASE':
-                if self.tool_mode == 'DRAW':
-                    #self.extrude_dir = None  # clear dir
+                if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                     self.tool_mode = 'IDLE'
-                return {'RUNNING_MODAL'}
+                    return {'RUNNING_MODAL'}
 
-            return {'RUNNING_MODAL'}
-
+        # logic
         if self.tool_mode == 'DRAW':
-            active_obj = context.scene.objects.active
             rv3d = context.region_data
             m_coords = event.mouse_region_x, event.mouse_region_y
             extrude_settings = context.scene.mi_extrude_settings
@@ -336,8 +349,24 @@ class MRStartDraw(bpy.types.Operator):
 
             return {'RUNNING_MODAL'}
 
-        elif self.tool_mode == 'ROTATE':
-            pass
+        elif len(self.extrude_steps) > 0:
+            if self.tool_mode == 'ROTATE':
+                m_coords = event.mouse_region_x, event.mouse_region_y
+                #new_rotate_point = get_mouse_on_plane(context, self.extrude_center, m_coords)
+                #if new_rotate_point is not None:
+                #new_rotate_vec = (new_rotate_point - self.extrude_center).normalized()
+                #if new_rotate_vec.length != 0:
+                bm = bmesh.from_edit_mesh(active_obj.data)
+                #new_rot_axis = new_rotate_vec.cross(self.rotate_mouse_pos)
+                new_rot_angle = Vector((m_coords[0] - self.rotate_mouse_pos[0], m_coords[1] - self.rotate_mouse_pos[1])).length * 0.03
+                new_rot_angle = math.radians(new_rot_angle)
+                if m_coords[0] > self.rotate_mouse_pos[0]:
+                    new_rot_angle = -new_rot_angle
+                #if new_rot_angle != 0:
+                self.rotate_angle = new_rot_angle - self.rotate_angle
+                rotate_verts(get_selected_verts(bm), self.rotate_angle, self.extrude_dir, self.extrude_center)
+
+                return {'RUNNING_MODAL'}
 
         # main stuff
         if event.type in {'RIGHTMOUSE', 'ESC'}:
@@ -363,6 +392,10 @@ def reset_params(self):
     self.extrude_steps = []
     self.picked_meshes = None
     self.raycast_offset = None
+
+    # rotate settings    # rotate settings
+    self.rotate_mouse_pos = None
+    self.rotate_angle = None
 
 
 def finish_extrude(self, context):
@@ -428,11 +461,17 @@ def get_previous_extrude_verts(bm, context):
 
 # TODO move to utils
 def get_selected_bmesh(bm):
-    sel_verts = [v for v in bm.verts if v.select]
+    sel_verts = get_selected_verts(bm)
     sel_edges = [e for e in bm.edges if e.select]
     sel_faces = [f for f in bm.faces if f.select]
 
     return [sel_verts, sel_edges, sel_faces]
+
+
+# TODO move to utils
+def get_selected_verts(bm):
+    sel_verts = [v for v in bm.verts if v.select]
+    return sel_verts
 
 
 # TODO move to utils
@@ -557,9 +596,7 @@ def multiply_scale(vec1, vec2):
     vec1[2] *= vec2[2]
 
 
-def scale_extrude(extrude_steps):
-    pass
-
-
-def rotate_extrude(extrude_steps):
-    pass
+def rotate_verts(verts, rot_angle, axis, rot_origin):
+    for vert in verts:
+        rot_mat = Matrix.Rotation(rot_angle, 3, axis)
+        vert.co = rot_mat * (vert.co - rot_origin) + rot_origin
