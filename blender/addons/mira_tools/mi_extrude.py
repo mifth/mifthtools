@@ -81,7 +81,35 @@ class MI_ExtrudePanel(bpy.types.Panel):
         layout.prop(extrude_settings, "extrude_mode", text='Mode')
 
 
-class MRStartDraw(bpy.types.Operator):
+class MI_Extrude_Point():
+    # base stuff
+    position = None
+    direction = None
+    __verts = None  # private variable. Use update_verts() func.
+    verts_origins = []  # non deformed position
+
+    # for raycast mode
+    hit_normal = None
+
+    # rotation
+    rotate_angle = None
+    twist_angle = None
+    scale = None
+    bent = None
+
+    # class constructor
+    def __init__(self, position, direction, verts, hit_normal):
+        self.position, self.direction, self.hit_normal = position, direction, hit_normal
+        self.update_verts(verts)
+
+    def update_verts(self, verts):
+        self.__verts = verts
+        self.verts_origins = []
+        for vert in verts:
+            self.verts_origins.append([ vert.co[0], vert.co[1], vert.co[2] ])
+
+
+class MI_StartDraw(bpy.types.Operator):
     """Draw a line with the mouse"""
     bl_idname = "mira.draw_extrude"
     bl_label = "DrawExtrude"
@@ -94,8 +122,8 @@ class MRStartDraw(bpy.types.Operator):
                  'MOUSEMOVE']
     # 'SELECTMOUSE' 'LEFTMOUSE'
 
-    extrude_center = None
-    extrude_dir = None
+    #extrude_center = None
+    #extrude_dir = None
 
     # curve tool mode
     tool_modes = ('IDLE', 'DRAW', 'ROTATE', 'TWIST', 'SCALE')
@@ -104,7 +132,7 @@ class MRStartDraw(bpy.types.Operator):
     # changed parameters
     manipulator = None
     relative_step_size = None
-    extrude_steps = []
+    extrude_points = []
     mesh_automerge = None
 
     # draw on surface settings
@@ -150,11 +178,14 @@ class MRStartDraw(bpy.types.Operator):
                         finish_extrude(self, context)
                         return {'CANCELLED'}
 
-                self.extrude_center = get_vertices_center(sel_verts, active_obj)
+                extrude_center = get_vertices_center(sel_verts, active_obj)
                 rv3d = context.region_data
                 cam_dir_negated = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
                 cam_dir_negated.negate()
-                self.extrude_steps.append( [self.extrude_center, None, [], cam_dir_negated ] )
+
+                # here we create zero extrude point
+                new_point = MI_Extrude_Point(extrude_center, None, [], cam_dir_negated)
+                self.extrude_points.append( new_point )
 
                 # max_obj_scale
                 self.max_obj_scale = active_obj.scale.x
@@ -193,7 +224,7 @@ class MRStartDraw(bpy.types.Operator):
                 if self.tool_mode == 'IDLE':
                     m_coords = event.mouse_region_x, event.mouse_region_y
                     if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
-                        do_pick = mi_pick_extrude_point(self.extrude_center, context, m_coords)
+                        do_pick = mi_pick_extrude_point(self.extrude_points[-1].position, context, m_coords)
 
                         if do_pick:
                             self.tool_mode = 'DRAW'
@@ -229,14 +260,14 @@ class MRStartDraw(bpy.types.Operator):
                 # set offset for surface normal and extrude_center
                 if new_pos is not None:
                     if self.raycast_offset is None:
-                        self.raycast_offset = (hit_position - self.extrude_center).length
+                        self.raycast_offset = (hit_position - self.extrude_points[-1].position).length
                         new_pos += hit_normal*self.raycast_offset
                     else:
                         new_pos += hit_normal*self.raycast_offset
                         #print(hit_normal*self.raycast_offset)
 
             else:
-                new_pos = get_mouse_on_plane(context, self.extrude_center, m_coords)
+                new_pos = get_mouse_on_plane(context, self.extrude_points[-1].position, m_coords)
 
             extrude_step = None
             if extrude_settings.extrude_step_type == 'Relative':
@@ -245,60 +276,61 @@ class MRStartDraw(bpy.types.Operator):
                 extrude_step = extrude_settings.absolute_extrude_step
 
             # EXTRUDE
-            if new_pos is not None and (new_pos-self.extrude_center).length >= extrude_step:
+            if new_pos is not None and (new_pos - self.extrude_points[-1].position).length >= extrude_step:
                 bpy.ops.mesh.extrude_region_move()
 
                 bm = bmesh.from_edit_mesh(active_obj.data)
 
                 # New Extrude center
                 offset_dir = None
-                offset_move = new_pos-self.extrude_center
+                offset_move = new_pos -self.extrude_points[-1].position
                 bpy.ops.transform.translate(value=(offset_move.x, offset_move.y, offset_move.z), proportional='DISABLED')
                 offset_dir = offset_move.copy().normalized()
 
                 up_vec = None
                 cam_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
 
-                # rotate
+                # rotate if we have 2 extrude points at least
                 rotate_dir_vec = None
-                if self.extrude_dir is not None:
+                if len(self.extrude_points) > 1:
                     # ratate direction
-                    rot_angle = self.extrude_dir.angle(offset_dir)
+                    rot_angle = self.extrude_points[-1].direction.angle(offset_dir)
 
                     if extrude_settings.extrude_mode == 'Raycast':
-                        rotate_dir_vec = self.extrude_dir.cross( offset_dir)
+                        rotate_dir_vec = self.extrude_points[-1].direction.cross( offset_dir)
                     else:
                         rotate_dir_vec = cam_dir
 
                     # Possibly this does not need for Raycast
-                    up_vec = rotate_dir_vec.cross(self.extrude_dir).normalized()
+                    up_vec = rotate_dir_vec.cross(self.extrude_points[-1].direction).normalized()
                     if up_vec.angle(offset_dir) > math.radians(90):
                         rot_angle = -rot_angle
 
                     # Direction rotate
                     bpy.ops.transform.rotate(value=rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
 
-                    self.extrude_dir = offset_dir
+                    self.extrude_points[-1].direction = offset_dir
                 else:
                     # fix first extrude
                     if extrude_settings.extrude_mode == 'Raycast':
-                        fix_first_extrude_dir = get_mouse_on_plane(context, self.extrude_center, m_coords)
-                        self.extrude_dir = (fix_first_extrude_dir-self.extrude_center).normalized()
+                        fix_first_extrude_dir = get_mouse_on_plane(context, self.extrude_points[-1].position, m_coords)
+                        self.extrude_points[-1].direction = (fix_first_extrude_dir - self.extrude_points[-1].position).normalized()
                     else:
-                        self.extrude_dir = offset_dir
+                        self.extrude_points[-1].direction = offset_dir
 
                 # finalize things
                 # empty array will be for extruded vertices
                 # hit_normal is only for raycast mode
-                self.extrude_steps.append( [new_pos, self.extrude_dir, [], hit_normal ] )
-                self.extrude_center = new_pos
+                new_point = MI_Extrude_Point(new_pos, self.extrude_points[-1].direction, [], hit_normal)
+                self.extrude_points.append( new_point )
+                self.extrude_points[-1].position = new_pos
 
                 # fix direction of previous step
-                if len(self.extrude_steps) > 2:
-                    fix_dir = (self.extrude_steps[-1][0] - self.extrude_steps[-3][0]).normalized()
+                if len(self.extrude_points) > 2:
+                    fix_dir = (self.extrude_points[-1].position - self.extrude_points[-3].position).normalized()
                     fix_up_vec = rotate_dir_vec.cross(fix_dir).normalized()
-                    fix_step = self.extrude_steps[-2]
-                    fix_rot_angle = fix_dir.angle(fix_step[1])
+                    fix_step = self.extrude_points[-2]
+                    fix_rot_angle = fix_dir.angle(fix_step.direction)
                     
                     selected_bmesh = get_selected_bmesh(bm)
                     previous_extrude_verts = get_previous_extrude_verts(bm, context)
@@ -322,7 +354,7 @@ class MRStartDraw(bpy.types.Operator):
                             vert.select = True
 
                         # rotate previous extrude to fix rotation
-                        if fix_up_vec.angle( (fix_step[1] - fix_dir).normalized() ) < math.radians(90):
+                        if fix_up_vec.angle( (fix_step.direction - fix_dir).normalized() ) > math.radians(90):
                             fix_rot_angle = -fix_rot_angle
                         bpy.ops.transform.rotate(value=fix_rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
 
@@ -340,21 +372,21 @@ class MRStartDraw(bpy.types.Operator):
                             face.select = True
 
                     # chenge direction of previous extrude
-                    fix_step[1] = fix_dir
+                    fix_step.direction = fix_dir
                     # add verts of previos extrude
-                    fix_step[2] = previous_extrude_verts
+                    fix_step.update_verts(previous_extrude_verts) 
 
             #active_obj.data.update()
             bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
 
-        elif len(self.extrude_steps) > 0:
+        elif len(self.extrude_points) > 0:
             if self.tool_mode == 'ROTATE':
                 m_coords = event.mouse_region_x, event.mouse_region_y
-                #new_rotate_point = get_mouse_on_plane(context, self.extrude_center, m_coords)
+                #new_rotate_point = get_mouse_on_plane(context, self.extrude_points[-1].position, m_coords)
                 #if new_rotate_point is not None:
-                #new_rotate_vec = (new_rotate_point - self.extrude_center).normalized()
+                #new_rotate_vec = (new_rotate_point - self.extrude_points[-1].position).normalized()
                 #if new_rotate_vec.length != 0:
                 bm = bmesh.from_edit_mesh(active_obj.data)
                 #new_rot_axis = new_rotate_vec.cross(self.rotate_mouse_pos)
@@ -364,8 +396,8 @@ class MRStartDraw(bpy.types.Operator):
                     new_rot_angle = -new_rot_angle
                 #if new_rot_angle != 0:
                 self.rotate_angle = new_rot_angle - self.rotate_angle
-                new_rot_center = active_obj.matrix_world.inverted() * self.extrude_center
-                new_rot_dir = active_obj.matrix_world.inverted().to_quaternion() * self.extrude_dir
+                new_rot_center = active_obj.matrix_world.inverted() * self.extrude_points[-1].position
+                new_rot_dir = active_obj.matrix_world.inverted().to_quaternion() * self.extrude_points[-1].direction
                 rotate_verts(get_selected_verts(bm), self.rotate_angle, new_rot_dir, new_rot_center)
 
                 return {'RUNNING_MODAL'}
@@ -387,11 +419,11 @@ class MRStartDraw(bpy.types.Operator):
 
 
 def reset_params(self):
-    self.extrude_center = None
-    self.extrude_dir = None
+    #self.extrude_center = None
+    #self.extrude_dir = None
     self.tool_mode = 'IDLE'
     self.relative_step_size = None
-    self.extrude_steps = []
+    self.extrude_points = []
     self.picked_meshes = None
     self.raycast_offset = None
 
@@ -403,14 +435,14 @@ def reset_params(self):
 def finish_extrude(self, context):
     context.space_data.show_manipulator = self.manipulator
     bpy.context.scene.tool_settings.use_mesh_automerge = self.mesh_automerge
-    self.extrude_steps = []
+    self.extrude_points = []
 
 
 def mi_extrude_draw_2d(self, context):
     active_obj = context.scene.objects.active
     region = context.region
     rv3d = context.region_data
-    point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.extrude_center)
+    point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.extrude_points[-1].position)
 
     p_col = (0.5,0.8,1.0,1.0)
     mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
