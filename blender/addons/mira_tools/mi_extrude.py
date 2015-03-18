@@ -364,7 +364,9 @@ class MRStartDraw(bpy.types.Operator):
                     new_rot_angle = -new_rot_angle
                 #if new_rot_angle != 0:
                 self.rotate_angle = new_rot_angle - self.rotate_angle
-                rotate_verts(get_selected_verts(bm), self.rotate_angle, self.extrude_dir, self.extrude_center)
+                new_rot_center = active_obj.matrix_world.inverted() * self.extrude_center
+                new_rot_dir = active_obj.matrix_world.inverted().to_quaternion() * self.extrude_dir
+                rotate_verts(get_selected_verts(bm), self.rotate_angle, new_rot_dir, new_rot_center)
 
                 return {'RUNNING_MODAL'}
 
