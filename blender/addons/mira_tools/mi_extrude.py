@@ -135,7 +135,7 @@ class MI_StartDraw(bpy.types.Operator):
     # changed parameters
     manipulator = None
     relative_step_size = None
-    extrude_points = []
+    extrude_points = None
     mesh_automerge = None
 
     # draw on surface settings
@@ -252,7 +252,9 @@ class MI_StartDraw(bpy.types.Operator):
                 if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                     if self.tool_mode == 'ROTATE' or self.tool_mode == 'SCALE':
                         self.extrude_points[-1].update_verts(get_selected_bmverts(bm))
+
                     self.tool_mode = 'IDLE'
+
                     return {'RUNNING_MODAL'}
 
         # logic
@@ -288,6 +290,15 @@ class MI_StartDraw(bpy.types.Operator):
 
             # EXTRUDE
             if new_pos is not None and (new_pos - self.extrude_points[-1].position).length >= extrude_step:
+                # set original position of points
+                if self.scale_all != 0.0 or self.rotate_all != 0.0:
+                    for extr_point in self.extrude_points:
+                        extr_point.set_original_position(bm)
+
+                # disolve edges to fix points indices issues
+                if len(self.extrude_points) == 1:
+                    bpy.ops.mesh.dissolve_faces()
+
                 bpy.ops.mesh.extrude_region_move()
 
                 # New Extrude center
@@ -385,6 +396,12 @@ class MI_StartDraw(bpy.types.Operator):
                     # add verts of previos extrude
                     fix_step.update_verts(previous_extrude_verts) 
 
+                    # apply scale and rotation
+                    if self.scale_all != 0.0:
+                        scale_all_epoints(active_obj, bm, self.extrude_points, self.scale_all)
+                    if self.rotate_all != 0.0:
+                        rotate_all_epoints(active_obj, bm, self.extrude_points, self.rotate_all)
+
             #active_obj.data.update()
             bmesh.update_edit_mesh(active_obj.data)
 
@@ -403,51 +420,40 @@ class MI_StartDraw(bpy.types.Operator):
                         extr_point.set_original_position(bm)
 
                 # main stuff
-                if self.tool_mode in {'ROTATE', 'ROTATE_ALL'}:
-                    if self.tool_mode is 'ROTATE':
-                        deform_center = active_obj.matrix_world.inverted() * self.extrude_points[-1].position
-                        deform_dir = active_obj.matrix_world.inverted().to_quaternion() * self.extrude_points[-1].direction
-                        new_rot_angle = math.radians( (m_coords[0] - self.deform_mouse_pos[0]) * 0.3 )
-                        the_verts = get_bmverts_from_ids(bm, self.extrude_points[-1].verts)
-                        rotate_verts(the_verts, new_rot_angle, deform_dir, deform_center)
-
-                    # rotate all
-                    else:
-                        if self.rotate_all is None:
-                            self.rotate_all = 0.0
-
-                        points_size = len(self.extrude_points)
-                        self.rotate_all += math.radians( (m_coords[0] - self.deform_mouse_pos[0]) * 0.3 * points_size)
-
-                        for i in range(points_size):
-                            deform_center = active_obj.matrix_world.inverted() * self.extrude_points[i].position
-                            deform_dir = active_obj.matrix_world.inverted().to_quaternion() * self.extrude_points[i].direction
-                            new_rot_angle = self.rotate_all * (float(i)/float(points_size))
-                            the_verts = get_bmverts_from_ids(bm, self.extrude_points[i].verts)
-                            rotate_verts(the_verts, new_rot_angle, deform_dir, deform_center)
-
-                        self.deform_mouse_pos = m_coords
-
-                elif self.tool_mode in {'SCALE', 'SCALE_ALL'}:
+                if self.tool_mode in {'SCALE', 'SCALE_ALL'}:
+                    # scale epoint
                     if self.tool_mode is 'SCALE':
-                        deform_center = active_obj.matrix_world.inverted() * self.extrude_points[-1].position
                         new_scale =  (m_coords[0] - self.deform_mouse_pos[0]) * 0.01
-                        the_verts = get_bmverts_from_ids(bm, self.extrude_points[-1].verts)
-                        scale_verts(the_verts, new_scale, deform_center)
+                        scale_epoint(active_obj, bm, self.extrude_points[-1], new_scale)
 
                     # scale all
                     else:
-                        if self.scale_all is None:
-                            self.scale_all = 0.0
 
                         points_size = len(self.extrude_points)
                         self.scale_all += math.radians( (m_coords[0] - self.deform_mouse_pos[0]) * 0.01 * points_size)
+                        scale_all_epoints(active_obj, bm, self.extrude_points, self.scale_all)
 
-                        for i in range(points_size):
-                            deform_center = active_obj.matrix_world.inverted() * self.extrude_points[i].position
-                            new_scale = self.scale_all * (float(i)/float(points_size))
-                            the_verts = get_bmverts_from_ids(bm, self.extrude_points[i].verts)
-                            scale_verts(the_verts, new_scale, deform_center)
+                        if self.rotate_all != 0.0:
+                            rotate_all_epoints(active_obj, bm, self.extrude_points, self.rotate_all)
+
+                        self.deform_mouse_pos = m_coords
+
+                elif self.tool_mode in {'ROTATE', 'ROTATE_ALL'}:
+                    # rotate epoint
+                    if self.tool_mode is 'ROTATE':
+                        new_rot_angle = math.radians( (m_coords[0] - self.deform_mouse_pos[0]) * 0.3 )
+                        rotate_epoint(active_obj, bm, self.extrude_points[-1], new_rot_angle)
+
+
+                    # rotate all
+                    else:
+                        if self.scale_all != 0.0:
+                            scale_all_epoints(active_obj, bm, self.extrude_points, self.scale_all)
+
+                        points_size = len(self.extrude_points)
+                        self.rotate_all += math.radians( (m_coords[0] - self.deform_mouse_pos[0]) * 0.3 * points_size)
+                        rotate_all_epoints(active_obj, bm, self.extrude_points, self.rotate_all)
+
 
                         self.deform_mouse_pos = m_coords
 
@@ -482,13 +488,13 @@ def reset_params(self):
 
     # deform settings
     self.deform_mouse_pos = None
-    self.scale_all = None
-    self.rotate_all = None
+    self.scale_all = 0.0
+    self.rotate_all = 0.0
 
 def finish_extrude(self, context):
     context.space_data.show_manipulator = self.manipulator
     bpy.context.scene.tool_settings.use_mesh_automerge = self.mesh_automerge
-    self.extrude_points = []
+    self.extrude_points = None
 
 
 def mi_extrude_draw_2d(self, context):
@@ -518,33 +524,20 @@ def get_mouse_on_plane(context, plane_pos, mouse_coords):
 
 def get_previous_extrude_verts(bm, context):
     verts_array = None
-    selected_bmesh = get_selected_bmesh(bm)
-
-    sel_mode = context.tool_settings.mesh_select_mode
-    sel_mode = (sel_mode[0], sel_mode[1], sel_mode[2])
-    context.tool_settings.mesh_select_mode = (True, False, False)
+    verts1 = get_selected_bmverts_ids(bm)
     bpy.ops.mesh.select_more()
 
-    for vert in selected_bmesh[0]:
-        vert.select = False
-    for edge in selected_bmesh[1]:
-        edge.select = False
-    for face in selected_bmesh[2]:
-        face.select = False
+    verts2 = get_selected_bmverts_ids(bm)
+    bpy.ops.mesh.select_less()
 
-    verts_array = [v for v in bm.verts if v.select]
+    new_verts = []
+    bm.verts.ensure_lookup_table()
+    for vert in verts2:
+        if vert not in verts1:
+            new_verts.append(bm.verts[vert])
 
-    bpy.ops.mesh.select_all(action='DESELECT')
-    context.tool_settings.mesh_select_mode = (sel_mode[0], sel_mode[1], sel_mode[2])
+    return new_verts
 
-    for vert in selected_bmesh[0]:
-        vert.select = True
-    for edge in selected_bmesh[1]:
-        edge.select = True
-    for face in selected_bmesh[2]:
-        face.select = True
-
-    return verts_array
 
 # TODO move to utils
 def get_selected_bmesh(bm):
@@ -708,3 +701,34 @@ def scale_verts(verts, scale_value, origin):
         vert.co += (vert.co - origin) * scale_value
 
 
+def scale_epoint(obj, bm, epoint, scale_value):
+    deform_center = obj.matrix_world.inverted() * epoint.position
+    the_verts = get_bmverts_from_ids(bm, epoint.verts)
+    scale_verts(the_verts, scale_value, deform_center)
+
+
+def scale_all_epoints(obj, bm, epoints, scale_value):
+    points_size = len(epoints)
+    for i in range(points_size):
+        deform_center = obj.matrix_world.inverted() * epoints[i].position
+        new_scale = scale_value * (float(i)/float(points_size))
+        #new_scale = sorted((0.0, new_scale, scale_value))[1]
+        the_verts = get_bmverts_from_ids(bm, epoints[i].verts)
+        scale_verts(the_verts, new_scale, deform_center)    
+
+
+def rotate_epoint(obj, bm, epoint, rot_angle):
+    deform_center = obj.matrix_world.inverted() * epoint.position
+    deform_dir = obj.matrix_world.inverted().to_quaternion() * epoint.direction
+    the_verts = get_bmverts_from_ids(bm, epoint.verts)
+    rotate_verts(the_verts, rot_angle, deform_dir, deform_center)
+
+
+def rotate_all_epoints(obj, bm, epoints, rotate_value):
+    points_size = len(epoints)
+    for i in range(points_size):
+        deform_center = obj.matrix_world.inverted() * epoints[i].position
+        deform_dir = obj.matrix_world.inverted().to_quaternion() * epoints[i].direction
+        new_rot_angle = rotate_value * (float(i)/float(points_size))
+        the_verts = get_bmverts_from_ids(bm, epoints[i].verts)
+        rotate_verts(the_verts, new_rot_angle, deform_dir, deform_center)
