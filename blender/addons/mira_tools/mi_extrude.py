@@ -765,7 +765,8 @@ def scale_all_epoints(obj, bm, epoints, scale_value):
 
 def rotate_epoint(obj, bm, epoint, rot_angle):
     deform_center = obj.matrix_world.inverted() * epoint.position
-    deform_dir = obj.matrix_world.inverted().to_quaternion() * epoint.direction
+    deform_dir = (epoint.direction * obj.matrix_world).normalized()
+    # deform_dir = obj.matrix_world.inverted().to_quaternion() * epoint.direction
     the_verts = get_bmverts_from_ids(bm, epoint.verts)
     rotate_verts(the_verts, rot_angle, deform_dir, deform_center)
 
@@ -774,8 +775,8 @@ def rotate_all_epoints(obj, bm, epoints, rotate_value):
     points_size = len(epoints)
     for i in range(points_size):
         deform_center = obj.matrix_world.inverted() * epoints[i].position
-        deform_dir = obj.matrix_world.inverted().to_quaternion() * epoints[
-            i].direction
+        deform_dir = (epoints[i].direction * obj.matrix_world).normalized()
+        # deform_dir = obj.matrix_world.inverted().to_quaternion() * epoints[i].direction
         new_rot_angle = rotate_value * (float(i) / float(points_size))
         the_verts = get_bmverts_from_ids(bm, epoints[i].verts)
         rotate_verts(the_verts, new_rot_angle, deform_dir, deform_center)
