@@ -41,29 +41,27 @@ class MI_DeformPanel(bpy.types.Panel):
     bl_context = "mesh_edit"
     bl_category = 'Mira'
 
-
     def draw(self, context):
         layout = self.layout
         layout.operator("mira.deformer", text="Deformer")
 
 
 class MI_Deform(bpy.types.Operator):
+
     """Draw a line with the mouse"""
     bl_idname = "mira.deformer"
     bl_label = "Deformer"
     bl_description = "Deformer"
     bl_options = {'REGISTER', 'UNDO'}
 
-    taper_value = FloatProperty(default=0.0,min=-1000.0,max=1.0)
+    taper_value = FloatProperty(default=0.0, min=-1000.0, max=1.0)
     twist_angle = FloatProperty(default=0.0)
     bend_angle = FloatProperty(default=0.0)
     offset_rotation = FloatProperty(default=0.0)
     offset_axis = FloatProperty(default=0.0)
     bend_scale = FloatProperty(default=1.0)
-    
 
-    #selected_verts = BoolProperty(default=True)
-
+    # selected_verts = BoolProperty(default=True)
     deform_axis = EnumProperty(
         items=(('X', 'X', ''),
                ('Y', 'Y', ''),
@@ -71,13 +69,13 @@ class MI_Deform(bpy.types.Operator):
                ),
         default = 'X'
     )
-    #deform_direction = EnumProperty(
-        #items=(('Top', 'Top', ''),
+    # deform_direction = EnumProperty(
+        # items=(('Top', 'Top', ''),
                #('Bottom', 'Bottom', ''),
                #('Left', 'Left', ''),
                #('Right', 'Right', ''),
                #),
-        #default = 'Top'
+        # default = 'Top'
     #)
 
     def execute(self, context):
@@ -88,16 +86,15 @@ class MI_Deform(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        #if context.area.type == 'VIEW_3D':
-            ## change startup
-            #self.select_mouse_mode = context.user_preferences.inputs.select_mouse
-            #context.user_preferences.inputs.select_mouse = 'RIGHT'
-
+        # if context.area.type == 'VIEW_3D':
+            # change startup
+            # self.select_mouse_mode = context.user_preferences.inputs.select_mouse
+            # context.user_preferences.inputs.select_mouse = 'RIGHT'
 
         return self.execute(context)
-        #else:
-            #self.report({'WARNING'}, "View3D not found, cannot run operator")
-            #return {'CANCELLED'}
+        # else:
+            # self.report({'WARNING'}, "View3D not found, cannot run operator")
+            # return {'CANCELLED'}
 
 
 def deform_obj(obj, context, self):
@@ -120,9 +117,9 @@ def deform_obj(obj, context, self):
         verts = [v for v in obj.data.vertices if v.select]
         if len(verts) == 0:
             verts = obj.data.vertices
-            
 
-    # TODO Move it into utilities method. As Extrude class has the same min/max.
+    # TODO Move it into utilities method. As Extrude class has the same
+    # min/max.
     if verts:
         if obj.mode == 'EDIT':
             bm.verts.ensure_lookup_table()
@@ -147,18 +144,18 @@ def deform_obj(obj, context, self):
             if vert.co.z < z_min:
                 z_min = vert.co.z
 
-        x_orig = ((x_max-x_min) / 2.0) + x_min
-        y_orig = ((y_max-y_min) / 2.0) + y_min
+        x_orig = ((x_max - x_min) / 2.0) + x_min
+        y_orig = ((y_max - y_min) / 2.0) + y_min
         z_orig = z_min
         if self.deform_axis == 'Z':
             y_orig = y_min
-            z_orig = ((z_max-z_min) / 2.0) + z_min
+            z_orig = ((z_max - z_min) / 2.0) + z_min
 
         rot_origin = Vector((x_orig, y_orig, z_orig))
 
-        visual_max = z_max-z_min
+        visual_max = z_max - z_min
         if self.deform_axis == 'Z':
-            visual_max = y_max-y_min
+            visual_max = y_max - y_min
 
         for vert in verts:
             vec = vert.co.copy()
@@ -171,18 +168,19 @@ def deform_obj(obj, context, self):
             # TAPER CODE
             # scale the vert
             if self.taper_value != 0:
-                taper_value = ((self.taper_value) * (visual_up_pos / visual_max))
+                taper_value = (
+                    (self.taper_value) * (visual_up_pos / visual_max))
                 if self.deform_axis != 'Z':
-                    vert.co.xy -= (vert.co.xy-rot_origin.xy) * taper_value
+                    vert.co.xy -= (vert.co.xy - rot_origin.xy) * taper_value
                 else:
-                    vert.co.xz -= (vert.co.xz-rot_origin.xz) * taper_value
+                    vert.co.xz -= (vert.co.xz - rot_origin.xz) * taper_value
 
             # TWIST CODE
             # rotate the vert
             if self.twist_angle != 0:
                 twist_angle = self.twist_angle * (visual_up_pos / visual_max)
-                #if self.deform_axis == 'X':
-                    #rot_angle = -rot_angle
+                # if self.deform_axis == 'X':
+                    # rot_angle = -rot_angle
                 rot_mat = None
                 if self.deform_axis != 'Z':
                     rot_mat = Matrix.Rotation(twist_angle, 3, 'Z')
@@ -191,13 +189,14 @@ def deform_obj(obj, context, self):
                 vert.co = rot_mat * (vert.co - rot_origin) + rot_origin
 
             # BEND CODE
-            beta = math.radians(self.bend_angle * (visual_up_pos/visual_max) )
+            beta = math.radians(self.bend_angle * (visual_up_pos / visual_max))
             if beta != 0:
                 final_offset = visual_up_pos * self.offset_rotation
                 if beta < 0:
                     final_offset = -final_offset
 
-                move_to_rotate = ((visual_up_pos / beta) + final_offset) * self.bend_scale
+                move_to_rotate = (
+                    (visual_up_pos / beta) + final_offset) * self.bend_scale
                 if self.deform_axis == 'X':
                     vert.co.y -= move_to_rotate
                 elif self.deform_axis == 'Y' or self.deform_axis == 'Z':
@@ -223,7 +222,7 @@ def deform_obj(obj, context, self):
                     vert.co.x += back_offset
 
                 # offset axys
-                move_offset = self.offset_axis * (visual_up_pos/visual_max)
+                move_offset = self.offset_axis * (visual_up_pos / visual_max)
                 if self.deform_axis == 'X':
                     vert.co.x += move_offset
                 elif self.deform_axis == 'Y':
@@ -231,5 +230,5 @@ def deform_obj(obj, context, self):
                 elif self.deform_axis == 'Z':
                     vert.co.z += move_offset
 
-    #obj.data.update()
+    # obj.data.update()
     bmesh.update_edit_mesh(obj.data)

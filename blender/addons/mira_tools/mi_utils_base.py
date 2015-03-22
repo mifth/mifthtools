@@ -32,7 +32,7 @@ def get_obj_dup_meshes(objects_array, context):
 
         obj.dupli_list_clear()
 
-    return listObjMatrix 
+    return listObjMatrix
 
 
 def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
@@ -50,7 +50,8 @@ def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
             region, rv3d, coords_2d)
 
         # Do RayCast! t1,t2,t3,t4 - temp values
-        t1, t2, t3 = obj_ray_cast(obj, matrix, view_vector, ray_origin, ray_max)
+        t1, t2, t3 = obj_ray_cast(
+            obj, matrix, view_vector, ray_origin, ray_max)
         if t1 is not None and t3 < best_length_squared:
             best_obj, hit_normal, hit_position = obj, t1, t2
             best_length_squared = t3
