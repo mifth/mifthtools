@@ -3,6 +3,9 @@ This is my repository of tools which i use.
 
 Blender:
 
+MiraTools - Modeling/Retopo tools dedicated to my daghter.
+http://blenderartists.org/forum/showthread.php?366107-MiraTools
+
 MifthTools - many tools which i use every day. Cloning, Animation.
 http://blenderartists.org/forum/showthread.php?346588-MifthTools-Addon
 
