@@ -3,7 +3,7 @@ This is my repository of tools which i use.
 
 Blender:
 
-MiraTools - Modeling/Retopo tools dedicated to my daghter.
+MiraTools - Modeling/Retopo tools dedicated to my daughter.
 http://blenderartists.org/forum/showthread.php?366107-MiraTools
 
 MifthTools - many tools which i use every day. Cloning, Animation.
