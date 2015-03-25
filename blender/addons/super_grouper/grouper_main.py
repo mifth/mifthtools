@@ -810,22 +810,23 @@ class SG_change_selected_objects(bpy.types.Operator):
 
     def execute(self, context):
         for obj in context.selected_objects:
-            if obj.type == 'MESH':
-                if self.sg_objects_changer == 'BOUND_SHADE':
-                    obj.draw_type = 'BOUNDS'
-                    obj.show_wire = False
-                elif self.sg_objects_changer == 'WIRE_SHADE':
-                    obj.draw_type = 'WIRE'
-                    obj.show_wire = False
-                elif self.sg_objects_changer == 'MATERIAL_SHADE':
-                    obj.draw_type = 'TEXTURED'
-                    obj.show_wire = False
-                elif self.sg_objects_changer == 'SHOW_WIRE':
-                    obj.draw_type = 'TEXTURED'
-                    obj.show_wire = True
-                elif self.sg_objects_changer == 'ONESIDE_SHADE':
+            if self.sg_objects_changer == 'BOUND_SHADE':
+                obj.draw_type = 'BOUNDS'
+                obj.show_wire = False
+            elif self.sg_objects_changer == 'WIRE_SHADE':
+                obj.draw_type = 'WIRE'
+                obj.show_wire = False
+            elif self.sg_objects_changer == 'MATERIAL_SHADE':
+                obj.draw_type = 'TEXTURED'
+                obj.show_wire = False
+            elif self.sg_objects_changer == 'SHOW_WIRE':
+                obj.draw_type = 'TEXTURED'
+                obj.show_wire = True
+            elif self.sg_objects_changer == 'ONESIDE_SHADE':
+                if obj.type == 'MESH':
                     obj.data.show_double_sided = False
-                elif self.sg_objects_changer == 'TWOSIDE_SHADE':
+            elif self.sg_objects_changer == 'TWOSIDE_SHADE':
+                if obj.type == 'MESH':
                     obj.data.show_double_sided = True
 
         return {'FINISHED'}
