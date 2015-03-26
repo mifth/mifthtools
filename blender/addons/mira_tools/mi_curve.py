@@ -33,32 +33,60 @@ import random
 from mathutils import Vector
 
 
-#class MI_Bezier_Display():
-    #bezier_points = []
+#class MI_CurvePoint(bpy.types.PropertyGroup):
+    #position = FloatVectorProperty()
+    #direction = FloatVectorProperty()
+    #up_direction = FloatVectorProperty()
+    #handle1 = FloatVectorProperty()
+    #handle2 = FloatVectorProperty()
+    #point_id = StringProperty(default="")
 
 
-#class MI_Curve_Display():
-    #curve_points = []
+#class MI_CurveObject(bpy.types.PropertyGroup):
+    #curve_points = CollectionProperty(
+        #type=MI_CurvePoint
+    #)
+    #active_point = StringProperty(default="")
 
 
-class MI_CurvePoint(bpy.types.PropertyGroup):
-    position = FloatVectorProperty()
-    direction = FloatVectorProperty()
-    up_direction = FloatVectorProperty()
-    handle1 = FloatVectorProperty()
-    handle2 = FloatVectorProperty()
-    point_id = StringProperty(default="")
+class MI_CurveSettings(bpy.types.PropertyGroup):
+    # Extrude Settings
+    curve_resolution = IntProperty(default=13, min=3, max=128)
+    draw_handlers = BoolProperty(default=False)
 
 
-class MI_CurveObject(bpy.types.PropertyGroup):
-    curve_points = CollectionProperty(
-        type=MI_CurvePoint
-    )
-    active_point = StringProperty(default="")
+class MI_CurvePoint():
+
+    #position = None
+    #direction = None
+    #up_direction = None
+    #handle1 = None
+    #handle2 = None
+    #point_id = None
+
+    # class constructor
+    def __init__(self):
+        self.position = FloatVectorProperty()
+        self.direction = FloatVectorProperty()
+        self.up_direction = FloatVectorProperty()
+        self.handle1 = FloatVectorProperty()
+        self.handle2 = FloatVectorProperty()
+        self.point_id = StringProperty(default="")
+
+
+class MI_CurveObject():
+
+    #curve_points = None
+    #active_point = None
+
+    # class constructor
+    def __init__(self):
+        self.curve_points = []
+        self.active_point = StringProperty(default="")
 
 
 class MI_BasePanel(bpy.types.Panel):
-    bl_label = "Mira"
+    bl_label = "Curve"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_context = "mesh_edit"
@@ -67,7 +95,11 @@ class MI_BasePanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        curve_settings = context.scene.mi_curve_settings
+
         layout.operator("mira.start_draw", text="Draw Curve")
+        layout.prop(curve_settings, "curve_resolution", text='Resolution')
+        layout.prop(curve_settings, "draw_handlers", text='Handlers')
 
 
 class MRStartDraw(bpy.types.Operator):
@@ -89,34 +121,120 @@ class MRStartDraw(bpy.types.Operator):
     curve_tool_modes = ('IDLE', 'MOVE_POINT', 'ADD_POINT')
     curve_tool_mode = 'IDLE'
 
+    curves = None
     active_curve = None
+
+
+    def invoke(self, context, event):
+        if context.area.type == 'VIEW_3D':
+            # initialize base variables
+            self.curves = []
+            active_curve = None
+
+            # the arguments we pass the the callbackection
+            args = (self, context)
+            # Add the region OpenGL drawing callback
+            # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
+            self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
+            self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+
+            # change startup
+            self.select_mouse_mode = context.user_preferences.inputs.select_mouse
+            context.user_preferences.inputs.select_mouse = 'RIGHT'
+
+            # test test test
+            if context.scene.objects.active:
+                curve_settings = context.scene.mi_curve_settings
+                cur = None
+                if self.curves:
+                    cur = self.curves[0]
+                else:
+                    cur = MI_CurveObject()
+                self.curves.append(cur)
+                self.active_curve = cur  # set active curve
+
+                # for i in range(8):
+                #     point = cur.curve_points.add()
+                #     point.point_id = generate_point_id(cur.curve_points)
+                #     vec = Vector((-1.0, 0.0, 0.0))
+                #
+                #     beta = math.radians((360.0 /8.0)*i )
+                #curve_points
+                #     eul = mathu.Euler((0.0, 0.0, beta), 'XYZ')
+                #     vec.rotate(eul)
+                #     point.position = (vec.x, vec.y, vec.z)
+                    # if i == 4:
+                    #     point.position = (vec.x+15.0, vec.y, vec.z)
+
+
+                # points
+                point = MI_CurvePoint()
+                cur.curve_points.append(point)
+                point.point_id = generate_point_id(cur.curve_points)
+                point.position = (-1.0, 0.0, 0.0)
+
+                point = MI_CurvePoint()
+                cur.curve_points.append(point)
+                point.point_id = generate_point_id(cur.curve_points)
+                point.position = (0.0, 1.0, 0.0)
+
+                point = MI_CurvePoint()
+                cur.curve_points.append(point)
+                point.point_id = generate_point_id(cur.curve_points)
+                point.position = (1.0, 0.0, 0.0)
+
+                point = MI_CurvePoint()
+                cur.curve_points.append(point)
+                point.point_id = generate_point_id(cur.curve_points)
+                point.position = (0.0, -1.0, 0.0)
+
+                point = MI_CurvePoint()
+                cur.curve_points.append(point)
+                point.point_id = generate_point_id(cur.curve_points)
+                point.position = (-1.0, 0.0, 0.0)
+
+                cur.active_point = point.point_id
+
+                # add to display
+                mi_generate_bezier(cur, self.display_bezier, curve_settings.curve_resolution)
+
+            context.window_manager.modal_handler_add(self)
+            return {'RUNNING_MODAL'}
+        else:
+            self.report({'WARNING'}, "View3D not found, cannot run operator")
+            return {'CANCELLED'}
+
 
     def modal(self, context, event):
         #print(context.active_operator)
         context.area.tag_redraw()
+
+        curve_settings = context.scene.mi_curve_settings
 
         # make picking
         if self.curve_tool_mode == 'IDLE':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
                 # pick point test
                 m_coords = event.mouse_region_x, event.mouse_region_y
-                picked_point = mi_pick_curve_point(self.active_curve, context, m_coords)
+                picked_point = pick_curve_point(self.active_curve, context, m_coords)
                 if picked_point:
                     self.active_curve.active_point = picked_point.point_id
                     self.curve_tool_mode = 'MOVE_POINT'
                     #print(picked_point)
                 else:
                     # add point
-                    point = self.active_curve.curve_points.add()
-                    point.point_id = mi_generate_point_id(self.active_curve.curve_points)
-                    new_point_pos = get_mouse_on_plane(context, point.position, m_coords)
+                    act_point = get_point(self.active_curve.curve_points, self.active_curve.active_point)
+                    new_point_pos = get_mouse_on_plane(context, act_point.position, m_coords)
                     if new_point_pos:
+                        point = MI_CurvePoint()
+                        self.active_curve.curve_points.append(point)
+                        point.point_id = generate_point_id(self.active_curve.curve_points)
                         point.position = new_point_pos
                         self.active_curve.active_point = point.point_id
                         self.curve_tool_mode = 'ADD_POINT'
 
                     # add to display
-                    mi_generate_bezier(self.active_curve, self.display_bezier)
+                    mi_generate_bezier(self.active_curve, self.display_bezier, curve_settings.curve_resolution)
 
                 return {'RUNNING_MODAL'}
 
@@ -132,7 +250,7 @@ class MRStartDraw(bpy.types.Operator):
                         new_point_pos = get_mouse_on_plane(context, point.position, m_coords)
                         if new_point_pos:
                             point.position = new_point_pos
-                        mi_generate_bezier(self.active_curve, self.display_bezier)
+                        mi_generate_bezier(self.active_curve, self.display_bezier, curve_settings.curve_resolution)
 
                 return {'RUNNING_MODAL'}
 
@@ -163,85 +281,26 @@ class MRStartDraw(bpy.types.Operator):
         return {'RUNNING_MODAL'}
         #return {'PASS_THROUGH'}
 
-    def invoke(self, context, event):
-        if context.area.type == 'VIEW_3D':
-            # the arguments we pass the the callbackection
-            args = (self, context)
-            # Add the region OpenGL drawing callback
-            # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-            self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_deform_draw_3d, args, 'WINDOW', 'POST_VIEW')
-            self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_deform_draw_2d, args, 'WINDOW', 'POST_PIXEL')
 
-            # change startup
-            self.select_mouse_mode = context.user_preferences.inputs.select_mouse
-            context.user_preferences.inputs.select_mouse = 'RIGHT'
-
-            # test test test
-            if context.scene.objects.active:
-                cur = context.scene.objects.active.mi_curves.add()
-                self.active_curve = cur  # set active curve
-
-                # for i in range(8):
-                #     point = cur.curve_points.add()
-                #     point.point_id = mi_generate_point_id(cur.curve_points)
-                #     vec = Vector((-1.0, 0.0, 0.0))
-                #
-                #     beta = math.radians((360.0 /8.0)*i )
-                #
-                #     eul = mathu.Euler((0.0, 0.0, beta), 'XYZ')
-                #     vec.rotate(eul)
-                #     point.position = (vec.x, vec.y, vec.z)
-                    # if i == 4:
-                    #     point.position = (vec.x+15.0, vec.y, vec.z)
-
-
-                # points
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (-1.0, 0.0, 0.0)
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (0.0, 1.0, 0.0)
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (1.0, 0.0, 0.0)
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (0.0, -1.0, 0.0)
-
-                point = cur.curve_points.add()
-                point.point_id = mi_generate_point_id(cur.curve_points)
-                point.position = (-1.0, 0.0, 0.0)
-
-                # add to display
-                mi_generate_bezier(cur, self.display_bezier)
-
-            context.window_manager.modal_handler_add(self)
-            return {'RUNNING_MODAL'}
-        else:
-            self.report({'WARNING'}, "View3D not found, cannot run operator")
-            return {'CANCELLED'}
-
-
-def mi_deform_draw_2d(self, context):
+def mi_curve_draw_2d(self, context):
     active_obj = context.scene.objects.active
-    if active_obj.mi_curves:
-        mi_draw_curve(active_obj.mi_curves, context)
+    if self.curves:
+        mi_draw_curve(self.curves, context)
 
 
-def mi_deform_draw_3d(self, context):
+def mi_curve_draw_3d(self, context):
     active_obj = context.scene.objects.active
-    if active_obj.mi_curves:
+    if self.curves:
         # test1
         region = context.region
         rv3d = context.region_data
-        for curve in active_obj.mi_curves:
+        for curve in self.curves:
             for cur_point in curve.curve_points:
                 if cur_point.point_id in self.display_bezier:
-                    mi_deform_draw_3d_polyline(self.display_bezier[cur_point.point_id], 2, (0.5,0.8,0.9,1.0))
+                    mi_curve_draw_3d_polyline(self.display_bezier[cur_point.point_id], 2, (0.5,0.8,0.9,1.0))
 
 
-def mi_generate_point_id(points):
+def generate_point_id(points):
     # Generate unique id
     other_ids = []
     for point in points:
@@ -257,6 +316,12 @@ def mi_generate_point_id(points):
 
     other_ids = None  # clean
     return uniq_numb
+
+def get_point(points, p_id):
+    for point in points:
+        if point.point_id == p_id:
+            return point
+    return None
 
 
 def get_mouse_on_plane(context, plane_pos, mouse_coords):
@@ -274,7 +339,7 @@ def get_mouse_on_plane(context, plane_pos, mouse_coords):
     return None
 
 
-def mi_pick_curve_point(curve, context, mouse_coords):
+def pick_curve_point(curve, context, mouse_coords):
     region = context.region
     rv3d = context.region_data
 
@@ -308,7 +373,7 @@ def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
 
 
 # TODO MOVE TO UTILITIES
-def mi_deform_draw_3d_polyline(points, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
+def mi_curve_draw_3d_polyline(points, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glLineWidth(1)
 
@@ -332,6 +397,7 @@ def mi_deform_draw_3d_polyline(points, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
 def mi_draw_curve(curves, context):
     region = context.region
     rv3d = context.region_data
+    curve_settings = context.scene.mi_curve_settings
     # coord = event.mouse_region_x, event.mouse_region_y
     for curve in curves:
         for cu_point in curve.curve_points:
@@ -342,16 +408,17 @@ def mi_draw_curve(curves, context):
                 p_col = (0.9,0.7,0.3,1.0)
             mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
-            # Debug
-            if curve.curve_points.values().index(cu_point) < len(curve.curve_points)-1:
-                point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
-                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, (0.0,0.5,1.0,0.7))
-            if curve.curve_points.values().index(cu_point) > 0:
-                point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
-                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, (1.0,0.5,0.0,0.7))
+            # Handlers
+            if curve_settings.draw_handlers:
+                if curve.curve_points.index(cu_point) < len(curve.curve_points)-1:
+                    point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
+                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, (0.0,0.5,1.0,0.7))
+                if curve.curve_points.index(cu_point) > 0:
+                    point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
+                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, (1.0,0.5,0.0,0.7))
 
 
-def mi_generate_bezier(curve, display_bezier):
+def mi_generate_bezier(curve, display_bezier, curve_resolution):
         p_len = len(curve.curve_points)
         for i in range(p_len):
             if i > 0:
@@ -424,7 +491,7 @@ def mi_generate_bezier(curve, display_bezier):
                 # Get all the points on the curve between these two items.  Uses the default of 12 for a "preview" resolution
                 # on the curve.  Note the +1 because the "preview resolution" tells how many segments to use.  ie. 2 => 2 segments
                 # or 3 points.  The "interpolate_bezier" functions takes the number of points it should generate.
-                vecs = mathu.geometry.interpolate_bezier(knot1, handle1, handle2, knot2, 20+1)
+                vecs = mathu.geometry.interpolate_bezier(knot1, handle1, handle2, knot2, curve_resolution+1)
                 display_bezier[curve.curve_points[i].point_id] = vecs
 
 

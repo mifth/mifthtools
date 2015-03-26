@@ -59,7 +59,7 @@ class MI_ExtrudeSettings(bpy.types.PropertyGroup):
 
 
 class MI_ExtrudePanel(bpy.types.Panel):
-    bl_label = "Mira"
+    bl_label = "Extrude"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_context = "mesh_edit"
@@ -70,14 +70,14 @@ class MI_ExtrudePanel(bpy.types.Panel):
         extrude_settings = context.scene.mi_extrude_settings
 
         layout.operator("mira.draw_extrude", text="Draw Extrude")
-        layout.prop(extrude_settings, "extrude_step_type", text='Step')
 
+        layout.prop(extrude_settings, "extrude_mode", text='Mode')
+
+        layout.prop(extrude_settings, "extrude_step_type", text='Step')
         if extrude_settings.extrude_step_type == 'Asolute':
             layout.prop(extrude_settings, "absolute_extrude_step", text='')
         else:
             layout.prop(extrude_settings, "relative_extrude_step", text='')
-
-        layout.prop(extrude_settings, "extrude_mode", text='Mode')
 
 
 class MI_Extrude_Point():

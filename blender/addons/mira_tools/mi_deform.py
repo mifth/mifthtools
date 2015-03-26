@@ -35,7 +35,7 @@ from mathutils import Vector, Matrix
 
 
 class MI_DeformPanel(bpy.types.Panel):
-    bl_label = "Deforms"
+    bl_label = "Deform"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_context = "mesh_edit"
