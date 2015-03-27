@@ -173,25 +173,25 @@ class MRStartDraw(bpy.types.Operator):
                 point.point_id = generate_point_id(cur.curve_points)
                 point.position = (-1.0, 0.0, 0.0)
 
-                point = MI_CurvePoint()
-                cur.curve_points.append(point)
-                point.point_id = generate_point_id(cur.curve_points)
-                point.position = (0.0, 1.0, 0.0)
+                #point = MI_CurvePoint()
+                #cur.curve_points.append(point)
+                #point.point_id = generate_point_id(cur.curve_points)
+                #point.position = (0.0, 1.0, 0.0)
 
-                point = MI_CurvePoint()
-                cur.curve_points.append(point)
-                point.point_id = generate_point_id(cur.curve_points)
-                point.position = (1.0, 0.0, 0.0)
+                #point = MI_CurvePoint()
+                #cur.curve_points.append(point)
+                #point.point_id = generate_point_id(cur.curve_points)
+                #point.position = (1.0, 0.0, 0.0)
 
-                point = MI_CurvePoint()
-                cur.curve_points.append(point)
-                point.point_id = generate_point_id(cur.curve_points)
-                point.position = (0.0, -1.0, 0.0)
+                #point = MI_CurvePoint()
+                #cur.curve_points.append(point)
+                #point.point_id = generate_point_id(cur.curve_points)
+                #point.position = (0.0, -1.0, 0.0)
 
-                point = MI_CurvePoint()
-                cur.curve_points.append(point)
-                point.point_id = generate_point_id(cur.curve_points)
-                point.position = (-1.0, 0.0, 0.0)
+                #point = MI_CurvePoint()
+                #cur.curve_points.append(point)
+                #point.point_id = generate_point_id(cur.curve_points)
+                #point.position = (-1.0, 0.0, 0.0)
 
                 cur.active_point = point.point_id
 
@@ -421,78 +421,81 @@ def mi_draw_curve(curves, context):
 def mi_generate_bezier(curve, display_bezier, curve_resolution):
         p_len = len(curve.curve_points)
         for i in range(p_len):
-            if i > 0:
+            if p_len == 2:
+                if i == 1:
+                    display_bezier[curve.curve_points[1].point_id] = [curve.curve_points[0].position, curve.curve_points[1].position]
+            else:
+                if i > 0:
+                    back_point = i-1
 
-                back_point = i-1
+                    two_back_point = None
+                    if i-2 < 0:
+                        two_back_point = i-1
+                    else:
+                        two_back_point = i-2
 
-                two_back_point = None
-                if i-2 < 0:
-                    two_back_point = i-1
-                else:
-                    two_back_point = i-2
+                    forward_point = None
+                    if i+1 > p_len-1:
+                        forward_point = i
+                    else:
+                        forward_point = i+1
 
-                forward_point = None
-                if i+1 > p_len-1:
-                    forward_point = i
-                else:
-                    forward_point = i+1
+                    knot1 = Vector(curve.curve_points[back_point].position)
+                    knot2 = Vector(curve.curve_points[i].position)
 
-                knot1 = Vector(curve.curve_points[back_point].position)
-                knot2 = Vector(curve.curve_points[i].position)
+                    handle1 = None
+                    handle2 = None
 
-                handle1 = None
-                handle2 = None
+                    # Make common interpolation for handles
+                    if i > 1:
+                        dist1 = (Vector(curve.curve_points[i].position) - Vector(curve.curve_points[two_back_point].position))
+                        dl1 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position))
+                        dl1_2 = (Vector(curve.curve_points[two_back_point].position) - Vector(curve.curve_points[i].position))
 
-                # Make common interpolation for handles
-                if i > 1:
-                    dist1 = (Vector(curve.curve_points[i].position) - Vector(curve.curve_points[two_back_point].position))
-                    dl1 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position))
-                    dl1_2 = (Vector(curve.curve_points[two_back_point].position) - Vector(curve.curve_points[i].position))
+                        handle1_len = ( dl1.length  ) * (dl1.length/(dl1.length+dl1_2.length))  # 1.1042 is smooth coefficient
 
-                    handle1_len = ( dl1.length  ) * (dl1.length/(dl1.length+dl1_2.length))  # 1.1042 is smooth coefficient
+                        if dl1.length > dl1_2.length/1.5 and dl1.length != 0:
+                            handle1_len *= ((dl1_2.length/1.5)/dl1.length)
+                        elif dl1.length < dl1_2.length/3.0 and dl1.length != 0:
+                            handle1_len *= (dl1_2.length/3.0)/dl1.length
 
-                    if dl1.length > dl1_2.length/1.5 and dl1.length != 0:
-                        handle1_len *= ((dl1_2.length/1.5)/dl1.length)
-                    elif dl1.length < dl1_2.length/3.0 and dl1.length != 0:
-                        handle1_len *= (dl1_2.length/3.0)/dl1.length
+                        # handle1_len = min(( dl1.length  ) * (dl1.length/(dl1.length+dl1_2.length)) ,dist1.length* h1_final*0.5)  # 1.1042 is smooth coefficient
+                        handle1 = knot1 + (dist1.normalized() * handle1_len)
 
-                    # handle1_len = min(( dl1.length  ) * (dl1.length/(dl1.length+dl1_2.length)) ,dist1.length* h1_final*0.5)  # 1.1042 is smooth coefficient
-                    handle1 = knot1 + (dist1.normalized() * handle1_len)
+                    if i < p_len-1:
+                        dist2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[forward_point].position))
+                        dl2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position))
+                        dl2_2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[forward_point].position))
 
-                if i < p_len-1:
-                    dist2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[forward_point].position))
-                    dl2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[i].position))
-                    dl2_2 = (Vector(curve.curve_points[back_point].position) - Vector(curve.curve_points[forward_point].position))
+                        handle2_len = (dl2.length  ) * (dl2.length/(dl2.length+dl2_2.length)) # 1.1042 is smooth coefficient
 
-                    handle2_len = (dl2.length  ) * (dl2.length/(dl2.length+dl2_2.length)) # 1.1042 is smooth coefficient
+                        if dl2.length > dl2_2.length/1.5 and dl2.length != 0:
+                            handle2_len *= ((dl2_2.length/1.5)/dl2.length)
+                        elif dl2.length < dl2_2.length/3.0 and dl2.length != 0:
+                            handle2_len *= (dl2_2.length/3.0)/dl2.length
 
-                    if dl2.length > dl2_2.length/1.5 and dl2.length != 0:
-                        handle2_len *= ((dl2_2.length/1.5)/dl2.length)
-                    elif dl2.length < dl2_2.length/3.0 and dl2.length != 0:
-                        handle2_len *= (dl2_2.length/3.0)/dl2.length
+                        # handle2_len = min((dl2.length  ) * (dl2.length/(dl2.length+dl2_2.length)), dist2.length* h2_final*0.5) # 1.1042 is smooth coefficient
+                        handle2 = knot2 + (dist2.normalized() * handle2_len)
 
-                    # handle2_len = min((dl2.length  ) * (dl2.length/(dl2.length+dl2_2.length)), dist2.length* h2_final*0.5) # 1.1042 is smooth coefficient
-                    handle2 = knot2 + (dist2.normalized() * handle2_len)
+                    # Make end points
+                    if handle1 is None:
+                        handle1 = (handle2 - knot1)
+                        handle1_len = handle1.length * 0.4
+                        handle1 = knot1 + (handle1.normalized() * handle1_len)
+                    if handle2 is None:
+                        handle2 = (handle1 - knot2)
+                        handle2_len = handle2.length * 0.4
+                        handle2 = knot2 + (handle2.normalized() * handle2_len)
 
-                # Make end points
-                if handle1 is None:
-                    handle1 = (handle2 - knot1)
-                    handle1_len = handle1.length * 0.4
-                    handle1 = knot1 + (handle1.normalized() * handle1_len)
-                if handle2 is None:
-                    handle2 = (handle1 - knot2)
-                    handle2_len = handle2.length * 0.4
-                    handle2 = knot2 + (handle2.normalized() * handle2_len)
+                    curve.curve_points[i-1].handle1 = handle1  # save handle
+                    curve.curve_points[i].handle2 = handle2  # save handle
 
-                curve.curve_points[i-1].handle1 = handle1  # save handle
-                curve.curve_points[i].handle2 = handle2  # save handle
-
-                # Display Bezier points
-                # Get all the points on the curve between these two items.  Uses the default of 12 for a "preview" resolution
-                # on the curve.  Note the +1 because the "preview resolution" tells how many segments to use.  ie. 2 => 2 segments
-                # or 3 points.  The "interpolate_bezier" functions takes the number of points it should generate.
-                vecs = mathu.geometry.interpolate_bezier(knot1, handle1, handle2, knot2, curve_resolution+1)
-                display_bezier[curve.curve_points[i].point_id] = vecs
+                    # Display Bezier points
+                    # Get all the points on the curve between these two items.  Uses the default of 12 for a "preview" resolution
+                    # on the curve.  Note the +1 because the "preview resolution" tells how many segments to use.  ie. 2 => 2 segments
+                    # or 3 points.  The "interpolate_bezier" functions takes the number of points it should generate.
+                    vecs = mathu.geometry.interpolate_bezier(knot1, handle1, handle2, knot2, curve_resolution+1)
+                    display_bezier[curve.curve_points[i].point_id] = vecs
 
 
 # ---------------------------------------
