@@ -32,10 +32,12 @@ bl_info = {
 if "bpy" in locals():
     import imp
     imp.reload(mi_curve)
+    imp.reload(mi_curve_settings)
     imp.reload(mi_deform)
     imp.reload(mi_extrude)
 else:
     from . import mi_curve
+    from . import mi_curve_settings
     from . import mi_deform
     from . import mi_extrude
 
@@ -62,7 +64,7 @@ def register():
 
     bpy.types.Scene.mi_curve_settings = PointerProperty(
         name="Mira Tool Variables",
-        type=mi_curve.MI_CurveSettings,
+        type=mi_curve_settings.MI_CurveSettings,
         description="Mira Curve"
     )
 

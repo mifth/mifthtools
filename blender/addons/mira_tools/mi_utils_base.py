@@ -35,6 +35,7 @@ def get_obj_dup_meshes(objects_array, context):
     return listObjMatrix
 
 
+# mesh picking
 def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
     region = context.region
     rv3d = context.region_data
@@ -59,6 +60,7 @@ def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
     return best_obj, hit_normal, hit_position
 
 
+# mesh picking
 def obj_ray_cast(obj, matrix, view_vector, ray_origin, ray_max):
     """Wrapper for ray casting that moves the ray into object space"""
 
@@ -82,3 +84,20 @@ def obj_ray_cast(obj, matrix, view_vector, ray_origin, ray_max):
             return normal_world.normalized(), hit_world, length_squared
 
     return None, None, None
+
+
+# get mouse on a plane
+def get_mouse_on_plane(context, plane_pos, mouse_coords):
+    region = context.region
+    rv3d = context.region_data
+    cam_dir = rv3d.view_rotation * Vector((0.0, 0.0, -1.0))
+    # cam_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d,
+    # (region.width/2.0, region.height/2.0))
+    mouse_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d, mouse_coords)
+    mouse_dir = view3d_utils.region_2d_to_vector_3d(region, rv3d, mouse_coords)
+    new_pos = mathu.geometry.intersect_line_plane(
+        mouse_pos, mouse_pos + (mouse_dir * 10000.0), plane_pos, cam_dir, False)
+    if new_pos:
+        return new_pos
+
+    return None

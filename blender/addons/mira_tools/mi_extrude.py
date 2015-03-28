@@ -289,7 +289,7 @@ class MI_StartDraw(bpy.types.Operator):
                         new_pos += hit_normal * self.raycast_offset
 
             else:
-                new_pos = get_mouse_on_plane(
+                new_pos = ut_base.get_mouse_on_plane(
                     context, self.extrude_points[-1].position, m_coords)
 
             extrude_step = None
@@ -350,7 +350,7 @@ class MI_StartDraw(bpy.types.Operator):
                 else:
                     # fix first extrude
                     if extrude_settings.extrude_mode == 'Raycast':
-                        fix_first_extrude_dir = get_mouse_on_plane(
+                        fix_first_extrude_dir = ut_base.get_mouse_on_plane(
                             context, self.extrude_points[-1].position, m_coords)
                         self.extrude_points[-1].direction = (
                             fix_first_extrude_dir - self.extrude_points[-1].position).normalized()
@@ -544,23 +544,6 @@ def mi_extrude_draw_2d(self, context):
 
     p_col = (0.5, 0.8, 1.0, 1.0)
     mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
-
-
-# TODO move to utilities
-def get_mouse_on_plane(context, plane_pos, mouse_coords):
-    region = context.region
-    rv3d = context.region_data
-    cam_dir = rv3d.view_rotation * Vector((0.0, 0.0, -1.0))
-    # cam_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d,
-    # (region.width/2.0, region.height/2.0))
-    mouse_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d, mouse_coords)
-    mouse_dir = view3d_utils.region_2d_to_vector_3d(region, rv3d, mouse_coords)
-    new_pos = mathu.geometry.intersect_line_plane(
-        mouse_pos, mouse_pos + (mouse_dir * 10000.0), plane_pos, cam_dir, False)
-    if new_pos:
-        return new_pos
-
-    return None
 
 
 def get_previous_extrude_verts(bm, context):
