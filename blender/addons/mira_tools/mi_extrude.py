@@ -57,6 +57,15 @@ class MI_ExtrudeSettings(bpy.types.PropertyGroup):
         default = 'Screen'
     )
 
+    do_symmetry = BoolProperty(default=False)
+    symmetry_axys = EnumProperty(
+        items=(('X', 'X', ''),
+               ('Y', 'Y', ''),
+               ('Z', 'Z', '')
+               ),
+        default = 'X'
+    )
+
 
 class MI_ExtrudePanel(bpy.types.Panel):
     bl_label = "Extrude"
@@ -78,6 +87,10 @@ class MI_ExtrudePanel(bpy.types.Panel):
             layout.prop(extrude_settings, "absolute_extrude_step", text='')
         else:
             layout.prop(extrude_settings, "relative_extrude_step", text='')
+
+        layout.prop(extrude_settings, "do_symmetry", text='Symmetry')
+        if extrude_settings.do_symmetry:
+            layout.prop(extrude_settings, "symmetry_axys", text='Axys')
 
 
 class MI_Extrude_Point():
@@ -184,15 +197,32 @@ class MI_StartDraw(bpy.types.Operator):
                         finish_extrude(self, context)
                         return {'CANCELLED'}
 
-                extrude_center = get_vertices_center(sel_verts, active_obj)
                 rv3d = context.region_data
-                cam_dir_negated = (
+                extrude_center = get_vertices_center(sel_verts, active_obj)
+                camera_dir = (
                     rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
-                cam_dir_negated.negate()
+                camera_dir.negate()
+
+                # if we have symmetry
+                if extrude_settings.do_symmetry:
+                    if extrude_settings.symmetry_axys == 'X':
+                        extrude_center.x = 0.0
+                        camera_dir.y = 0.0
+                        camera_dir.z = 0.0
+                    if extrude_settings.symmetry_axys == 'Y':
+                        extrude_center.y = 0.0
+                        camera_dir.x = 0.0
+                        camera_dir.z = 0.0
+                    if extrude_settings.symmetry_axys == 'Z':
+                        extrude_center.z = 0.0
+                        camera_dir.x = 0.0
+                        camera_dir.y = 0.0
+
+                    camera_dir = camera_dir.normalized()
 
                 # here we create zero extrude point
                 new_point = MI_Extrude_Point(
-                    extrude_center, None, [], cam_dir_negated)
+                    extrude_center, None, [], camera_dir)
                 self.extrude_points.append(new_point)
 
                 # max_obj_scale
@@ -292,6 +322,15 @@ class MI_StartDraw(bpy.types.Operator):
                 new_pos = ut_base.get_mouse_on_plane(
                     context, self.extrude_points[-1].position, m_coords)
 
+            # if we have symmetry
+            if extrude_settings.do_symmetry:
+                if extrude_settings.symmetry_axys == 'X':
+                    new_pos.x = 0.0
+                if extrude_settings.symmetry_axys == 'Y':
+                    new_pos.y = 0.0
+                if extrude_settings.symmetry_axys == 'Z':
+                    new_pos.z = 0.0
+
             extrude_step = None
             if extrude_settings.extrude_step_type == 'Relative':
                 extrude_step = extrude_settings.relative_extrude_step * \
@@ -317,11 +356,26 @@ class MI_StartDraw(bpy.types.Operator):
                 offset_move = new_pos - self.extrude_points[-1].position
                 bpy.ops.transform.translate(
                     value=(offset_move.x, offset_move.y, offset_move.z), proportional='DISABLED')
-                offset_dir = offset_move.copy().normalized()
 
+                offset_dir = offset_move.copy()
                 up_vec = None
                 cam_dir = (rv3d.view_rotation * Vector(
-                    (0.0, 0.0, -1.0))).normalized()
+                    (0.0, 0.0, -1.0)))
+
+                # if we have symmetry
+                if extrude_settings.do_symmetry:
+                    if extrude_settings.symmetry_axys == 'X':
+                        cam_dir.y = 0.0
+                        cam_dir.z = 0.0
+                    if extrude_settings.symmetry_axys == 'Y':
+                        cam_dir.x = 0.0
+                        cam_dir.z = 0.0
+                    if extrude_settings.symmetry_axys == 'Z':
+                        cam_dir.x = 0.0
+                        cam_dir.y = 0.0
+
+                cam_dir = cam_dir.normalized()
+
 
                 # rotate if we have 2 extrude points at least
                 rotate_dir_vec = None
@@ -423,8 +477,7 @@ class MI_StartDraw(bpy.types.Operator):
 
                     # apply scale and rotation
                     if self.scale_all != 0.0:
-                        scale_all_epoints(
-                            active_obj, bm, self.extrude_points, self.scale_all)
+                        scale_all_epoints(active_obj, bm, self.extrude_points, self.scale_all)
                     if self.rotate_all != 0.0:
                         rotate_all_epoints(
                             active_obj, bm, self.extrude_points, self.rotate_all)
@@ -452,8 +505,7 @@ class MI_StartDraw(bpy.types.Operator):
                     if self.tool_mode is 'SCALE':
                         new_scale = (
                             m_coords[0] - self.deform_mouse_pos[0]) * 0.01
-                        scale_epoint(
-                            active_obj, bm, self.extrude_points[-1], new_scale)
+                        scale_epoint(active_obj, bm, self.extrude_points[-1], new_scale)
 
                     # scale all
                     else:
@@ -461,8 +513,7 @@ class MI_StartDraw(bpy.types.Operator):
                         points_size = len(self.extrude_points)
                         self.scale_all += math.radians(
                             (m_coords[0] - self.deform_mouse_pos[0]) * 0.01 * points_size)
-                        scale_all_epoints(
-                            active_obj, bm, self.extrude_points, self.scale_all)
+                        scale_all_epoints(active_obj, bm, self.extrude_points, self.scale_all)
 
                         if self.rotate_all != 0.0:
                             rotate_all_epoints(
@@ -481,8 +532,7 @@ class MI_StartDraw(bpy.types.Operator):
                     # rotate all
                     else:
                         if self.scale_all != 0.0:
-                            scale_all_epoints(
-                                active_obj, bm, self.extrude_points, self.scale_all)
+                            scale_all_epoints(active_obj, bm, self.extrude_points, self.scale_all)
 
                         points_size = len(self.extrude_points)
                         self.rotate_all += math.radians(
