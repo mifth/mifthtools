@@ -21,6 +21,7 @@ import bpy
 import bgl
 import blf
 import string
+import bmesh
 
 from bpy.props import *
 from bpy.types import Operator, AddonPreferences
@@ -34,6 +35,7 @@ from mathutils import Vector
 
 from . import mi_curve_main as cur_main
 from . import mi_utils_base as ut_base
+from . import mi_looptools as loop_t
 
 
 class MI_BasePanel(bpy.types.Panel):
@@ -92,6 +94,13 @@ class MRStartDraw(bpy.types.Operator):
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
             self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
             self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+
+            ## test looptools
+            #active_obj = context.scene.objects.active
+            #bm = bmesh.from_edit_mesh(active_obj.data)
+            #loops = loop_t.get_connected_input(bm)
+            #loops = loop_t.check_loops(loops, bm)
+            #print(loops)
 
             # test test test
             if context.scene.objects.active:
