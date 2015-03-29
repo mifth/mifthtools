@@ -64,7 +64,6 @@ class MRStartDraw(bpy.types.Operator):
                  'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
                  'NUMPAD_9', 'LEFTMOUSE', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
                  'SELECTMOUSE', 'MOUSEMOVE']
-    select_mouse_mode = None
 
     display_bezier = {}  # display bezier curves dictionary
 
@@ -79,7 +78,6 @@ class MRStartDraw(bpy.types.Operator):
     def invoke(self, context, event):
         # reset base curve_settings
         self.curve_tool_mode = 'IDLE'
-        self.select_mouse_mode = None
         self.curves = None
         self.active_curve = None
 
@@ -94,10 +92,6 @@ class MRStartDraw(bpy.types.Operator):
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
             self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
             self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
-
-            # change startup
-            self.select_mouse_mode = context.user_preferences.inputs.select_mouse
-            context.user_preferences.inputs.select_mouse = 'RIGHT'
 
             # test test test
             if context.scene.objects.active:
@@ -181,7 +175,7 @@ class MRStartDraw(bpy.types.Operator):
                 else:
                     # add point
                     act_point = get_point(self.active_curve.curve_points, self.active_curve.active_point)
-                    new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, m_coords)
+                    new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
                     if new_point_pos:
                         point = cur_main.MI_CurvePoint()
                         self.active_curve.curve_points.append(point)
@@ -204,7 +198,7 @@ class MRStartDraw(bpy.types.Operator):
                 m_coords = event.mouse_region_x, event.mouse_region_y
                 for point in self.active_curve.curve_points:
                     if point.point_id == self.active_curve.active_point:
-                        new_point_pos = ut_base.get_mouse_on_plane(context, point.position, m_coords)
+                        new_point_pos = ut_base.get_mouse_on_plane(context, point.position, None, m_coords)
                         if new_point_pos:
                             point.position = new_point_pos
                             cur_main.curve_point_changed(self.active_curve, self.active_curve.curve_points.index(point), curve_settings.curve_resolution, self.display_bezier)
@@ -228,7 +222,6 @@ class MRStartDraw(bpy.types.Operator):
 
             # clear
             display_bezier = None
-            context.user_preferences.inputs.select_mouse = self.select_mouse_mode
 
             return {'FINISHED'}
 

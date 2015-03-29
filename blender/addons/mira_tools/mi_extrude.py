@@ -88,9 +88,10 @@ class MI_ExtrudePanel(bpy.types.Panel):
         else:
             layout.prop(extrude_settings, "relative_extrude_step", text='')
 
-        layout.prop(extrude_settings, "do_symmetry", text='Symmetry')
-        if extrude_settings.do_symmetry:
-            layout.prop(extrude_settings, "symmetry_axys", text='Axys')
+        if extrude_settings.extrude_mode == 'Screen':
+            layout.prop(extrude_settings, "do_symmetry", text='Symmetry')
+            if extrude_settings.do_symmetry:
+                layout.prop(extrude_settings, "symmetry_axys", text='Axys')
 
 
 class MI_Extrude_Point():
@@ -198,27 +199,27 @@ class MI_StartDraw(bpy.types.Operator):
                         return {'CANCELLED'}
 
                 rv3d = context.region_data
-                extrude_center = get_vertices_center(sel_verts, active_obj)
-                camera_dir = (
-                    rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
-                camera_dir.negate()
 
                 # if we have symmetry
-                if extrude_settings.do_symmetry:
+                extrude_center = None
+                camera_dir = None
+                if extrude_settings.do_symmetry and extrude_settings.extrude_mode == 'Screen':
+                    extrude_center = get_vertices_center(sel_verts, active_obj, True)
                     if extrude_settings.symmetry_axys == 'X':
                         extrude_center.x = 0.0
-                        camera_dir.y = 0.0
-                        camera_dir.z = 0.0
+                        camera_dir = ut_base.get_obj_axis(active_obj, 'X')
                     if extrude_settings.symmetry_axys == 'Y':
                         extrude_center.y = 0.0
-                        camera_dir.x = 0.0
-                        camera_dir.z = 0.0
+                        camera_dir = ut_base.get_obj_axis(active_obj, 'Y')
                     if extrude_settings.symmetry_axys == 'Z':
                         extrude_center.z = 0.0
-                        camera_dir.x = 0.0
-                        camera_dir.y = 0.0
+                        camera_dir = ut_base.get_obj_axis(active_obj, 'Z')
 
-                    camera_dir = camera_dir.normalized()
+                    extrude_center = active_obj.matrix_world * extrude_center
+                else:
+                    extrude_center = get_vertices_center(sel_verts, active_obj, False)
+                    camera_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
+                    camera_dir.negate()
 
                 # here we create zero extrude point
                 new_point = MI_Extrude_Point(
@@ -302,6 +303,7 @@ class MI_StartDraw(bpy.types.Operator):
 
             # get new position according to a mouse
             new_pos = None
+            obj_dir_axys = None  # only for symmetry
             best_obj, hit_normal, hit_position = None, None, None
 
             if extrude_settings.extrude_mode == 'Raycast':
@@ -319,17 +321,19 @@ class MI_StartDraw(bpy.types.Operator):
                         new_pos += hit_normal * self.raycast_offset
 
             else:
-                new_pos = ut_base.get_mouse_on_plane(
-                    context, self.extrude_points[-1].position, m_coords)
+                if extrude_settings.do_symmetry and extrude_settings.extrude_mode == 'Screen':
+                    if extrude_settings.symmetry_axys == 'X':
+                        obj_dir_axys = ut_base.get_obj_axis(active_obj, 'X')
+                    if extrude_settings.symmetry_axys == 'Y':
+                        obj_dir_axys = ut_base.get_obj_axis(active_obj, 'Y')
+                    if extrude_settings.symmetry_axys == 'Z':
+                        obj_dir_axys = ut_base.get_obj_axis(active_obj, 'Z')
 
-            # if we have symmetry
-            if extrude_settings.do_symmetry:
-                if extrude_settings.symmetry_axys == 'X':
-                    new_pos.x = 0.0
-                if extrude_settings.symmetry_axys == 'Y':
-                    new_pos.y = 0.0
-                if extrude_settings.symmetry_axys == 'Z':
-                    new_pos.z = 0.0
+                    new_pos = ut_base.get_mouse_on_plane(
+                        context, self.extrude_points[-1].position, obj_dir_axys, m_coords)
+                else:
+                    new_pos = ut_base.get_mouse_on_plane(
+                        context, self.extrude_points[-1].position, None, m_coords)
 
             extrude_step = None
             if extrude_settings.extrude_step_type == 'Relative':
@@ -359,23 +363,13 @@ class MI_StartDraw(bpy.types.Operator):
 
                 offset_dir = offset_move.copy()
                 up_vec = None
-                cam_dir = (rv3d.view_rotation * Vector(
-                    (0.0, 0.0, -1.0)))
+                cam_dir = None
 
                 # if we have symmetry
-                if extrude_settings.do_symmetry:
-                    if extrude_settings.symmetry_axys == 'X':
-                        cam_dir.y = 0.0
-                        cam_dir.z = 0.0
-                    if extrude_settings.symmetry_axys == 'Y':
-                        cam_dir.x = 0.0
-                        cam_dir.z = 0.0
-                    if extrude_settings.symmetry_axys == 'Z':
-                        cam_dir.x = 0.0
-                        cam_dir.y = 0.0
-
-                cam_dir = cam_dir.normalized()
-
+                if extrude_settings.do_symmetry and extrude_settings.extrude_mode == 'Screen':
+                    cam_dir = obj_dir_axys
+                else:
+                    cam_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
 
                 # rotate if we have 2 extrude points at least
                 rotate_dir_vec = None
@@ -405,7 +399,7 @@ class MI_StartDraw(bpy.types.Operator):
                     # fix first extrude
                     if extrude_settings.extrude_mode == 'Raycast':
                         fix_first_extrude_dir = ut_base.get_mouse_on_plane(
-                            context, self.extrude_points[-1].position, m_coords)
+                            context, self.extrude_points[-1].position, None, m_coords)
                         self.extrude_points[-1].direction = (
                             fix_first_extrude_dir - self.extrude_points[-1].position).normalized()
                     else:
@@ -660,11 +654,11 @@ def mi_pick_extrude_point(point, context, mouse_coords):
 
 
 # TODO Move it into utilities method. As Deform class has the same method.
-def get_vertices_center(verts, obj):
-    # if obj.mode == 'EDIT':
-        # bm.verts.ensure_lookup_table()
-    vert_world_first = obj.matrix_world * verts[0].co
-    # multiply_scale(vert_world_first, obj.scale)
+def get_vertices_center(verts, obj, local_space):
+
+    vert_world_first = verts[0].co
+    if not local_space:
+        vert_world_first = obj.matrix_world * verts[0].co
 
     x_min = vert_world_first.x
     x_max = vert_world_first.x
@@ -674,8 +668,9 @@ def get_vertices_center(verts, obj):
     z_max = vert_world_first.z
 
     for vert in verts:
-        vert_world = obj.matrix_world * vert.co
-        # multiply_scale(vert_world, obj.scale)
+        vert_world = vert.co
+        if not local_space:
+            vert_world = obj.matrix_world * vert.co
 
         if vert_world.x > x_max:
             x_max = vert_world.x

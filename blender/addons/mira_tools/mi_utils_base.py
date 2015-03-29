@@ -87,17 +87,38 @@ def obj_ray_cast(obj, matrix, view_vector, ray_origin, ray_max):
 
 
 # get mouse on a plane
-def get_mouse_on_plane(context, plane_pos, mouse_coords):
+def get_mouse_on_plane(context, plane_pos, plane_dir, mouse_coords):
     region = context.region
     rv3d = context.region_data
-    cam_dir = rv3d.view_rotation * Vector((0.0, 0.0, -1.0))
-    # cam_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d,
-    # (region.width/2.0, region.height/2.0))
+
+    final_dir = plane_dir
+    if plane_dir is None:
+        final_dir = rv3d.view_rotation * Vector((0.0, 0.0, -1.0))
+
     mouse_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d, mouse_coords)
     mouse_dir = view3d_utils.region_2d_to_vector_3d(region, rv3d, mouse_coords)
     new_pos = mathu.geometry.intersect_line_plane(
-        mouse_pos, mouse_pos + (mouse_dir * 10000.0), plane_pos, cam_dir, False)
+        mouse_pos, mouse_pos + (mouse_dir * 10000.0), plane_pos, final_dir, False)
     if new_pos:
         return new_pos
 
     return None
+
+
+# get object local axys
+def get_obj_axis(obj, axis):
+    ax = 0
+    if axis == 'Y' or axis == '-Y':
+        ax = 1
+    if axis == 'Z' or axis == '-Z':
+        ax = 2
+
+    obj_matrix = obj.matrix_world
+    axis_tuple = (
+        obj_matrix[0][ax], obj_matrix[1][ax], obj_matrix[2][ax])
+    axisResult = Vector(axis_tuple).normalized()
+
+    if axis == '-X' or axis == '-Y' or axis == '-Z':
+        axisResult.negate()
+
+    return axisResult
