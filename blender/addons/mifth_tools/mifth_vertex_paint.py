@@ -64,7 +64,7 @@ class MFTSetColorToSelected(bpy.types.Operator):
 
                 i += 1
 
-            obj.data.update()
+        obj.data.update()
 
         return {'FINISHED'}
 
@@ -113,6 +113,6 @@ class MFTInvertColors(bpy.types.Operator):
                                 2] = 1.0 - color_layer.data[i].color[2]
                 i += 1
 
-            obj.data.update()
+        obj.data.update()
 
         return {'FINISHED'}
