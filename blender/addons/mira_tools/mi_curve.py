@@ -50,14 +50,14 @@ class MI_BasePanel(bpy.types.Panel):
         layout = self.layout
         curve_settings = context.scene.mi_curve_settings
 
-        layout.operator("mira.start_draw", text="Draw Curve")
+        layout.operator("mira.curve_test", text="Curve Test")
         layout.prop(curve_settings, "curve_resolution", text='Resolution')
         layout.prop(curve_settings, "draw_handlers", text='Handlers')
 
 
-class MRStartDraw(bpy.types.Operator):
+class MRCurveTest(bpy.types.Operator):
     """Draw a line with the mouse"""
-    bl_idname = "mira.start_draw"
+    bl_idname = "mira.curve_test"
     bl_label = "StartDraw"
     bl_description = "Draw Test"
     bl_options = {'REGISTER', 'UNDO'}
@@ -109,13 +109,12 @@ class MRStartDraw(bpy.types.Operator):
                 if self.curves:
                     cur = self.curves[0]
                 else:
-                    cur = cur_main.MI_CurveObject()
+                    cur = cur_main.MI_CurveObject(None)
                 self.curves.append(cur)
                 self.active_curve = cur  # set active curve
 
                 # for i in range(8):
                 #     point = cur.curve_points.add()
-                #     point.point_id = generate_point_id(cur.curve_points)
                 #     vec = Vector((-1.0, 0.0, 0.0))
                 #
                 #     beta = math.radians((360.0 /8.0)*i )
@@ -128,29 +127,24 @@ class MRStartDraw(bpy.types.Operator):
 
 
                 # points
-                point = cur_main.MI_CurvePoint()
+                point = cur_main.MI_CurvePoint(cur.curve_points)
                 cur.curve_points.append(point)
-                point.point_id = generate_point_id(cur.curve_points)
                 point.position = (-1.0, 0.0, 0.0)
 
-                #point = cur_main.MI_CurvePoint()
+                #point = cur_main.MI_CurvePoint(cur.curve_points)
                 #cur.curve_points.append(point)
-                #point.point_id = generate_point_id(cur.curve_points)
                 #point.position = (0.0, 1.0, 0.0)
 
-                #point = cur_main.MI_CurvePoint()
+                #point = cur_main.MI_CurvePoint(cur.curve_points)
                 #cur.curve_points.append(point)
-                #point.point_id = generate_point_id(cur.curve_points)
                 #point.position = (1.0, 0.0, 0.0)
 
-                #point = cur_main.MI_CurvePoint()
+                #point = cur_main.MI_CurvePoint(cur.curve_points)
                 #cur.curve_points.append(point)
-                #point.point_id = generate_point_id(cur.curve_points)
                 #point.position = (0.0, -1.0, 0.0)
 
-                #point = cur_main.MI_CurvePoint()
+                #point = cur_main.MI_CurvePoint(cur.curve_points)
                 #cur.curve_points.append(point)
-                #point.point_id = generate_point_id(cur.curve_points)
                 #point.position = (-1.0, 0.0, 0.0)
 
                 cur.active_point = point.point_id
@@ -176,27 +170,39 @@ class MRStartDraw(bpy.types.Operator):
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
                 # pick point test
                 m_coords = event.mouse_region_x, event.mouse_region_y
-                picked_point = pick_curve_point(self.active_curve, context, m_coords)
+                picked_point = cur_main.pick_curve_point(self.active_curve, context, m_coords)
                 if picked_point:
                     self.active_curve.active_point = picked_point.point_id
                     self.curve_tool_mode = 'MOVE_POINT'
                     #print(picked_point)
                 else:
                     # add point
-                    act_point = get_point(self.active_curve.curve_points, self.active_curve.active_point)
-                    new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
-                    if new_point_pos:
-                        point = cur_main.MI_CurvePoint()
-                        self.active_curve.curve_points.append(point)
-                        point.point_id = generate_point_id(self.active_curve.curve_points)
-                        point.position = new_point_pos
-                        self.active_curve.active_point = point.point_id
-                        self.curve_tool_mode = 'ADD_POINT'
+                    if event.ctrl:
+                        act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
+                        new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
 
-                        # add to display
-                        cur_main.curve_point_changed(self.active_curve, self.active_curve.curve_points.index(point), curve_settings.curve_resolution, self.display_bezier)
+                        if new_point_pos:
+                            new_point = cur_main.add_point(new_point_pos, self.active_curve)
+
+                            self.active_curve.active_point = new_point.point_id
+                            self.curve_tool_mode = 'ADD_POINT'
+
+                            # add to display
+                            cur_main.curve_point_changed(self.active_curve, self.active_curve.curve_points.index(new_point), curve_settings.curve_resolution, self.display_bezier)
 
                 return {'RUNNING_MODAL'}
+
+            elif event.type in {'DEL'} and event.value == 'PRESS':
+                if self.active_curve.active_point:
+                    the_act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
+                    the_act_point_index = self.active_curve.curve_points.index(the_act_point)
+
+                    cur_main.delete_point(the_act_point, self.active_curve, self.display_bezier, curve_settings.curve_resolution)
+
+                    self.active_curve.active_point = self.active_curve.curve_points[the_act_point_index - 1].point_id
+
+                return {'RUNNING_MODAL'}
+
 
         elif self.curve_tool_mode == 'MOVE_POINT':
             if event.value == 'RELEASE':
@@ -258,43 +264,6 @@ def mi_curve_draw_3d(self, context):
             for cur_point in curve.curve_points:
                 if cur_point.point_id in self.display_bezier:
                     mi_curve_draw_3d_polyline(self.display_bezier[cur_point.point_id], 2, (0.5,0.8,0.9,1.0))
-
-
-def generate_point_id(points):
-    # Generate unique id
-    other_ids = []
-    for point in points:
-        other_ids.append(point.point_id)
-
-    while True:
-        uniq_numb = None
-        uniq_id_temp = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                               for _ in range(10))
-        if uniq_id_temp not in other_ids:
-            uniq_numb = uniq_id_temp
-            break
-
-    other_ids = None  # clean
-    return uniq_numb
-
-def get_point(points, p_id):
-    for point in points:
-        if point.point_id == p_id:
-            return point
-    return None
-
-
-def pick_curve_point(curve, context, mouse_coords):
-    region = context.region
-    rv3d = context.region_data
-
-    for cu_point in curve.curve_points:
-        point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
-        length = (point_pos_2d - Vector(mouse_coords)).length
-        if length <= 9.0:
-            return cu_point
-
-    return None
 
 
 # TODO MOVE TO UTILITIES

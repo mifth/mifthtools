@@ -32,6 +32,8 @@ import mathutils as mathu
 import random
 from mathutils import Vector
 
+from . import mi_utils_base as ut_base
+
 #class MI_CurvePoint(bpy.types.PropertyGroup):
     #position = FloatVectorProperty()
     #direction = FloatVectorProperty()
@@ -51,29 +53,43 @@ from mathutils import Vector
 class MI_CurvePoint():
 
     # class constructor
-    def __init__(self):
+    def __init__(self, other_points):
         self.position = FloatVectorProperty()
         self.direction = FloatVectorProperty()
         self.up_direction = FloatVectorProperty()
         self.handle1 = None  # Vector
         self.handle2 = None  # Vector
+
         self.point_id = StringProperty(default="")
+
+        other_points_ids = None
+        if other_points:
+            other_points_ids = get_points_ids(other_points)
+        self.point_id = ut_base.generate_id(other_points_ids)
+
         self.selected = BoolProperty(default=False)
 
 
 class MI_CurveObject():
 
     # class constructor
-    def __init__(self):
+    def __init__(self, other_curves):
         self.curve_points = []
         self.active_point = StringProperty(default="")
+
+        self.curve_id = StringProperty(default="")
+
+        other_curve_ids = None
+        if other_curves:
+            other_curve_ids = get_curves_ids(other_curves)
+        self.curve_id = ut_base.generate_id(other_curve_ids)
 
 
 def curve_point_changed(curve, point_numb, curve_resolution, display_bezier):
     # here we update 4 bezier areas
     len_cur = len(curve.curve_points)
-    for i in range(4):
-        new_i = (i - 1) + point_numb
+    for i in range(6):
+        new_i = (i - 2) + point_numb
         if new_i < len_cur and new_i > 0:
             new_b_points = generate_bezier_area(curve, new_i, curve_resolution)
             if new_b_points:
@@ -177,3 +193,87 @@ def generate_bezier_area(curve, point_numb, curve_resolution):
 
     return None
 
+
+def get_point_by_id(points, p_id):
+    for point in points:
+        if point.point_id == p_id:
+            return point
+    return None
+
+
+def get_points_ids(points):
+    other_ids = []
+    for point in points:
+        other_ids.append(point.point_id)
+
+    return other_ids
+
+
+def get_curves_ids(curves):
+    other_ids = []
+    for curve in curves:
+        other_ids.append(curve.curve_id)
+
+    return other_ids
+
+
+def pick_curve_point(curve, context, mouse_coords):
+    region = context.region
+    rv3d = context.region_data
+
+    picked_point = None
+    picked_point_length = None
+    for cu_point in curve.curve_points:
+        point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
+        the_length = (point_pos_2d - Vector(mouse_coords)).length
+        if the_length <= 9.0:
+            if picked_point is None:
+                picked_point = cu_point
+                picked_point_length = the_length
+            else:
+                if the_length < picked_point_length:
+                    picked_point = cu_point
+                    picked_point_length = the_length                    
+
+    return picked_point
+
+
+def add_point(new_point_pos, curve):
+    active_point = get_point_by_id(curve.curve_points, curve.active_point)
+    point_index = curve.curve_points.index(active_point)
+
+    new_point = MI_CurvePoint(curve.curve_points)
+    # add to 0 index
+    if point_index == 0:
+        curve.curve_points.insert(0, new_point)
+
+    # add to last index
+    elif point_index == len(curve.curve_points) - 1:
+        curve.curve_points.append(new_point)
+
+    # add to other indexes
+    else:
+        check_vec = (new_point_pos - active_point.position).normalized()
+        point_1 = ((curve.curve_points[point_index + 1].position ) - active_point.position).normalized()
+        p1_angle = point_1.angle(check_vec)
+        point_2 = ((curve.curve_points[point_index - 1].position ) - active_point.position).normalized()
+        p2_angle = point_2.angle(check_vec)
+
+        if p1_angle < p2_angle:
+            curve.curve_points.insert(point_index + 1, new_point)
+        else:
+            curve.curve_points.insert(point_index, new_point)
+
+    new_point.position = new_point_pos
+
+    return new_point
+
+
+def delete_point(point_to_delete, curve, display_bezier, curve_resolution):
+    if point_to_delete.point_id in display_bezier:
+        del display_bezier[point_to_delete.point_id]  # remove from dictionary
+
+    curve.curve_points.remove(point_to_delete)  # remove from curve
+
+    display_bezier.clear()
+    generate_bezier_points(curve, display_bezier, curve_resolution)

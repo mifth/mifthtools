@@ -122,3 +122,23 @@ def get_obj_axis(obj, axis):
         axisResult.negate()
 
     return axisResult
+
+
+def generate_id(other_ids):
+    # Generate unique id
+    while True:
+        uniq_numb = None
+        uniq_id_temp = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                               for _ in range(10))
+
+        if other_ids:
+            if uniq_id_temp not in other_ids:
+                uniq_numb = uniq_id_temp
+                break
+        else:
+            uniq_numb = uniq_id_temp
+            break
+
+    return uniq_numb
+
+
