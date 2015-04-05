@@ -67,7 +67,7 @@ class MI_CurvePoint():
             other_points_ids = get_points_ids(other_points)
         self.point_id = ut_base.generate_id(other_points_ids)
 
-        self.selected = BoolProperty(default=False)
+        self.select = False
 
 
 class MI_CurveObject():
@@ -76,6 +76,7 @@ class MI_CurveObject():
     def __init__(self, other_curves):
         self.curve_points = []
         self.active_point = StringProperty(default="")
+        self.display_bezier = {}  # display bezier curves dictionary
 
         self.curve_id = StringProperty(default="")
 
@@ -235,12 +236,54 @@ def pick_curve_point(curve, context, mouse_coords):
                     picked_point = cu_point
                     picked_point_length = the_length                    
 
-    return picked_point
+    return picked_point, the_length
+
+
+def pick_all_curves_point(all_curves, context, mouse_coords):
+    best_point = None
+    best_length = None
+    choosen_curve = None
+
+    for curve in all_curves:
+        pick_point, pick_length = pick_curve_point(curve, context, mouse_coords)
+
+        if pick_point is not None:
+            if best_point is None:
+                choosen_curve = curve
+                best_point = pick_point
+                best_length = pick_length
+            elif pick_length < best_length:
+                choosen_curve = curve
+                best_point = pick_point
+                best_length = pick_length
+
+    return best_point, best_length, choosen_curve
+
+
+def select_point(curve, picked_point, additive_selection):
+    if additive_selection is False:
+        if picked_point.select is False:
+            select_all_points(curve.curve_points, False)
+        picked_point.select = True
+    else:
+        if picked_point.select:
+            sel_points = get_selected_points(curve.curve_points)
+            if len(sel_points) > 1:
+                for point in sel_points:
+                    if point.point_id != picked_point.point_id:
+                        curve.active_point = point.point_id
+                        break
+                picked_point.select = False
+        else:
+            picked_point.select = True
 
 
 def add_point(new_point_pos, curve):
     active_point = get_point_by_id(curve.curve_points, curve.active_point)
     point_index = curve.curve_points.index(active_point)
+
+    # deselect points
+    select_all_points(curve.curve_points, False)
 
     new_point = MI_CurvePoint(curve.curve_points)
     # add to 0 index
@@ -265,6 +308,7 @@ def add_point(new_point_pos, curve):
             curve.curve_points.insert(point_index, new_point)
 
     new_point.position = new_point_pos
+    new_point.select = True
 
     return new_point
 
@@ -275,5 +319,18 @@ def delete_point(point_to_delete, curve, display_bezier, curve_resolution):
 
     curve.curve_points.remove(point_to_delete)  # remove from curve
 
-    display_bezier.clear()
-    generate_bezier_points(curve, display_bezier, curve_resolution)
+
+def select_all_points(points, select_mode):
+    for point in points:
+        point.select = select_mode
+
+
+def get_selected_points(points):
+    sel_points = []
+    for point in points:
+        if point.select:
+            sel_points.append(point)
+
+    return sel_points
+
+

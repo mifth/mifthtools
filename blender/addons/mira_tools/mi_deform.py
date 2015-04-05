@@ -34,18 +34,6 @@ import random
 from mathutils import Vector, Matrix
 
 
-class MI_DeformPanel(bpy.types.Panel):
-    bl_label = "Deform"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
-    bl_context = "mesh_edit"
-    bl_category = 'Mira'
-
-    def draw(self, context):
-        layout = self.layout
-        layout.operator("mira.deformer", text="Deformer")
-
-
 class MI_Deform(bpy.types.Operator):
 
     """Draw a line with the mouse"""

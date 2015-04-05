@@ -31,14 +31,18 @@ bl_info = {
 
 if "bpy" in locals():
     import imp
-    imp.reload(mi_curve)
+    imp.reload(mi_curve_test)
+    imp.reload(mi_curve_stretch)
     imp.reload(mi_curve_settings)
+    imp.reload(mi_deform_gui)
     imp.reload(mi_deform)
     imp.reload(mi_extrude)
 else:
-    from . import mi_curve
+    from . import mi_curve_test
+    from . import mi_curve_stretch
     from . import mi_curve_settings
     from . import mi_deform
+    from . import mi_deform_gui
     from . import mi_extrude
 
 
@@ -52,20 +56,26 @@ def register():
 
     # bpy.types.Scene.mira_curve_points = PointerProperty(
     #     name="Mira Tool Variables",
-    #     type=mi_curve.MR_CurvePoint,
+    #     type=mi_curve_test.MR_CurvePoint,
     #     description="Mira Curve"
     # )
 
     #bpy.types.Object.mi_curves = CollectionProperty(
         #name="Mira Tool Variables",
-        #type=mi_curve.MI_CurveObject,
+        #type=mi_curve_test.MI_CurveObject,
         #description="Mira Curve"
     #)
 
     bpy.types.Scene.mi_curve_settings = PointerProperty(
-        name="Mira Tool Variables",
+        name="Global Curve Settings",
         type=mi_curve_settings.MI_CurveSettings,
-        description="Mira Curve"
+        description="Global Curve Settings."
+    )
+
+    bpy.types.Scene.mi_cur_stretch_settings = PointerProperty(
+        name="Curve Stretch Settings",
+        type=mi_curve_stretch.MI_CurveStretchSettings,
+        description="Curve Stretch Settings."
     )
 
     bpy.types.Scene.mi_extrude_settings = PointerProperty(
@@ -80,6 +90,7 @@ def unregister():
     #del bpy.types.Scene.miraTool
     #del bpy.types.Object.mi_curves  # need to investigate if i need to delete it
     del bpy.types.Scene.mi_curve_settings
+    del bpy.types.Scene.mi_cur_stretch_settings
     del bpy.types.Scene.mi_extrude_settings
     bpy.utils.unregister_module(__name__)
 
