@@ -113,6 +113,8 @@ class MI_CurveStretch(bpy.types.Operator):
 
         curve_settings = context.scene.mi_curve_settings
         cur_stretch_settings = context.scene.mi_cur_stretch_settings
+        active_obj = context.scene.objects.active
+        bm = bmesh.from_edit_mesh(active_obj.data)
 
         # make picking
         if self.curve_tool_mode == 'IDLE':
@@ -174,6 +176,12 @@ class MI_CurveStretch(bpy.types.Operator):
 
         elif self.curve_tool_mode == 'MOVE_POINT':
             if event.value == 'RELEASE':
+                curve_vecs = [active_obj.matrix_world.inverted() * point.position for point in self.active_curve.curve_points]
+                line = pass_line(curve_vecs)
+                loop_verts = [bm.verts[i] for i in self.loops[self.all_curves.index(self.active_curve)][0]]
+                verts_to_line(loop_verts, line)
+                bmesh.update_edit_mesh(active_obj.data)
+
                 self.curve_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
@@ -275,6 +283,26 @@ def crete_curve_to_line(points_number, line_data, all_curves):
                 break
 
     return curve
+
+
+def verts_to_line(verts, line_data):
+    line_len = line_data[-1][1]
+    verts_number = len(verts)
+    point_passed = 0
+    for i, vert in enumerate(verts):
+        if i == 0:
+            vert.co = line_data[0][0]
+            continue
+        elif i == verts_number - 1:
+            vert.co = line_data[-1][0]
+            break
+
+        point_len = (line_len/ (verts_number - 1)) * (i)
+        for j, point_data in enumerate(line_data, start=point_passed):
+            if line_data[j+1][1] >= point_len:
+                vert.co = line_data[j][0] + (line_data[j][3] * (point_len - line_data[j][1]))
+                point_passed = j
+                break
 
 
 def mi_curve_draw_2d(self, context):
