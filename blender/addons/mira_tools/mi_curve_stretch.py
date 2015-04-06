@@ -76,6 +76,10 @@ class MI_CurveStretch(bpy.types.Operator):
             args = (self, context)
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
+
+            cur_stretch_settings = context.scene.mi_cur_stretch_settings
+            curve_settings = context.scene.mi_curve_settings
+
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
 
@@ -84,6 +88,13 @@ class MI_CurveStretch(bpy.types.Operator):
             self.loops = loop_t.check_loops(self.loops, bm)
 
             if self.loops:
+                for loop in self.loops:
+                    loop_verts = [active_obj.matrix_world * bm.verts[i].co for i in loop[0]]
+                    loop_line = pass_line(loop_verts)
+                    new_curve = crete_curve_to_line(cur_stretch_settings.point_number, loop_line, self.all_curves)
+                    self.all_curves.append(new_curve)
+                    self.active_curve = new_curve
+
                 self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
                 self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
                 context.window_manager.modal_handler_add(self)
@@ -101,6 +112,7 @@ class MI_CurveStretch(bpy.types.Operator):
         context.area.tag_redraw()
 
         curve_settings = context.scene.mi_curve_settings
+        cur_stretch_settings = context.scene.mi_cur_stretch_settings
 
         # make picking
         if self.curve_tool_mode == 'IDLE':
@@ -218,6 +230,51 @@ def reset_params(self):
 
     # loops code
     self.loops = None
+
+
+def pass_line(vecs):
+    line_length = 0.0
+    line_data = []
+    for i, vec in enumerate(vecs):
+        if i == len(vecs) - 1:
+            line_data.append((vec, line_length, 0.0, None))
+        else:
+            vec_area = vecs[i+1] - vec
+            area_length = vec_area.length
+            vec_dir = vec_area.normalized()
+            line_data.append((vec, line_length, area_length, vec_dir))
+
+            line_length += area_length
+
+    return line_data
+
+
+def crete_curve_to_line(points_number, line_data, all_curves):
+    curve = cur_main.MI_CurveObject(all_curves)
+    line_len = line_data[-1][1]
+    point_passed = 0
+    for i in range(points_number):
+        if i == 0:
+            curve_point = cur_main.MI_CurvePoint(curve.curve_points)
+            curve_point.position = line_data[0][0]
+            curve.curve_points.append(curve_point)
+            continue
+        elif i == points_number - 1:
+            curve_point = cur_main.MI_CurvePoint(curve.curve_points)
+            curve_point.position = line_data[-1][0]
+            curve.curve_points.append(curve_point)
+            break
+
+        point_len = (line_len/ (points_number - 1)) * (i)
+        for j, point_data in enumerate(line_data, start=point_passed):
+            if line_data[j+1][1] >= point_len:
+                curve_point = cur_main.MI_CurvePoint(curve.curve_points)
+                curve_point.position = line_data[j][0] + (line_data[j][3] * (point_len - line_data[j][1]))
+                curve.curve_points.append(curve_point)
+                point_passed = j
+                break
+
+    return curve
 
 
 def mi_curve_draw_2d(self, context):
