@@ -189,7 +189,9 @@ class MI_CurveStretch(bpy.types.Operator):
                 for point in self.active_curve.curve_points:
                     b_points = self.active_curve.display_bezier.get(point.point_id)
                     if b_points:
-                        curve_vecs.extend(b_points)  # add array to array
+                        b_points = b_points.copy()
+                        for b_p in b_points:
+                            curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
 
                 line = pass_line(curve_vecs)
                 loop_verts = [bm.verts[i] for i in self.loops[self.all_curves.index(self.active_curve)][0]]
