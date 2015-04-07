@@ -478,8 +478,8 @@ class MI_StartDraw(bpy.types.Operator):
 
                 # active_obj.data.update()
                 #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
-                bpy.ops.object.editmode_toggle()
-                bpy.ops.object.editmode_toggle()
+                #bpy.ops.object.editmode_toggle()
+                #bpy.ops.object.editmode_toggle()
                 bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
@@ -540,8 +540,8 @@ class MI_StartDraw(bpy.types.Operator):
                         self.deform_mouse_pos = m_coords
 
                 #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
-                bpy.ops.object.editmode_toggle()
-                bpy.ops.object.editmode_toggle()
+                #bpy.ops.object.editmode_toggle()
+                #bpy.ops.object.editmode_toggle()
                 bmesh.update_edit_mesh(active_obj.data)
 
                 return {'RUNNING_MODAL'}
