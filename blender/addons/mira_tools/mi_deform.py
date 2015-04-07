@@ -219,5 +219,7 @@ def deform_obj(obj, context, self):
                     vert.co.z += move_offset
 
     # obj.data.update()
-    bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+    #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.object.editmode_toggle()
     bmesh.update_edit_mesh(obj.data)

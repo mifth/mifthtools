@@ -196,7 +196,9 @@ class MI_CurveStretch(bpy.types.Operator):
                 line = pass_line(curve_vecs)
                 loop_verts = [bm.verts[i] for i in self.loops[self.all_curves.index(self.active_curve)][0]]
                 verts_to_line(loop_verts, line)
-                bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+                #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+                bpy.ops.object.editmode_toggle()
+                bpy.ops.object.editmode_toggle()
                 bmesh.update_edit_mesh(active_obj.data)
 
                 self.curve_tool_mode = 'IDLE'

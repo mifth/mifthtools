@@ -477,7 +477,9 @@ class MI_StartDraw(bpy.types.Operator):
                             active_obj, bm, self.extrude_points, self.rotate_all)
 
             # active_obj.data.update()
-            bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+            #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.object.editmode_toggle()
             bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
@@ -537,7 +539,9 @@ class MI_StartDraw(bpy.types.Operator):
 
                         self.deform_mouse_pos = m_coords
 
-                bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+                #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+                bpy.ops.object.editmode_toggle()
+                bpy.ops.object.editmode_toggle()
                 bmesh.update_edit_mesh(active_obj.data)
 
                 return {'RUNNING_MODAL'}
@@ -630,8 +634,6 @@ def get_selected_bmverts_ids(bm):
     return sel_verts
 
 # TODO move to utils
-
-
 def get_bmverts_from_ids(bm, ids):
     verts = []
     bm.verts.ensure_lookup_table()
