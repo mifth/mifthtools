@@ -67,6 +67,7 @@ class MI_CurveStretch(bpy.types.Operator):
 
     # loops code
     loops = None
+    manipulator = None
 
     def invoke(self, context, event):
         reset_params(self)
@@ -88,6 +89,10 @@ class MI_CurveStretch(bpy.types.Operator):
             self.loops = loop_t.check_loops(self.loops, bm)
 
             if self.loops:
+                self.manipulator = context.space_data.show_manipulator
+                context.space_data.show_manipulator = False
+
+
                 for loop in self.loops:
                     loop_verts = [active_obj.matrix_world * bm.verts[i].co for i in loop[0]]
                     loop_line = pass_line(loop_verts)
@@ -100,9 +105,11 @@ class MI_CurveStretch(bpy.types.Operator):
                 context.window_manager.modal_handler_add(self)
                 return {'RUNNING_MODAL'}
             else:
+                finish_work(self, context)
                 self.report({'WARNING'}, "No loops found!")
-                return {'CANCELLED'}                
+                return {'CANCELLED'}
         else:
+            finish_work(self, context)
             self.report({'WARNING'}, "View3D not found, cannot run operator!")
             return {'CANCELLED'}
 
@@ -176,7 +183,14 @@ class MI_CurveStretch(bpy.types.Operator):
 
         elif self.curve_tool_mode == 'MOVE_POINT':
             if event.value == 'RELEASE':
-                curve_vecs = [active_obj.matrix_world.inverted() * point.position for point in self.active_curve.curve_points]
+                # move point to the curve
+                #curve_vecs = [active_obj.matrix_world.inverted() * point.position for point in self.active_curve.curve_points]
+                curve_vecs = []
+                for point in self.active_curve.curve_points:
+                    b_points = self.active_curve.display_bezier.get(point.point_id)
+                    if b_points:
+                        curve_vecs.extend(b_points)  # add array to array
+
                 line = pass_line(curve_vecs)
                 loop_verts = [bm.verts[i] for i in self.loops[self.all_curves.index(self.active_curve)][0]]
                 verts_to_line(loop_verts, line)
@@ -216,6 +230,7 @@ class MI_CurveStretch(bpy.types.Operator):
         if event.type in {'RIGHTMOUSE', 'ESC'}:
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_deform_handle_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_deform_handle_2d, 'WINDOW')
+            finish_work(self, context)
 
             # clear
             #display_bezier = None
@@ -238,6 +253,9 @@ def reset_params(self):
 
     # loops code
     self.loops = None
+
+def finish_work(self, context):
+    context.space_data.show_manipulator = self.manipulator
 
 
 def pass_line(vecs):
@@ -264,12 +282,12 @@ def crete_curve_to_line(points_number, line_data, all_curves):
     for i in range(points_number):
         if i == 0:
             curve_point = cur_main.MI_CurvePoint(curve.curve_points)
-            curve_point.position = line_data[0][0]
+            curve_point.position = line_data[0][0].copy()
             curve.curve_points.append(curve_point)
             continue
         elif i == points_number - 1:
             curve_point = cur_main.MI_CurvePoint(curve.curve_points)
-            curve_point.position = line_data[-1][0]
+            curve_point.position = line_data[-1][0].copy()
             curve.curve_points.append(curve_point)
             break
 
@@ -291,10 +309,10 @@ def verts_to_line(verts, line_data):
     point_passed = 0
     for i, vert in enumerate(verts):
         if i == 0:
-            vert.co = line_data[0][0]
+            vert.co = line_data[0][0].copy()
             continue
         elif i == verts_number - 1:
-            vert.co = line_data[-1][0]
+            vert.co = line_data[-1][0].copy()
             break
 
         point_len = (line_len/ (verts_number - 1)) * (i)
