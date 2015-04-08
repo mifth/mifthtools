@@ -68,6 +68,7 @@ class MI_CurveStretch(bpy.types.Operator):
     # loops code
     loops = None
     manipulator = None
+    original_verts_data = None
 
     def invoke(self, context, event):
         reset_params(self)
@@ -99,6 +100,8 @@ class MI_CurveStretch(bpy.types.Operator):
                     new_curve = crete_curve_to_line(cur_stretch_settings.point_number, loop_line, self.all_curves)
                     self.all_curves.append(new_curve)
                     self.active_curve = new_curve
+
+                    self.original_verts_data.append(pass_line([bm.verts[i].co for i in loop[0]]))
 
                 self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
                 self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
@@ -195,7 +198,7 @@ class MI_CurveStretch(bpy.types.Operator):
 
                 line = pass_line(curve_vecs)
                 loop_verts = [bm.verts[i] for i in self.loops[self.all_curves.index(self.active_curve)][0]]
-                verts_to_line(loop_verts, line)
+                verts_to_line(loop_verts, line, self.original_verts_data[self.all_curves.index(self.active_curve)])
                 #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
                 bpy.ops.object.editmode_toggle()
                 bpy.ops.object.editmode_toggle()
@@ -258,6 +261,7 @@ def reset_params(self):
 
     # loops code
     self.loops = None
+    self.original_verts_data = []
 
 def finish_work(self, context):
     context.space_data.show_manipulator = self.manipulator
@@ -308,7 +312,7 @@ def crete_curve_to_line(points_number, line_data, all_curves):
     return curve
 
 
-def verts_to_line(verts, line_data):
+def verts_to_line(verts, line_data, verts_data):
     line_len = line_data[-1][1]
     verts_number = len(verts)
     point_passed = 0
@@ -320,7 +324,11 @@ def verts_to_line(verts, line_data):
             vert.co = line_data[-1][0].copy()
             break
 
-        point_len = (line_len/ (verts_number - 1)) * (i)
+        point_len = None
+        if verts_data:
+            point_len = (verts_data[i][1]/verts_data[-1][1]) * line_len
+        else:
+            point_len = (line_len/ (verts_number - 1)) * (i)
         for j, point_data in enumerate(line_data, start=point_passed):
             if line_data[j+1][1] >= point_len:
                 vert.co = line_data[j][0] + (line_data[j][3] * (point_len - line_data[j][1]))
