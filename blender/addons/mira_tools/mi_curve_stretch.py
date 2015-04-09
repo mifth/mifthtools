@@ -291,7 +291,11 @@ def update_curve_line(active_obj, curve_to_update, loops, all_curves, bm, spread
 
     line = pass_line(curve_vecs)
     loop_verts = [bm.verts[i] for i in loops[all_curves.index(curve_to_update)][0]]
-    verts_to_line(loop_verts, line, original_verts_data)
+
+    if spread_mode == 'ORIGINAL':
+        verts_to_line(loop_verts, line, original_verts_data)
+    else:
+        verts_to_line(loop_verts, line, None)
 
 
 def pass_line(vecs):
