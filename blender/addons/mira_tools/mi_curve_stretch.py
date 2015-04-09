@@ -39,10 +39,14 @@ from . import mi_looptools as loop_t
 
 
 class MI_CurveStretchSettings(bpy.types.PropertyGroup):
-    # Curve Stretch Settings
-    #curve_resolution = IntProperty(default=13, min=1, max=128)
-
-    point_number = IntProperty(default=5, min=2, max=128)
+    points_number = IntProperty(default=5, min=2, max=128)
+    spread_mode = EnumProperty(
+        name = "Spread Mode",
+        items = (('ORIGINAL', 'ORIGINAL', ''),
+                ('UNIFORM', 'UNIFORM', '')
+                ),
+        default = 'ORIGINAL'
+    )
 
 
 class MI_CurveStretch(bpy.types.Operator):
@@ -97,15 +101,31 @@ class MI_CurveStretch(bpy.types.Operator):
                 for loop in self.loops:
                     loop_verts = [active_obj.matrix_world * bm.verts[i].co for i in loop[0]]
                     loop_line = pass_line(loop_verts)
-                    new_curve = crete_curve_to_line(cur_stretch_settings.point_number, loop_line, self.all_curves)
+                    new_curve = create_curve_to_line(cur_stretch_settings.points_number, loop_line, self.all_curves)
                     self.all_curves.append(new_curve)
                     self.active_curve = new_curve
 
+<<<<<<< HEAD
+                    cur_main.generate_bezier_points(self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
+
                     self.original_verts_data.append(pass_line([bm.verts[i].co for i in loop[0]]))
 
+                    # move point to the curve
+                    update_curve_line(active_obj, self.active_curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
+
+=======
+                    self.original_verts_data.append(pass_line([bm.verts[i].co for i in loop[0]]))
+
+>>>>>>> d1e015597c42250f92a3d7c2a204af3250dc1837
                 self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
                 self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
                 context.window_manager.modal_handler_add(self)
+
+                #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+                bmesh.update_edit_mesh(active_obj.data)
+                bpy.ops.object.editmode_toggle()
+                bpy.ops.object.editmode_toggle()
+
                 return {'RUNNING_MODAL'}
             else:
                 finish_work(self, context)
@@ -171,6 +191,13 @@ class MI_CurveStretch(bpy.types.Operator):
                     cur_main.generate_bezier_points(self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
                     self.active_curve.active_point = None
 
+                    # move point to the curve
+                    update_curve_line(active_obj, self.active_curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
+                    #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+                    bmesh.update_edit_mesh(active_obj.data)
+                    bpy.ops.object.editmode_toggle()
+                    bpy.ops.object.editmode_toggle()
+
                 return {'RUNNING_MODAL'}
 
         elif self.curve_tool_mode == 'SELECT_POINT':
@@ -187,6 +214,9 @@ class MI_CurveStretch(bpy.types.Operator):
         elif self.curve_tool_mode == 'MOVE_POINT':
             if event.value == 'RELEASE':
                 # move point to the curve
+<<<<<<< HEAD
+                update_curve_line(active_obj, self.active_curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
+=======
                 #curve_vecs = [active_obj.matrix_world.inverted() * point.position for point in self.active_curve.curve_points]
                 curve_vecs = []
                 for point in self.active_curve.curve_points:
@@ -199,10 +229,12 @@ class MI_CurveStretch(bpy.types.Operator):
                 line = pass_line(curve_vecs)
                 loop_verts = [bm.verts[i] for i in self.loops[self.all_curves.index(self.active_curve)][0]]
                 verts_to_line(loop_verts, line, self.original_verts_data[self.all_curves.index(self.active_curve)])
+>>>>>>> d1e015597c42250f92a3d7c2a204af3250dc1837
                 #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
-                bpy.ops.object.editmode_toggle()
-                bpy.ops.object.editmode_toggle()
                 bmesh.update_edit_mesh(active_obj.data)
+                bpy.ops.object.editmode_toggle()
+                bpy.ops.object.editmode_toggle()
+
 
                 self.curve_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
@@ -267,6 +299,20 @@ def finish_work(self, context):
     context.space_data.show_manipulator = self.manipulator
 
 
+def update_curve_line(active_obj, curve_to_update, loops, all_curves, bm, spread_mode, original_verts_data):
+    curve_vecs = []
+    for point in curve_to_update.curve_points:
+        b_points = curve_to_update.display_bezier.get(point.point_id)
+        if b_points:
+            #b_points = b_points.copy()
+            for b_p in b_points:
+                curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
+
+    line = pass_line(curve_vecs)
+    loop_verts = [bm.verts[i] for i in loops[all_curves.index(curve_to_update)][0]]
+    verts_to_line(loop_verts, line, original_verts_data)
+
+
 def pass_line(vecs):
     line_length = 0.0
     line_data = []
@@ -284,7 +330,7 @@ def pass_line(vecs):
     return line_data
 
 
-def crete_curve_to_line(points_number, line_data, all_curves):
+def create_curve_to_line(points_number, line_data, all_curves):
     curve = cur_main.MI_CurveObject(all_curves)
     line_len = line_data[-1][1]
     point_passed = 0

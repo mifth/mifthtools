@@ -38,23 +38,6 @@ from . import mi_utils_base as ut_base
 from . import mi_looptools as loop_t
 
 
-class MI_CurveTest(bpy.types.Panel):
-    bl_label = "Curve"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
-    bl_context = "mesh_edit"
-    bl_category = 'Mira'
-
-
-    def draw(self, context):
-        layout = self.layout
-        curve_settings = context.scene.mi_curve_settings
-
-        layout.operator("mira.curve_test", text="Curve Test")
-        layout.prop(curve_settings, "curve_resolution", text='Resolution')
-        layout.prop(curve_settings, "draw_handlers", text='Handlers')
-
-
 class MI_CurveTest(bpy.types.Operator):
     """Draw a line with the mouse"""
     bl_idname = "mira.curve_test"
