@@ -142,3 +142,110 @@ def generate_id(other_ids):
     return uniq_numb
 
 
+# CODE FOR SELECTED BMESH ---
+def get_selected_bmesh(bm):
+    sel_verts = get_selected_bmverts(bm)
+    sel_edges = [e for e in bm.edges if e.select]
+    sel_faces = [f for f in bm.faces if f.select]
+
+    return [sel_verts, sel_edges, sel_faces]
+
+
+def get_selected_bmverts(bm):
+    sel_verts = [v for v in bm.verts if v.select]
+    return sel_verts
+
+
+def get_selected_bmverts_ids(bm):
+    sel_verts = [v.index for v in bm.verts if v.select]
+    return sel_verts
+
+
+def get_bmverts_from_ids(bm, ids):
+    verts = []
+    bm.verts.ensure_lookup_table()
+    for v_id in ids:
+        verts.append(bm.verts[v_id])
+
+    return verts
+
+
+def get_vertices_center(verts, obj, local_space):
+
+    vert_world_first = verts[0].co
+    if not local_space:
+        vert_world_first = obj.matrix_world * verts[0].co
+
+    x_min = vert_world_first.x
+    x_max = vert_world_first.x
+    y_min = vert_world_first.y
+    y_max = vert_world_first.y
+    z_min = vert_world_first.z
+    z_max = vert_world_first.z
+
+    for vert in verts:
+        vert_world = vert.co
+        if not local_space:
+            vert_world = obj.matrix_world * vert.co
+
+        if vert_world.x > x_max:
+            x_max = vert_world.x
+        if vert_world.x < x_min:
+            x_min = vert_world.x
+        if vert_world.y > y_max:
+            y_max = vert_world.y
+        if vert_world.y < y_min:
+            y_min = vert_world.y
+        if vert_world.z > z_max:
+            z_max = vert_world.z
+        if vert_world.z < z_min:
+            z_min = vert_world.z
+
+    x_orig = ((x_max - x_min) / 2.0) + x_min
+    y_orig = ((y_max - y_min) / 2.0) + y_min
+    z_orig = ((z_max - z_min) / 2.0) + z_min
+
+    return Vector((x_orig, y_orig, z_orig))
+
+
+def get_vertices_size(verts, obj):
+    # if obj.mode == 'EDIT':
+        # bm.verts.ensure_lookup_table()
+    vert_world_first = obj.matrix_world * verts[0].co
+    # multiply_scale(vert_world_first, obj.scale)
+
+    x_min = vert_world_first.x
+    x_max = vert_world_first.x
+    y_min = vert_world_first.y
+    y_max = vert_world_first.y
+    z_min = vert_world_first.z
+    z_max = vert_world_first.z
+
+    for vert in verts:
+        vert_world = obj.matrix_world * vert.co
+        # multiply_scale(vert_world, obj.scale)
+
+        if vert_world.x > x_max:
+            x_max = vert_world.x
+        if vert_world.x < x_min:
+            x_min = vert_world.x
+        if vert_world.y > y_max:
+            y_max = vert_world.y
+        if vert_world.y < y_min:
+            y_min = vert_world.y
+        if vert_world.z > z_max:
+            z_max = vert_world.z
+        if vert_world.z < z_min:
+            z_min = vert_world.z
+
+    x_size = (x_max - x_min)
+    y_size = (y_max - y_min)
+    z_size = (z_max - z_min)
+
+    final_size = x_size
+    if final_size < y_size:
+        final_size = y_size
+    if final_size < z_size:
+        final_size = z_size
+
+    return final_size

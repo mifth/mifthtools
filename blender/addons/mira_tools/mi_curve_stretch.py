@@ -180,7 +180,10 @@ class MI_CurveStretch(bpy.types.Operator):
                         #the_act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
                         #the_act_point_index = self.active_curve.curve_points.index(point)
 
-                        cur_main.delete_point(point, self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
+                        if len(self.active_curve.curve_points) > 2:
+                            cur_main.delete_point(point, self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
+                        else:
+                            break
 
                     self.active_curve.display_bezier.clear()
                     cur_main.generate_bezier_points(self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
@@ -454,83 +457,3 @@ def draw_curve_2d(curves, context):
                     point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
                     mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, (1.0,0.5,0.0,0.7))
 
-
-# --------------------------------------- OLD STUFF
-
-
-def draw_callback_px_3d(self, context):
-
-    # 50% alpha, 2 pixel width line
-    bgl.glEnable(bgl.GL_BLEND)
-    bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-    bgl.glLineWidth(2)
-
-   # bgl.glBegin(bgl.GL_LINE_STRIP)
-   # bgl.glVertex3f(*ob.matrix_world.translation)
-   # bgl.glVertex3f(*context.scene.cursor_location)
-   # bgl.glEnd()
-
-    bgl.glBegin(bgl.GL_POLYGON)
-    #bgl.glColor4f(0.0, 0.0, 0.0, 0.5)
-    bgl.glVertex3f(0.0, 0.0, 0.0)
-    bgl.glVertex3f(0.0, 1.0, 0.0)
-    bgl.glVertex3f(1.0, 1.0, 0.0)
-    bgl.glVertex3f(1.0, 0.0, 0.0)
-    bgl.glEnd()
-
-    ##bgl.glEnable(bgl.GL_BLEND)
-    ##bgl.glLineWidth(1.5)
-    #bgl.glPointSize(4)
-##    bgl.glBegin(bgl.GL_LINE_LOOP)
-    #bgl.glBegin(bgl.GL_POINTS)
- ##   bgl.glBegin(bgl.GL_POLYGON)
-    #bgl.glColor4f(0.5,1.1,1.0,0.5)
-    #bgl.glVertex2f(10, 20)
-    #bgl.glVertex2f(50,60)
-    #bgl.glVertex2f(700,80)
-    #bgl.glVertex2f(2,180)
-    #bgl.glEnd()
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
-
-
-def draw_callback_px_2d(self, context):
-
-    # 50% alpha, 2 pixel width line
-    bgl.glEnable(bgl.GL_BLEND)
-    bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-    bgl.glLineWidth(2)
-
-   # bgl.glBegin(bgl.GL_LINE_STRIP)
-   # bgl.glVertex3f(*ob.matrix_world.translation)
-   # bgl.glVertex3f(*context.scene.cursor_location)
-   # bgl.glEnd()
-
-    #bgl.glBegin(bgl.GL_POLYGON)
-    ##bgl.glColor4f(0.0, 0.0, 0.0, 0.5)
-    #bgl.glVertex3f(0.0, 0.0, 0.0)
-    #bgl.glVertex3f(0.0, 1.0, 0.0)
-    #bgl.glVertex3f(1.0, 1.0, 0.0)
-    #bgl.glVertex3f(1.0, 0.0, 0.0)
-    #bgl.glEnd()
-
-    #bgl.glEnable(bgl.GL_BLEND)
-    #bgl.glLineWidth(1.5)
-    bgl.glPointSize(4)
-#    bgl.glBegin(bgl.GL_LINE_LOOP)
-    bgl.glBegin(bgl.GL_POINTS)
- #   bgl.glBegin(bgl.GL_POLYGON)
-    bgl.glColor4f(0.5,1.1,1.0,0.5)
-    bgl.glVertex2f(10, 20)
-    bgl.glVertex2f(50,60)
-    bgl.glVertex2f(700,80)
-    bgl.glVertex2f(2,180)
-    bgl.glEnd()
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)

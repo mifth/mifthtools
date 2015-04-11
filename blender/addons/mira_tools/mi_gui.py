@@ -20,7 +20,7 @@ import bpy
 
 
 class MI_ExtrudePanel(bpy.types.Panel):
-    bl_label = "Extrude"
+    bl_label = "Modify"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_context = "mesh_edit"
@@ -57,7 +57,8 @@ class MI_DeformPanel(bpy.types.Panel):
         cur_stretch_settings = context.scene.mi_cur_stretch_settings
 
         layout = self.layout
-        layout.label(text="Deformer:")
+        layout.operator("mira.noise", text="Noise")
+        # layout.label(text="Deformer:")
         layout.operator("mira.deformer", text="Deformer")
 
         layout.separator()
@@ -65,7 +66,6 @@ class MI_DeformPanel(bpy.types.Panel):
         layout.operator("mira.curve_stretch", text="CurveStretchTest")
         layout.prop(cur_stretch_settings, "points_number", text='PointsNumber')
         layout.prop(cur_stretch_settings, "spread_mode", text='Spread')
-
 
 class MI_CurveTest(bpy.types.Panel):
     bl_label = "CurveSettings"
@@ -79,6 +79,6 @@ class MI_CurveTest(bpy.types.Panel):
         layout = self.layout
         curve_settings = context.scene.mi_curve_settings
 
-        layout.operator("mira.curve_test", text="Curve Test")
         layout.prop(curve_settings, "curve_resolution", text='Resolution')
         layout.prop(curve_settings, "draw_handlers", text='Handlers')
+        layout.operator("mira.curve_test", text="Curve Test")
