@@ -84,20 +84,21 @@ class MI_CurveTest(bpy.types.Operator):
                     #cur = self.curves[0]
                 #else:
                 cur = cur_main.MI_CurveObject(self.all_curves)
+                cur.closed = True
                 self.all_curves.append(cur)
                 #self.active_curve = cur  # set active curve
 
                 for i in range(8):
                     point = cur_main.MI_CurvePoint(cur.curve_points)
                     vec = Vector((-10.0, 0.0, 0.0))
-                
+
                     beta = math.radians((360.0 /8.0)*i )
 
                     eul = mathu.Euler((0.0, 0.0, beta), 'XYZ')
                     vec.rotate(eul)
                     point.position = Vector((vec.x, vec.y, vec.z))
-                    if i == 4:
-                        point.position = Vector((vec.x+15.0, vec.y, vec.z))
+                    #if i == 4:
+                        #point.position = Vector((vec.x+15.0, vec.y, vec.z))
                     cur.curve_points.append(point)
                 cur_main.generate_bezier_points(cur, cur.display_bezier, curve_settings.curve_resolution)
 

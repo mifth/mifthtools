@@ -63,7 +63,7 @@ class MI_DeformPanel(bpy.types.Panel):
 
         layout.separator()
         layout.label(text="CurveStretch:")
-        layout.operator("mira.curve_stretch", text="CurveStretchTest")
+        layout.operator("mira.curve_stretch", text="CurveStretch")
         layout.prop(cur_stretch_settings, "points_number", text='PointsNumber')
         layout.prop(cur_stretch_settings, "spread_mode", text='Spread')
 
