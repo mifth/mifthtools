@@ -38,6 +38,7 @@ from mathutils import Vector, Matrix
     # imp.reload(mi_utils_base)
 # else:
 from . import mi_utils_base as ut_base
+from . import mi_color_manager as col_man
 
 
 class MI_ExtrudeSettings(bpy.types.PropertyGroup):
@@ -565,7 +566,7 @@ def mi_extrude_draw_2d(self, context):
     point_pos_2d = view3d_utils.location_3d_to_region_2d(
         region, rv3d, self.extrude_points[-1].position)
 
-    p_col = (0.5, 0.8, 1.0, 1.0)
+    p_col = col_man.dre_point_base
     mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
 

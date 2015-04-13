@@ -35,8 +35,7 @@ from mathutils import Vector
 
 from . import mi_curve_main as cur_main
 from . import mi_utils_base as ut_base
-from . import mi_looptools as loop_t
-
+from . import mi_color_manager as col_man
 
 class MI_CurveTest(bpy.types.Operator):
     """Draw a line with the mouse"""
@@ -276,7 +275,7 @@ def mi_curve_draw_3d(self, context):
         for curve in self.all_curves:
             for cur_point in curve.curve_points:
                 if cur_point.point_id in curve.display_bezier:
-                    mi_curve_draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, (0.5,0.8,0.9,1.0))
+                    mi_curve_draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base)
 
 
 # TODO MOVE TO UTILITIES
@@ -330,11 +329,17 @@ def draw_curve_2d(curves, context):
         for cu_point in curve.curve_points:
             point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
 
-            p_col = (0.5,0.8,1.0,1.0)
+            p_col = col_man.cur_point_base
+            if curve.closed is True:
+                if curve.curve_points.index(cu_point) == 0:
+                    p_col = col_man.cur_point_closed_start
+                elif curve.curve_points.index(cu_point) == len(curve.curve_points) - 1:
+                    p_col = col_man.cur_point_closed_end
+
             if cu_point.select:
-                p_col = (0.9,0.5,0.1,1.0)
+                p_col = col_man.cur_point_selected
             if cu_point.point_id == curve.active_point:
-                p_col = (0.9,0.7,0.3,1.0)
+                p_col = col_man.cur_point_active
             mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
             # Handlers
@@ -342,11 +347,11 @@ def draw_curve_2d(curves, context):
             #if curve.curve_points.index(cu_point) < len(curve.curve_points)-1:
                 if cu_point.handle1:
                     point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
-                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, (0.0,0.5,1.0,0.7))
+                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, col_man.cur_handle_1_base)
             #if curve.curve_points.index(cu_point) > 0:
                 if cu_point.handle2:
                     point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
-                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, (1.0,0.5,0.0,0.7))
+                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, col_man.cur_handle_2_base)
 
 
 # --------------------------------------- OLD STUFF
