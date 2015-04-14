@@ -37,11 +37,13 @@ if "bpy" in locals():
     imp.reload(mi_gui)
     imp.reload(mi_noise)
     imp.reload(mi_deform)
+    imp.reload(mi_linear_deformer)
     imp.reload(mi_extrude)
 else:
     from . import mi_curve_test
     from . import mi_curve_stretch
     from . import mi_curve_settings
+    from . import mi_linear_deformer
     from . import mi_deform
     from . import mi_gui
     from . import mi_noise

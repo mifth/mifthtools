@@ -60,6 +60,7 @@ class MI_DeformPanel(bpy.types.Panel):
         layout.operator("mira.noise", text="Noise")
         # layout.label(text="Deformer:")
         layout.operator("mira.deformer", text="Deformer")
+        layout.operator("mira.linear_deformer", text="LinearDeformer")
 
         layout.separator()
         layout.label(text="CurveStretch:")
