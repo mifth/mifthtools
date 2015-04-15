@@ -68,9 +68,9 @@ class MI_Linear_Deformer(bpy.types.Operator):
             self.lw_tool = l_widget.MI_Linear_Widget()
 
             # test test test
-            self.lw_tool.start_point = Vector((0.0, 0.0, 0.0))
-            self.lw_tool.middle_point = Vector((0.0, 0.0, 1.0))
-            self.lw_tool.end_point = Vector((0.0, 0.0, 2.0))
+            self.lw_tool.start_point = l_widget.MI_LW_Point(Vector((0.0, 0.0, 0.0)))
+            self.lw_tool.middle_point = l_widget.MI_LW_Point(Vector((0.0, 0.0, 1.0)))
+            self.lw_tool.end_point = l_widget.MI_LW_Point(Vector((0.0, 0.0, 2.0)))
 
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
@@ -96,11 +96,13 @@ class MI_Linear_Deformer(bpy.types.Operator):
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
                 # pick point test
                 m_coords = event.mouse_region_x, event.mouse_region_y
-                # picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
-                # if picked_point:
-                #     self.deform_mouse_pos = m_coords
-                #
-                #     self.tool_mode = 'SELECT_POINT'
+                picked_point = pick_lw_point(context, m_coords, self.lw_tool)
+                if picked_point:
+                    self.deform_mouse_pos = m_coords
+                    self.active_lw_point = picked_point
+                    #print(picked_point)
+
+                    self.tool_mode = 'MOVE_POINT'
 
                 return {'RUNNING_MODAL'}
 
@@ -147,8 +149,31 @@ def reset_params(self):
 def lin_def_draw_2d(self, context):
     # active_obj = context.scene.objects.active
     rv3d = context.region_data
-    lw_dir = (self.lw_tool.start_point - self.lw_tool.end_point).normalized()
+    lw_dir = (self.lw_tool.start_point.position - self.lw_tool.end_point.position).normalized()
     cam_view = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
     side_dir = lw_dir.cross(cam_view).normalized()
     l_widget.draw_lw(context, self.lw_tool, side_dir)
+
+
+def pick_lw_point(context, m_coords, lw):
+    region = context.region
+    rv3d = context.region_data
+
+    return_point = None
+    good_distance = None
+
+    mouse_coords = Vector(m_coords)
+
+    lw_points = [lw.start_point, lw.middle_point, lw.end_point]
+    for lw_point in lw_points:
+        vec_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, lw_point.position)
+        dist = (vec_2d - mouse_coords).length
+        if dist <= 9.0:
+            if not return_point:
+                return_point = lw_point
+                good_distance = dist
+            elif good_distance > dist:
+                return_point = lw_point
+
+    return return_point
 
