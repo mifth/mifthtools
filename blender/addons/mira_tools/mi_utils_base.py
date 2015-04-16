@@ -249,3 +249,17 @@ def get_vertices_size(verts, obj):
         final_size = z_size
 
     return final_size
+
+
+# VECTOR OPERATIONS
+def multiply_local_vecs(vec1, vec2):
+    vec1[0] *= vec2[0]
+    vec1[1] *= vec2[1]
+    vec1[2] *= vec2[2]
+
+def multiply_vecs(vec1, vec2):
+    vec3 = Vector( (0.0, 0.0, 0.0) )
+    vec3[0] = vec1[0] * vec2[0]
+    vec3[1] = vec1[1] * vec2[1]
+    vec3[2] = vec1[2] * vec2[2]
+    return vec3

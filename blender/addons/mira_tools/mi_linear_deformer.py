@@ -51,12 +51,16 @@ class MI_Linear_Deformer(bpy.types.Operator):
                  'SELECTMOUSE', 'MOUSEMOVE']
 
     # curve tool mode
-    tool_modes = ('IDLE', 'MOVE_POINT')
+    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE', 'MOVE', 'TWIST', 'ROTATE', 'BEND')
     tool_mode = 'IDLE'
 
     lw_tool = None
     active_lw_point = None
     deform_mouse_pos = None
+
+    start_work_center = None
+    work_verts = None
+    apply_tool_verts = None
 
     def invoke(self, context, event):
         reset_params(self)
@@ -64,47 +68,72 @@ class MI_Linear_Deformer(bpy.types.Operator):
         if context.area.type == 'VIEW_3D':
             # the arguments we pass the the callbackection
             args = (self, context)
+            active_obj = context.scene.objects.active
+            bm = bmesh.from_edit_mesh(active_obj.data)
 
-            self.lw_tool = l_widget.MI_Linear_Widget()
+            if bm.verts:
+                work_verts = ut_base.get_selected_bmverts(bm)
+                if not work_verts:
+                    work_verts = bm.verts
 
-            # test test test
-            self.lw_tool.start_point = l_widget.MI_LW_Point(Vector((0.0, 0.0, 0.0)))
-            self.lw_tool.middle_point = l_widget.MI_LW_Point(Vector((0.0, 0.0, 1.0)))
-            self.lw_tool.end_point = l_widget.MI_LW_Point(Vector((0.0, 0.0, 2.0)))
+                self.start_work_center = ut_base.get_vertices_center(work_verts, active_obj, False)
+                self.work_verts = [vert.index for vert in work_verts]
 
-            # Add the region OpenGL drawing callback
-            # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-            # self.lin_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_3d, args, 'WINDOW', 'POST_VIEW')
-            self.lin_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_2d, args, 'WINDOW', 'POST_PIXEL')
-            context.window_manager.modal_handler_add(self)
+                # Add the region OpenGL drawing callback
+                # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
+                # self.lin_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_3d, args, 'WINDOW', 'POST_VIEW')
+                self.lin_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+                context.window_manager.modal_handler_add(self)
 
-            return {'RUNNING_MODAL'}
+                return {'RUNNING_MODAL'}
+            else:
+                self.report({'WARNING'}, "No verts!!")
+                return {'CANCELLED'}
         else:
             self.report({'WARNING'}, "View3D not found, cannot run operator")
             return {'CANCELLED'}
 
 
     def modal(self, context, event):
-        #print(context.active_operator)
         context.area.tag_redraw()
 
         region = context.region
         rv3d = context.region_data
+        m_coords = event.mouse_region_x, event.mouse_region_y
+        active_obj = context.scene.objects.active
+        bm = bmesh.from_edit_mesh(active_obj.data)
 
         # make picking
-        if self.tool_mode == 'IDLE':
-            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
-                # pick point test
-                m_coords = event.mouse_region_x, event.mouse_region_y
-                picked_point = pick_lw_point(context, m_coords, self.lw_tool)
-                if picked_point:
-                    self.deform_mouse_pos = m_coords
-                    self.active_lw_point = picked_point
-                    #print(picked_point)
+        if self.tool_mode == 'IDLE' and event.value == 'PRESS':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+                if self.lw_tool:
+                    # pick point test
+                    picked_point = pick_lw_point(context, m_coords, self.lw_tool)
+                    if picked_point:
+                        self.deform_mouse_pos = m_coords
+                        self.active_lw_point = picked_point
+                        #print(picked_point)
 
-                    self.tool_mode = 'MOVE_POINT'
+                        self.tool_mode = 'MOVE_POINT'
+                else:
+                    picked_point = ut_base.get_mouse_on_plane(context, self.start_work_center, None, m_coords)
+                    if picked_point:
+                        self.lw_tool = l_widget.MI_Linear_Widget()
 
-                return {'RUNNING_MODAL'}
+                        self.lw_tool.start_point = l_widget.MI_LW_Point(picked_point.copy())
+                        self.lw_tool.middle_point = l_widget.MI_LW_Point(picked_point.copy())
+                        self.lw_tool.end_point = l_widget.MI_LW_Point(picked_point)
+
+                        self.active_lw_point = self.lw_tool.end_point
+
+                        self.tool_mode = 'MOVE_POINT'
+
+            elif event.type == 'S':
+                self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj)
+                self.deform_mouse_pos = Vector(m_coords)
+                self.tool_mode = 'SCALE'
+
+            return {'RUNNING_MODAL'}
 
         elif self.tool_mode == 'MOVE_POINT':
             if event.value == 'RELEASE':
@@ -112,7 +141,6 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 return {'RUNNING_MODAL'}
             else:
                 # move points
-                m_coords = event.mouse_region_x, event.mouse_region_y
                 new_point_pos = ut_base.get_mouse_on_plane(context, self.active_lw_point.position, None, m_coords)
                 if self.active_lw_point.position == self.lw_tool.start_point.position or self.active_lw_point.position == self.lw_tool.end_point.position:
                     self.active_lw_point.position = new_point_pos
@@ -124,11 +152,29 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                 return {'RUNNING_MODAL'}
 
+        elif self.tool_mode == 'SCALE':
+            if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+                self.tool_mode = 'IDLE'
+            else:
+                # move points
+                start_point_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.lw_tool.start_point.position)
+                if start_point_2d:
+                    tool_dist = (start_point_2d - self.deform_mouse_pos).length
+                    now_dist = (start_point_2d - Vector(m_coords)).length
+                    apply_value = (now_dist - tool_dist)
+                    if scale_value != 0.0:
+                        tool_orig = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
+                        for vert_data in self.apply_tool_verts:
+                            scale_vec = (vert_data[2] - tool_orig).normalized()
+                            bm.verts[vert_data[0]].co = vert_data[2] + ( scale_vec * (vert_data[1]) * apply_value * 0.001)
+                        bmesh.update_edit_mesh(active_obj.data)
+
+            return {'RUNNING_MODAL'}
+
         else:
-            if event.value == 'RELEASE':
+            if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 self.tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
-
 
         # main stuff
         if event.type in {'RIGHTMOUSE', 'ESC'}:
@@ -150,8 +196,13 @@ class MI_Linear_Deformer(bpy.types.Operator):
 def reset_params(self):
     self.tool_mode = 'IDLE'
     self.deform_mouse_pos = None
+
     self.lw_tool = None
     self.active_lw_point = None
+
+    self.start_work_center = None
+    self.work_verts = None
+    self.apply_tool_verts = None
 
 
 def lin_def_draw_2d(self, context):

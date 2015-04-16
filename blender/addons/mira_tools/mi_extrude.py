@@ -178,7 +178,7 @@ class MI_StartDraw(bpy.types.Operator):
                 extrude_center = None
                 camera_dir = None
                 if extrude_settings.do_symmetry and extrude_settings.extrude_mode == 'Screen':
-                    extrude_center = get_vertices_center(sel_verts, active_obj, True)
+                    extrude_center = ut_base.get_vertices_center(sel_verts, active_obj, True)
                     if extrude_settings.symmetry_axys == 'X':
                         extrude_center.x = 0.0
                         camera_dir = ut_base.get_obj_axis(active_obj, 'X')
@@ -191,7 +191,7 @@ class MI_StartDraw(bpy.types.Operator):
 
                     extrude_center = active_obj.matrix_world * extrude_center
                 else:
-                    extrude_center = get_vertices_center(sel_verts, active_obj, False)
+                    extrude_center = ut_base.get_vertices_center(sel_verts, active_obj, False)
                     camera_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
                     camera_dir.negate()
 
@@ -203,12 +203,12 @@ class MI_StartDraw(bpy.types.Operator):
                 # max_obj_scale
                 self.max_obj_scale = active_obj.scale.x
                 if active_obj.scale.y > self.max_obj_scale:
-                    self.max_obj_scale = active_obj.scale.yget_vertices_size
+                    self.max_obj_scale = active_obj.scale.yut_base.get_vertices_size
                 if active_obj.scale.z > self.max_obj_scale:
                     self.max_obj_scale = active_obj.scale.z
 
                 # relative step
-                self.relative_step_size = get_vertices_size(
+                self.relative_step_size = ut_base.get_vertices_size(
                     sel_verts, active_obj)
                 if self.relative_step_size == 0.0 and extrude_settings.extrude_step_type == 'Relative':
                     self.report(
@@ -263,7 +263,7 @@ class MI_StartDraw(bpy.types.Operator):
                 if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                     if self.tool_mode == 'ROTATE' or self.tool_mode == 'SCALE':
                         self.extrude_points[-1].update_verts(
-                            get_selected_bmverts(bm))
+                            ut_base.get_selected_bmverts(bm))
 
                     self.tool_mode = 'IDLE'
 
@@ -383,7 +383,7 @@ class MI_StartDraw(bpy.types.Operator):
                 # empty array will be for extruded vertices
                 # hit_normal is only for raycast mode
                 new_point = MI_Extrude_Point(new_pos, self.extrude_points[
-                                             -1].direction, get_selected_bmverts(bm), hit_normal)
+                                             -1].direction, ut_base.get_selected_bmverts(bm), hit_normal)
                 self.extrude_points.append(new_point)
                 # self.extrude_points[-1].position = new_pos
 
@@ -395,7 +395,7 @@ class MI_StartDraw(bpy.types.Operator):
                     fix_up_vec = rotate_dir_vec.cross(fix_dir).normalized()
                     fix_rot_angle = fix_dir.angle(fix_step.direction)
 
-                    selected_bmesh = get_selected_bmesh(bm)
+                    selected_bmesh = ut_base.get_selected_bmesh(bm)
                     previous_extrude_verts = get_previous_extrude_verts(
                         bm, context)
 
@@ -572,10 +572,10 @@ def mi_extrude_draw_2d(self, context):
 
 def get_previous_extrude_verts(bm, context):
     verts_array = None
-    verts1 = get_selected_bmverts_ids(bm)
+    verts1 = ut_base.get_selected_bmverts_ids(bm)
     bpy.ops.mesh.select_more()
 
-    verts2 = get_selected_bmverts_ids(bm)
+    verts2 = ut_base.get_selected_bmverts_ids(bm)
     bpy.ops.mesh.select_less()
 
     new_verts = []
@@ -585,36 +585,6 @@ def get_previous_extrude_verts(bm, context):
             new_verts.append(bm.verts[vert])
 
     return new_verts
-
-
-# TODO move to utils
-def get_selected_bmesh(bm):
-    sel_verts = get_selected_bmverts(bm)
-    sel_edges = [e for e in bm.edges if e.select]
-    sel_faces = [f for f in bm.faces if f.select]
-
-    return [sel_verts, sel_edges, sel_faces]
-
-
-# TODO move to utils
-def get_selected_bmverts(bm):
-    sel_verts = [v for v in bm.verts if v.select]
-    return sel_verts
-
-
-# TODO move to utils
-def get_selected_bmverts_ids(bm):
-    sel_verts = [v.index for v in bm.verts if v.select]
-    return sel_verts
-
-# TODO move to utils
-def get_bmverts_from_ids(bm, ids):
-    verts = []
-    bm.verts.ensure_lookup_table()
-    for v_id in ids:
-        verts.append(bm.verts[v_id])
-
-    return verts
 
 
 # TODO move to utils
@@ -629,89 +599,6 @@ def mi_pick_extrude_point(point, context, mouse_coords):
         return True
 
     return False
-
-
-# TODO Move it into utilities method. As Deform class has the same method.
-def get_vertices_center(verts, obj, local_space):
-
-    vert_world_first = verts[0].co
-    if not local_space:
-        vert_world_first = obj.matrix_world * verts[0].co
-
-    x_min = vert_world_first.x
-    x_max = vert_world_first.x
-    y_min = vert_world_first.y
-    y_max = vert_world_first.y
-    z_min = vert_world_first.z
-    z_max = vert_world_first.z
-
-    for vert in verts:
-        vert_world = vert.co
-        if not local_space:
-            vert_world = obj.matrix_world * vert.co
-
-        if vert_world.x > x_max:
-            x_max = vert_world.x
-        if vert_world.x < x_min:
-            x_min = vert_world.x
-        if vert_world.y > y_max:
-            y_max = vert_world.y
-        if vert_world.y < y_min:
-            y_min = vert_world.y
-        if vert_world.z > z_max:
-            z_max = vert_world.z
-        if vert_world.z < z_min:
-            z_min = vert_world.z
-
-    x_orig = ((x_max - x_min) / 2.0) + x_min
-    y_orig = ((y_max - y_min) / 2.0) + y_min
-    z_orig = ((z_max - z_min) / 2.0) + z_min
-
-    return Vector((x_orig, y_orig, z_orig))
-
-
-# TODO Move it into utilities method. As Deform class has the same method.
-def get_vertices_size(verts, obj):
-    # if obj.mode == 'EDIT':
-        # bm.verts.ensure_lookup_table()
-    vert_world_first = obj.matrix_world * verts[0].co
-    # multiply_scale(vert_world_first, obj.scale)
-
-    x_min = vert_world_first.x
-    x_max = vert_world_first.x
-    y_min = vert_world_first.y
-    y_max = vert_world_first.y
-    z_min = vert_world_first.z
-    z_max = vert_world_first.z
-
-    for vert in verts:
-        vert_world = obj.matrix_world * vert.co
-        # multiply_scale(vert_world, obj.scale)
-
-        if vert_world.x > x_max:
-            x_max = vert_world.x
-        if vert_world.x < x_min:
-            x_min = vert_world.x
-        if vert_world.y > y_max:
-            y_max = vert_world.y
-        if vert_world.y < y_min:
-            y_min = vert_world.y
-        if vert_world.z > z_max:
-            z_max = vert_world.z
-        if vert_world.z < z_min:
-            z_min = vert_world.z
-
-    x_size = (x_max - x_min)
-    y_size = (y_max - y_min)
-    z_size = (z_max - z_min)
-
-    final_size = x_size
-    if final_size < y_size:
-        final_size = y_size
-    if final_size < z_size:
-        final_size = z_size
-
-    return final_size
 
 
 # TODO MOVE TO UTILITIES
@@ -733,14 +620,6 @@ def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0, 1.0, 1.0, 1.0)):
     bgl.glDisable(bgl.GL_BLEND)
     bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
 
-# TODO MOVE TO UTILITIES
-
-
-def multiply_scale(vec1, vec2):
-    vec1[0] *= vec2[0]
-    vec1[1] *= vec2[1]
-    vec1[2] *= vec2[2]
-
 
 def rotate_verts(verts, rot_angle, axis, rot_origin):
     for vert in verts:
@@ -755,7 +634,7 @@ def scale_verts(verts, scale_value, origin):
 
 def scale_epoint(obj, bm, epoint, scale_value):
     deform_center = obj.matrix_world.inverted() * epoint.position
-    the_verts = get_bmverts_from_ids(bm, epoint.verts)
+    the_verts = ut_base.get_bmverts_from_ids(bm, epoint.verts)
     scale_verts(the_verts, scale_value, deform_center)
 
 
@@ -765,7 +644,7 @@ def scale_all_epoints(obj, bm, epoints, scale_value):
         deform_center = obj.matrix_world.inverted() * epoints[i].position
         new_scale = scale_value * (float(i) / float(points_size))
         # new_scale = sorted((0.0, new_scale, scale_value))[1]
-        the_verts = get_bmverts_from_ids(bm, epoints[i].verts)
+        the_verts = ut_base.get_bmverts_from_ids(bm, epoints[i].verts)
         scale_verts(the_verts, new_scale, deform_center)
 
 
@@ -773,7 +652,7 @@ def rotate_epoint(obj, bm, epoint, rot_angle):
     deform_center = obj.matrix_world.inverted() * epoint.position
     deform_dir = (epoint.direction * obj.matrix_world).normalized()
     # deform_dir = obj.matrix_world.inverted().to_quaternion() * epoint.direction
-    the_verts = get_bmverts_from_ids(bm, epoint.verts)
+    the_verts = ut_base.get_bmverts_from_ids(bm, epoint.verts)
     rotate_verts(the_verts, rot_angle, deform_dir, deform_center)
 
 
@@ -784,5 +663,5 @@ def rotate_all_epoints(obj, bm, epoints, rotate_value):
         deform_dir = (epoints[i].direction * obj.matrix_world).normalized()
         # deform_dir = obj.matrix_world.inverted().to_quaternion() * epoints[i].direction
         new_rot_angle = rotate_value * (float(i) / float(points_size))
-        the_verts = get_bmverts_from_ids(bm, epoints[i].verts)
+        the_verts = ut_base.get_bmverts_from_ids(bm, epoints[i].verts)
         rotate_verts(the_verts, new_rot_angle, deform_dir, deform_center)
