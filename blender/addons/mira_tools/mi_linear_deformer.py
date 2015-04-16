@@ -113,6 +113,14 @@ class MI_Linear_Deformer(bpy.types.Operator):
             else:
                 # move points
                 m_coords = event.mouse_region_x, event.mouse_region_y
+                new_point_pos = ut_base.get_mouse_on_plane(context, self.active_lw_point.position, None, m_coords)
+                if self.active_lw_point.position == self.lw_tool.start_point.position or self.active_lw_point.position == self.lw_tool.end_point.position:
+                    self.active_lw_point.position = new_point_pos
+                    l_widget.update_middle_point(self.lw_tool)
+                elif self.active_lw_point.position == self.lw_tool.middle_point.position:
+                    self.lw_tool.start_point.position += new_point_pos - self.active_lw_point.position
+                    self.lw_tool.end_point.position += new_point_pos - self.active_lw_point.position
+                    self.lw_tool.middle_point.position = new_point_pos
 
                 return {'RUNNING_MODAL'}
 

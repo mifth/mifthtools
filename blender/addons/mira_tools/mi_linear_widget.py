@@ -51,6 +51,14 @@ class MI_Linear_Widget():
         self.end_point = None
 
 
+def update_middle_point(lw_tool):
+    lw_dir = (lw_tool.end_point.position - lw_tool.start_point.position)
+    lw_len = (lw_dir).length
+    lw_dir = lw_dir.normalized()
+
+    lw_tool.middle_point.position = lw_tool.start_point.position + (lw_dir * (lw_len / 2.0))
+
+
 def draw_lw(context, lw, cross_up_dir):
     region = context.region
     rv3d = context.region_data
