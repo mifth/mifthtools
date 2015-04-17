@@ -168,6 +168,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     apply_value = (now_dist - tool_dist) / tool_dist
                     if apply_value != 0.0:
                         tool_orig = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
+                        tool_end = active_obj.matrix_world.inverted() * self.lw_tool.end_point.position
                         for vert_data in self.apply_tool_verts:
                             scale_vec = None
                             scale_value = vert_data[1]
@@ -176,7 +177,6 @@ class MI_Linear_Deformer(bpy.types.Operator):
                                 scale_value = min(1.0, scale_value)
                             else:
                                 # SCALE_FRONT
-                                tool_end = active_obj.matrix_world.inverted() * self.lw_tool.end_point.position
                                 scale_vec = (tool_end - tool_orig)
 
                             bm.verts[vert_data[0]].co = vert_data[2] + ( scale_vec * scale_value * apply_value)
