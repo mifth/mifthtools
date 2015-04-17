@@ -31,7 +31,7 @@ from bpy_extras import view3d_utils
 import math
 import mathutils as mathu
 import random
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
@@ -51,7 +51,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
                  'MOUSEMOVE']
 
     # curve tool mode
-    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'ROTATE', 'BEND')
+    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'ROTATE_ALL', 'BEND')
     tool_mode = 'IDLE'
 
     lw_tool = None
@@ -130,9 +130,13 @@ class MI_Linear_Deformer(bpy.types.Operator):
                         self.tool_mode = 'MOVE_POINT'
 
             elif event.type in {'S', 'G', 'R', 'B'}:
-                self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj)
+                if event.type in {'S'} and event.shift:
+                    # do not clamp for SCALE_FRONT mode
+                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, False)
+                else:
+                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, True)
 
-                if event.type in {'S'}:
+                if event.type in {'S', 'R'}:
                     self.deform_mouse_pos = Vector(m_coords)
 
                 if event.type == 'S':
@@ -143,9 +147,17 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                 elif event.type == 'G':
                     mouse_pos_3d = ut_base.get_mouse_on_plane(context, self.lw_tool.start_point.position, None, m_coords)
-                    #mouse_pos_3d = active_obj.matrix_world.inverted() * mouse_pos_3d
-                    self.deform_vec_pos = mouse_pos_3d
+                    self.deform_vec_pos = mouse_pos_3d  # 3d location
                     self.tool_mode = 'MOVE_ALL'
+
+                elif event.type == 'R':
+                    start_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.lw_tool.start_point.position)
+                    self.deform_vec_pos = (Vector(m_coords) - start_2d).normalized()  # 2d direction
+                    if event.shift:
+                        self.tool_mode = 'TWIST'
+                    else:
+                        self.tool_mode = 'ROTATE_ALL'
+
 
                 return {'RUNNING_MODAL'}
 
@@ -184,7 +196,6 @@ class MI_Linear_Deformer(bpy.types.Operator):
                             scale_value = vert_data[1]
                             if self.tool_mode == 'SCALE_ALL':
                                 scale_vec = (vert_data[2] - tool_orig)
-                                scale_value = min(1.0, scale_value)
                             else:
                                 # SCALE_FRONT
                                 scale_vec = (tool_end - tool_orig)
@@ -206,10 +217,46 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 move_vec = (mouse_pos_3d - start_pos) - orig_vec
 
                 for vert_data in self.apply_tool_verts:
-                    move_value = min(1.0, vert_data[1])
+                    move_value = vert_data[1]
                     bm.verts[vert_data[0]].co = vert_data[2] + (move_vec * move_value)
 
                 bmesh.update_edit_mesh(active_obj.data)
+
+            return {'RUNNING_MODAL'}
+
+        elif self.tool_mode in {'ROTATE_ALL', 'TWIST'}:
+            if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+                self.tool_mode = 'IDLE'
+            else:
+                m_coords = Vector(m_coords)  # convert into vector for operations
+                start_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.lw_tool.start_point.position)
+                new_vec_dir = (m_coords - start_2d).normalized()
+                rot_angle = new_vec_dir.angle(self.deform_vec_pos)
+
+                if rot_angle != 0.0:
+                    vec_check_1 = Vector((new_vec_dir[0], new_vec_dir[1], 0))
+                    vec_check_2 = Vector((new_vec_dir[0]-self.deform_vec_pos[0], new_vec_dir[1]-self.deform_vec_pos[1], 0))
+                    if vec_check_1.cross(vec_check_2).normalized()[2] > 0.0:
+                        rot_angle = -rot_angle
+
+                    start_pos = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
+                    rot_dir = None
+                    if self.tool_mode == 'ROTATE_ALL':
+                        rot_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
+                    else:
+                        start_3d = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
+                        end_3d = active_obj.matrix_world.inverted() * self.lw_tool.end_point.position
+                        rot_dir = (end_3d - start_3d).normalized()
+
+                    for vert_data in self.apply_tool_verts:
+                        apply_value = vert_data[1]
+                        rot_mat = Matrix.Rotation(rot_angle * apply_value, 3, rot_dir)
+                        vert = bm.verts[vert_data[0]]
+                        vert.co = rot_mat * (vert.co - start_pos) + start_pos
+                        self.deform_vec_pos = new_vec_dir
+                        # bm.verts[vert_data[0]].co = vert_data[2] + (move_vec * apply_value)
+
+                    bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
 
@@ -251,10 +298,11 @@ def reset_params(self):
 def lin_def_draw_2d(self, context):
     # active_obj = context.scene.objects.active
     rv3d = context.region_data
-    lw_dir = (self.lw_tool.start_point.position - self.lw_tool.end_point.position).normalized()
-    cam_view = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
-    side_dir = lw_dir.cross(cam_view).normalized()
-    l_widget.draw_lw(context, self.lw_tool, side_dir)
+    if self.lw_tool:
+        lw_dir = (self.lw_tool.start_point.position - self.lw_tool.end_point.position).normalized()
+        cam_view = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
+        side_dir = lw_dir.cross(cam_view).normalized()
+        l_widget.draw_lw(context, self.lw_tool, side_dir)
 
 
 def pick_lw_point(context, m_coords, lw):
