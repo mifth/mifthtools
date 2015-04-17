@@ -59,8 +59,8 @@ class MI_CurveStretch(bpy.types.Operator):
 
     pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
                  'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'LEFTMOUSE', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-                 'SELECTMOUSE', 'MOUSEMOVE']
+                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
+                 'MOUSEMOVE']
 
     # curve tool mode
     curve_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT')

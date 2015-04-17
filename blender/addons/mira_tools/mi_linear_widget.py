@@ -67,10 +67,10 @@ def get_tool_verts(lw_tool, verts_ids, bm, obj):
         v_pos = obj.matrix_world * bm.verts[vert_id].co
         value = mathu.geometry.distance_point_to_plane(v_pos, lw_tool.start_point.position, final_dir)
         if value > 0:
-            if value > max_dist:
-                value = 1.0
-            else:
-                value /= max_dist
+            #if value > max_dist:
+                #value = 1.0
+            #else:
+            value /= max_dist
             apply_tool_verts.append( (vert_id, value, bm.verts[vert_id].co.copy()) )
 
     return apply_tool_verts

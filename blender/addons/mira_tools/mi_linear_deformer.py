@@ -47,11 +47,11 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
     pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
                  'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'LEFTMOUSE', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-                 'SELECTMOUSE', 'MOUSEMOVE']
+                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
+                 'MOUSEMOVE']
 
     # curve tool mode
-    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE', 'MOVE', 'TWIST', 'ROTATE', 'BEND')
+    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE', 'TWIST', 'ROTATE', 'BEND')
     tool_mode = 'IDLE'
 
     lw_tool = None
@@ -131,9 +131,13 @@ class MI_Linear_Deformer(bpy.types.Operator):
             elif event.type == 'S':
                 self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj)
                 self.deform_mouse_pos = Vector(m_coords)
-                self.tool_mode = 'SCALE'
 
-            return {'RUNNING_MODAL'}
+                if event.shift:
+                    self.tool_mode = 'SCALE_FRONT'
+                else:
+                    self.tool_mode = 'SCALE_ALL'
+
+                return {'RUNNING_MODAL'}
 
         elif self.tool_mode == 'MOVE_POINT':
             if event.value == 'RELEASE':
@@ -152,7 +156,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                 return {'RUNNING_MODAL'}
 
-        elif self.tool_mode == 'SCALE':
+        elif self.tool_mode in {'SCALE_ALL', 'SCALE_FRONT'}:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 self.tool_mode = 'IDLE'
             else:
@@ -161,12 +165,19 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 if start_point_2d:
                     tool_dist = (start_point_2d - self.deform_mouse_pos).length
                     now_dist = (start_point_2d - Vector(m_coords)).length
-                    apply_value = (now_dist - tool_dist)
-                    if scale_value != 0.0:
+                    apply_value = (now_dist - tool_dist) / tool_dist
+                    if apply_value != 0.0:
                         tool_orig = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
                         for vert_data in self.apply_tool_verts:
-                            scale_vec = (vert_data[2] - tool_orig).normalized()
-                            bm.verts[vert_data[0]].co = vert_data[2] + ( scale_vec * (vert_data[1]) * apply_value * 0.001)
+                            scale_vec = None
+                            if self.tool_mode == 'SCALE_ALL':
+                                scale_vec = (vert_data[2] - tool_orig).normalized()
+                            else:
+                                # SCALE_FRONT
+                                tool_end = active_obj.matrix_world.inverted() * self.lw_tool.end_point.position
+                                scale_vec = (tool_end - tool_orig).normalized()
+
+                            bm.verts[vert_data[0]].co = vert_data[2] + ( scale_vec * (vert_data[1]) * apply_value)
                         bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
