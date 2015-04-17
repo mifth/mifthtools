@@ -51,12 +51,13 @@ class MI_Linear_Deformer(bpy.types.Operator):
                  'MOUSEMOVE']
 
     # curve tool mode
-    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE', 'TWIST', 'ROTATE', 'BEND')
+    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'ROTATE', 'BEND')
     tool_mode = 'IDLE'
 
     lw_tool = None
     active_lw_point = None
     deform_mouse_pos = None
+    deform_vec_pos = None
 
     start_work_center = None
     work_verts = None
@@ -128,14 +129,23 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                         self.tool_mode = 'MOVE_POINT'
 
-            elif event.type == 'S':
+            elif event.type in {'S', 'G', 'R', 'B'}:
                 self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj)
-                self.deform_mouse_pos = Vector(m_coords)
 
-                if event.shift:
-                    self.tool_mode = 'SCALE_FRONT'
-                else:
-                    self.tool_mode = 'SCALE_ALL'
+                if event.type in {'S'}:
+                    self.deform_mouse_pos = Vector(m_coords)
+
+                if event.type == 'S':
+                    if event.shift:
+                        self.tool_mode = 'SCALE_FRONT'
+                    else:
+                        self.tool_mode = 'SCALE_ALL'
+
+                elif event.type == 'G':
+                    mouse_pos_3d = ut_base.get_mouse_on_plane(context, self.lw_tool.start_point.position, None, m_coords)
+                    #mouse_pos_3d = active_obj.matrix_world.inverted() * mouse_pos_3d
+                    self.deform_vec_pos = mouse_pos_3d
+                    self.tool_mode = 'MOVE_ALL'
 
                 return {'RUNNING_MODAL'}
 
@@ -184,6 +194,25 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
             return {'RUNNING_MODAL'}
 
+        elif self.tool_mode == 'MOVE_ALL':
+            if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+                self.tool_mode = 'IDLE'
+            else:
+                mouse_pos_3d = ut_base.get_mouse_on_plane(context, self.lw_tool.start_point.position, None, m_coords)
+                mouse_pos_3d = active_obj.matrix_world.inverted() * mouse_pos_3d
+                start_pos = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
+                orig_pos = active_obj.matrix_world.inverted() * self.deform_vec_pos
+                orig_vec = orig_pos - start_pos
+                move_vec = (mouse_pos_3d - start_pos) - orig_vec
+
+                for vert_data in self.apply_tool_verts:
+                    move_value = min(1.0, vert_data[1])
+                    bm.verts[vert_data[0]].co = vert_data[2] + (move_vec * move_value)
+
+                bmesh.update_edit_mesh(active_obj.data)
+
+            return {'RUNNING_MODAL'}
+
         else:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 self.tool_mode = 'IDLE'
@@ -209,6 +238,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
 def reset_params(self):
     self.tool_mode = 'IDLE'
     self.deform_mouse_pos = None
+    self.deform_vec_pos = None
 
     self.lw_tool = None
     self.active_lw_point = None
