@@ -279,11 +279,18 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                     bend_side_dir = None
                     faloff_len = None
+                    spiral_value = 0.0
                     if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
                         bend_side_dir = (((end_3d - start_3d).normalized()).cross(rot_dir)).normalized()
                         faloff_len = end_3d - start_3d
 
-                    spiral_value = 0.0
+                        if self.tool_mode == 'BEND_SPIRAL':
+                            val_spin = None
+                            if rot_angle > 0.0:
+                                val_spin = ( 1.0 - ( (m_coords - start_2d).length / self.bend_spiral_len) )
+                            else:
+                                val_spin = (  ( (m_coords - start_2d).length / self.bend_spiral_len) )
+                            spiral_value = 1.0 - ( faloff_len.length * val_spin )
 
                     for vert_data in self.apply_tool_verts:
                         apply_value = vert_data[1]
@@ -292,14 +299,6 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                         if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
                             vert.co = vert_data[2] - ((faloff_len) * apply_value)
-
-                            if self.tool_mode == 'BEND_SPIRAL':
-                                val_spin = None
-                                if rot_angle > 0.0:
-                                    val_spin = ( 1.0 - ( (m_coords - start_2d).length / self.bend_spiral_len) )
-                                else:
-                                    val_spin = (  ( (m_coords - start_2d).length / self.bend_spiral_len) )
-                                spiral_value = 1.0 - ( faloff_len.length * val_spin )
 
                             back_offset = (((faloff_len).length / (rot_angle * apply_value)) + spiral_value) * apply_value
                             vert.co += bend_side_dir * back_offset
