@@ -83,7 +83,7 @@ def noise_obj(obj, context, self):
     bm = bmesh.from_edit_mesh(obj.data)
     verts = [v for v in bm.verts if v.select]
     if not verts:
-        verts = bm.verts
+        verts = [v for v in bm.verts if v.hide is False]
 
     for vert in verts:
         noise_pos = vert.co.copy()

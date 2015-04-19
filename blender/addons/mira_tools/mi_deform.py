@@ -98,13 +98,13 @@ def deform_obj(obj, context, self):
 
         verts = [v for v in bm.verts if v.select]
         if len(verts) == 0:
-            verts = bm.verts
+            verts = [v for v in bm.verts if v.hide is False]
 
     else:
         # this works only in object mode,
         verts = [v for v in obj.data.vertices if v.select]
         if len(verts) == 0:
-            verts = obj.data.vertices
+            verts = [v for v in obj.data.vertices if v.hide is False]
 
     # TODO Move it into utilities method. As Extrude class has the same
     # min/max.
@@ -146,6 +146,7 @@ def deform_obj(obj, context, self):
             visual_max = y_max - y_min
 
         for vert in verts:
+            print(vert.hide)
             vec = vert.co.copy()
             visual_up_pos = None
             if self.deform_axis != 'Z':

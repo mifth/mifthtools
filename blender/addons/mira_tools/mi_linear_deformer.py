@@ -77,7 +77,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
             if bm.verts:
                 work_verts = ut_base.get_selected_bmverts(bm)
                 if not work_verts:
-                    work_verts = bm.verts
+                    work_verts = [v for v in bm.verts if v.hide is False]
 
                 self.start_work_center = ut_base.get_vertices_center(work_verts, active_obj, False)
                 self.work_verts = [vert.index for vert in work_verts]
