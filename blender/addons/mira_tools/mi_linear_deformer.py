@@ -59,7 +59,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
     deform_mouse_pos = None
     deform_vec_pos = None
 
-    bend_spiral_len = None
+    bend_scale_len = None
 
     start_work_center = None
     work_verts = None
@@ -173,8 +173,8 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     self.deform_vec_pos = (Vector(m_coords) - start_2d).normalized()  # 2d direction
                     self.deform_mouse_pos = 0.0  # we will use it as angle counter
 
-                    if self.tool_mode == 'BEND_SPIRAL':
-                        self.bend_spiral_len = (Vector(m_coords) - start_2d).length
+                    if self.tool_mode in {'BEND_SPIRAL', 'BEND_ALL'}:
+                        self.bend_scale_len = (Vector(m_coords) - start_2d).length
 
 
                 return {'RUNNING_MODAL'}
@@ -279,18 +279,24 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                     bend_side_dir = None
                     faloff_len = None
-                    spiral_value = 0.0
+                    spiral_value = 0.0  # only for BEND_SPIRAL
+                    bend_scale_value = 1.0  # only for BEND_ALL
                     if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
                         bend_side_dir = (((end_3d - start_3d).normalized()).cross(rot_dir)).normalized()
                         faloff_len = end_3d - start_3d
 
                         if self.tool_mode == 'BEND_SPIRAL':
-                            val_spin = None
+                            val_scale = None
                             if rot_angle > 0.0:
-                                val_spin = ( 1.0 - ( (m_coords - start_2d).length / self.bend_spiral_len) )
+                                val_scale = ( 1.0 - ( (m_coords - start_2d).length / self.bend_scale_len) )
                             else:
-                                val_spin = (  ( (m_coords - start_2d).length / self.bend_spiral_len) )
-                            spiral_value = 1.0 - ( faloff_len.length * val_spin )
+                                val_scale = (  ( (m_coords - start_2d).length / self.bend_scale_len) )
+
+                            spiral_value = 1.0 - ( faloff_len.length * val_scale )
+
+                        else:
+                            val_scale = ( ( (m_coords - start_2d).length / self.bend_scale_len) )
+                            bend_scale_value = (( val_scale) )
 
                     for vert_data in self.apply_tool_verts:
                         apply_value = vert_data[1]
@@ -300,7 +306,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
                         if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
                             vert.co = vert_data[2] - ((faloff_len) * apply_value)
 
-                            back_offset = (((faloff_len).length / (rot_angle * apply_value)) + spiral_value) * apply_value
+                            back_offset = (((faloff_len).length / (rot_angle * apply_value)) + spiral_value) * apply_value * bend_scale_value
                             vert.co += bend_side_dir * back_offset
                         else:
                             # set original position
@@ -312,7 +318,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
                         self.deform_vec_pos = new_vec_dir
 
                         if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
-                            back_offset = ((faloff_len).length / (rot_angle * apply_value)) * apply_value
+                            back_offset = ((faloff_len).length / (rot_angle * apply_value)) * apply_value * bend_scale_value
                             vert.co -= bend_side_dir * back_offset
 
                         self.deform_mouse_pos = rot_angle  # set new angle rotation for next step
@@ -347,7 +353,7 @@ def reset_params(self):
     self.tool_mode = 'IDLE'
     self.deform_mouse_pos = None
     self.deform_vec_pos = None
-    self.bend_spiral_len = None
+    self.bend_scale_len = None
 
     self.lw_tool = None
     self.active_lw_point = None
