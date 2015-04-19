@@ -220,6 +220,7 @@ def deform_obj(obj, context, self):
 
     # obj.data.update()
     #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
-    bpy.ops.object.editmode_toggle()
-    bpy.ops.object.editmode_toggle()
+    #bpy.ops.object.editmode_toggle()
+    #bpy.ops.object.editmode_toggle()
+    bm.normal_update()
     bmesh.update_edit_mesh(obj.data)

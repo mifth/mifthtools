@@ -122,10 +122,8 @@ class MI_CurveStretch(bpy.types.Operator):
                 self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
                 context.window_manager.modal_handler_add(self)
 
-                #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+                bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
-                bpy.ops.object.editmode_toggle()
-                bpy.ops.object.editmode_toggle()
 
                 return {'RUNNING_MODAL'}
             else:
@@ -197,10 +195,9 @@ class MI_CurveStretch(bpy.types.Operator):
 
                     # move point to the curve
                     update_curve_line(active_obj, self.active_curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
-                    #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+
+                    bm.normal_update()
                     bmesh.update_edit_mesh(active_obj.data)
-                    bpy.ops.object.editmode_toggle()
-                    bpy.ops.object.editmode_toggle()
 
                 return {'RUNNING_MODAL'}
 
@@ -220,11 +217,8 @@ class MI_CurveStretch(bpy.types.Operator):
                 # move point to the curve
                 update_curve_line(active_obj, self.active_curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
 
-                #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
+                bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
-                bpy.ops.object.editmode_toggle()
-                bpy.ops.object.editmode_toggle()
-
 
                 self.curve_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}

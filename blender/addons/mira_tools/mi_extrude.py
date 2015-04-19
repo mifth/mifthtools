@@ -450,10 +450,7 @@ class MI_StartDraw(bpy.types.Operator):
                         rotate_all_epoints(
                             active_obj, bm, self.extrude_points, self.rotate_all)
 
-                # active_obj.data.update()
-                #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
-                #bpy.ops.object.editmode_toggle()
-                #bpy.ops.object.editmode_toggle()
+                bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
@@ -513,9 +510,7 @@ class MI_StartDraw(bpy.types.Operator):
 
                         self.deform_mouse_pos = m_coords
 
-                #bpy.ops.mesh.normals_make_consistent()  # recalculate normals
-                #bpy.ops.object.editmode_toggle()
-                #bpy.ops.object.editmode_toggle()
+                bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
 
                 return {'RUNNING_MODAL'}

@@ -101,4 +101,6 @@ def noise_obj(obj, context, self):
 
         vert_offset = vert.normal.copy().normalized() * noise_val
         vert.co += vert_offset * self.intensity
+
+    bm.normal_update()
     bmesh.update_edit_mesh(obj.data)

@@ -225,6 +225,8 @@ class MI_Linear_Deformer(bpy.types.Operator):
                                 scale_value = min(1.0, vert_data[1])
 
                             bm.verts[vert_data[0]].co = vert_data[2] + ( scale_vec * scale_value * apply_value)
+
+                        bm.normal_update()
                         bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
@@ -244,6 +246,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     move_value = vert_data[1]
                     bm.verts[vert_data[0]].co = vert_data[2] + (move_vec * move_value)
 
+                bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
@@ -323,6 +326,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                         self.deform_mouse_pos = rot_angle  # set new angle rotation for next step
 
+                    bm.normal_update()
                     bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
