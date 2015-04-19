@@ -51,7 +51,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
                  'MOUSEMOVE']
 
     # curve tool mode
-    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'ROTATE_ALL', 'BEND_ALL')
+    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'TAPE', 'ROTATE_ALL', 'BEND_ALL')
     tool_mode = 'IDLE'
 
     lw_tool = None
@@ -129,39 +129,47 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                         self.tool_mode = 'MOVE_POINT'
 
-            elif event.type in {'S', 'G', 'R', 'B'}:
-                if event.type in {'S'} and event.shift:
-                    # do not clamp for SCALE_FRONT mode
-                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, False)
-                else:
-                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, True)
-
-                if event.type in {'S'}:
-                    self.deform_mouse_pos = Vector(m_coords)
-                elif event.type in{'B'}:
-                    self.deform_mouse_pos = 0.0  # we will use it as angle counter
-
+            elif event.type in {'S', 'G', 'R', 'B', 'T'}:
+                # set tool type
                 if event.type == 'S':
                     if event.shift:
                         self.tool_mode = 'SCALE_FRONT'
                     else:
                         self.tool_mode = 'SCALE_ALL'
-
+                elif event.type == 'R':
+                    self.tool_mode = 'ROTATE_ALL'
                 elif event.type == 'G':
+                    self.tool_mode = 'MOVE_ALL'
+                elif event.type == 'B':
+                    # if event.shift:
+                    #     self.tool_mode = 'SCALE_FRONT'
+                    # else:
+                    self.tool_mode = 'BEND_ALL'
+                elif event.type == 'T':
+                    if event.shift:
+                        self.tool_mode = 'TWIST'
+                    else:
+                        self.tool_mode = 'TAPE'
+
+                # get tool verts
+                if self.tool_mode in {'SCALE_FRONT', 'TAPE'}:
+                    # do not clamp for SCALE_FRONT mode
+                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, False)
+                else:
+                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, True)
+
+                # set some settings for tools
+                if self.tool_mode in {'SCALE_ALL', 'SCALE_FRONT', 'TAPE'}:
+                    self.deform_mouse_pos = Vector(m_coords)
+
+                elif self.tool_mode == 'MOVE_ALL':
                     mouse_pos_3d = ut_base.get_mouse_on_plane(context, self.lw_tool.start_point.position, None, m_coords)
                     self.deform_vec_pos = mouse_pos_3d  # 3d location
-                    self.tool_mode = 'MOVE_ALL'
 
-                elif event.type in {'R', 'B'}:
+                elif self.tool_mode in {'ROTATE_ALL', 'TWIST', 'BEND_ALL'}:
                     start_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.lw_tool.start_point.position)
                     self.deform_vec_pos = (Vector(m_coords) - start_2d).normalized()  # 2d direction
-                    if event.type == 'B':
-                        self.tool_mode = 'BEND_ALL'
-                    elif event.type == 'R':
-                        if event.shift:
-                            self.tool_mode = 'TWIST'
-                        else:
-                            self.tool_mode = 'ROTATE_ALL'
+                    self.deform_mouse_pos = 0.0  # we will use it as angle counter
 
 
                 return {'RUNNING_MODAL'}
@@ -183,7 +191,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                 return {'RUNNING_MODAL'}
 
-        elif self.tool_mode in {'SCALE_ALL', 'SCALE_FRONT'}:
+        elif self.tool_mode in {'SCALE_ALL', 'SCALE_FRONT', 'TAPE'}:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 self.tool_mode = 'IDLE'
             else:
@@ -196,14 +204,20 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     if apply_value != 0.0:
                         tool_orig = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
                         tool_end = active_obj.matrix_world.inverted() * self.lw_tool.end_point.position
+                        tool_vec = tool_end - tool_orig
+                        tool_dir = (tool_end - tool_orig).normalized()
                         for vert_data in self.apply_tool_verts:
                             scale_vec = None
                             scale_value = vert_data[1]
+
                             if self.tool_mode == 'SCALE_ALL':
                                 scale_vec = (vert_data[2] - tool_orig)
-                            else:
-                                # SCALE_FRONT
+                            elif self.tool_mode == 'SCALE_FRONT':
                                 scale_vec = (tool_end - tool_orig)
+                            else:
+                                # TAPE
+                                scale_vec = vert_data[2] - ( tool_orig + (tool_dir * vert_data[1] * (tool_vec).length) )
+                                scale_value = min(1.0, vert_data[1])
 
                             bm.verts[vert_data[0]].co = vert_data[2] + ( scale_vec * scale_value * apply_value)
                         bmesh.update_edit_mesh(active_obj.data)
@@ -255,10 +269,11 @@ class MI_Linear_Deformer(bpy.types.Operator):
                         # ROTATE_FRONT code
                         rot_dir = (end_3d - start_3d).normalized()
 
+                    rot_angle += self.deform_mouse_pos  # add rot angle
+
                     bend_side_dir = None
                     faloff_len = None
                     if self.tool_mode == 'BEND_ALL':
-                        rot_angle += self.deform_mouse_pos  # change rot angle for BEND mode only
                         bend_side_dir = (((end_3d - start_3d).normalized()).cross(rot_dir)).normalized()
                         faloff_len = end_3d - start_3d
 
@@ -271,6 +286,11 @@ class MI_Linear_Deformer(bpy.types.Operator):
                             vert.co = vert_data[2] - ((faloff_len) * apply_value)
                             back_offset = (((faloff_len).length / (rot_angle * apply_value))) * apply_value
                             vert.co += bend_side_dir * back_offset
+                        else:
+                            # set original position
+                            vert.co[0] = vert_data[2][0]
+                            vert.co[1] = vert_data[2][1]
+                            vert.co[2] = vert_data[2][2]
 
                         vert.co = rot_mat * (vert.co - start_pos) + start_pos
                         self.deform_vec_pos = new_vec_dir
@@ -278,7 +298,8 @@ class MI_Linear_Deformer(bpy.types.Operator):
                         if self.tool_mode == 'BEND_ALL':
                             back_offset = ((faloff_len).length / (rot_angle * apply_value)) * apply_value
                             vert.co -= bend_side_dir * back_offset
-                            self.deform_mouse_pos = rot_angle  # we use it as angle counter in BEND mode case
+
+                        self.deform_mouse_pos = rot_angle  # set new angle rotation for next step
 
                     bmesh.update_edit_mesh(active_obj.data)
 
