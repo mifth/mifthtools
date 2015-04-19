@@ -51,13 +51,15 @@ class MI_Linear_Deformer(bpy.types.Operator):
                  'MOUSEMOVE']
 
     # curve tool mode
-    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'TAPE', 'ROTATE_ALL', 'BEND_ALL')
+    tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'TAPE', 'ROTATE_ALL', 'BEND_ALL', 'BEND_SPIRAL')
     tool_mode = 'IDLE'
 
     lw_tool = None
     active_lw_point = None
     deform_mouse_pos = None
     deform_vec_pos = None
+
+    bend_spiral_len = None
 
     start_work_center = None
     work_verts = None
@@ -141,10 +143,10 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 elif event.type == 'G':
                     self.tool_mode = 'MOVE_ALL'
                 elif event.type == 'B':
-                    # if event.shift:
-                    #     self.tool_mode = 'SCALE_FRONT'
-                    # else:
-                    self.tool_mode = 'BEND_ALL'
+                    if event.shift:
+                        self.tool_mode = 'BEND_SPIRAL'
+                    else:
+                        self.tool_mode = 'BEND_ALL'
                 elif event.type == 'T':
                     if event.shift:
                         self.tool_mode = 'TWIST'
@@ -166,10 +168,13 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     mouse_pos_3d = ut_base.get_mouse_on_plane(context, self.lw_tool.start_point.position, None, m_coords)
                     self.deform_vec_pos = mouse_pos_3d  # 3d location
 
-                elif self.tool_mode in {'ROTATE_ALL', 'TWIST', 'BEND_ALL'}:
+                elif self.tool_mode in {'ROTATE_ALL', 'TWIST', 'BEND_ALL', 'BEND_SPIRAL'}:
                     start_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.lw_tool.start_point.position)
                     self.deform_vec_pos = (Vector(m_coords) - start_2d).normalized()  # 2d direction
                     self.deform_mouse_pos = 0.0  # we will use it as angle counter
+
+                    if self.tool_mode == 'BEND_SPIRAL':
+                        self.bend_spiral_len = (Vector(m_coords) - start_2d).length
 
 
                 return {'RUNNING_MODAL'}
@@ -243,7 +248,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
             return {'RUNNING_MODAL'}
 
-        elif self.tool_mode in {'ROTATE_ALL', 'TWIST', 'BEND_ALL'}:
+        elif self.tool_mode in {'ROTATE_ALL', 'TWIST', 'BEND_ALL', 'BEND_SPIRAL'}:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 self.tool_mode = 'IDLE'
             else:
@@ -258,12 +263,13 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 if rot_angle != 0.0:
                     vec_check_1 = Vector((new_vec_dir[0], new_vec_dir[1], 0))
                     vec_check_2 = Vector((new_vec_dir[0]-self.deform_vec_pos[0], new_vec_dir[1]-self.deform_vec_pos[1], 0))
-                    if vec_check_1.cross(vec_check_2).normalized()[2] > 0.0:
+                    checker_side_dir = vec_check_1.cross(vec_check_2).normalized()[2]
+                    if checker_side_dir > 0.0:
                         rot_angle = -rot_angle
 
                     start_pos = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
                     rot_dir = None
-                    if self.tool_mode in {'ROTATE_ALL', 'BEND_ALL'}:
+                    if self.tool_mode in {'ROTATE_ALL', 'BEND_ALL', 'BEND_SPIRAL'}:
                         rot_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
                     else:
                         # ROTATE_FRONT code
@@ -273,18 +279,29 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                     bend_side_dir = None
                     faloff_len = None
-                    if self.tool_mode == 'BEND_ALL':
+                    if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
                         bend_side_dir = (((end_3d - start_3d).normalized()).cross(rot_dir)).normalized()
                         faloff_len = end_3d - start_3d
+
+                    spiral_value = 0.0
 
                     for vert_data in self.apply_tool_verts:
                         apply_value = vert_data[1]
                         rot_mat = Matrix.Rotation(rot_angle * apply_value, 3, rot_dir)
                         vert = bm.verts[vert_data[0]]
 
-                        if self.tool_mode == 'BEND_ALL':
+                        if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
                             vert.co = vert_data[2] - ((faloff_len) * apply_value)
-                            back_offset = (((faloff_len).length / (rot_angle * apply_value))) * apply_value
+
+                            if self.tool_mode == 'BEND_SPIRAL':
+                                val_spin = None
+                                if rot_angle > 0.0:
+                                    val_spin = ( 1.0 - ( (m_coords - start_2d).length / self.bend_spiral_len) )
+                                else:
+                                    val_spin = (  ( (m_coords - start_2d).length / self.bend_spiral_len) )
+                                spiral_value = 1.0 - ( faloff_len.length * val_spin )
+
+                            back_offset = (((faloff_len).length / (rot_angle * apply_value)) + spiral_value) * apply_value
                             vert.co += bend_side_dir * back_offset
                         else:
                             # set original position
@@ -295,7 +312,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
                         vert.co = rot_mat * (vert.co - start_pos) + start_pos
                         self.deform_vec_pos = new_vec_dir
 
-                        if self.tool_mode == 'BEND_ALL':
+                        if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
                             back_offset = ((faloff_len).length / (rot_angle * apply_value)) * apply_value
                             vert.co -= bend_side_dir * back_offset
 
@@ -331,6 +348,7 @@ def reset_params(self):
     self.tool_mode = 'IDLE'
     self.deform_mouse_pos = None
     self.deform_vec_pos = None
+    self.bend_spiral_len = None
 
     self.lw_tool = None
     self.active_lw_point = None
