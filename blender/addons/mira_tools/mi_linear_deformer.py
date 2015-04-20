@@ -273,7 +273,8 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     start_pos = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
                     rot_dir = None
                     if self.tool_mode in {'ROTATE_ALL', 'BEND_ALL', 'BEND_SPIRAL'}:
-                        rot_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
+                        # here we multiply to_quaternion() so that to get right direction
+                        rot_dir = (active_obj.matrix_world.inverted().to_quaternion() * rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
                     else:
                         # ROTATE_FRONT code
                         rot_dir = (end_3d - start_3d).normalized()
