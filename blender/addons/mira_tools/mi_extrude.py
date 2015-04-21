@@ -203,7 +203,7 @@ class MI_StartDraw(bpy.types.Operator):
                 # max_obj_scale
                 self.max_obj_scale = active_obj.scale.x
                 if active_obj.scale.y > self.max_obj_scale:
-                    self.max_obj_scale = active_obj.scale.yut_base.get_vertices_size
+                    self.max_obj_scale = active_obj.scale.y
                 if active_obj.scale.z > self.max_obj_scale:
                     self.max_obj_scale = active_obj.scale.z
 
@@ -224,6 +224,7 @@ class MI_StartDraw(bpy.types.Operator):
         else:
             self.report({'WARNING'}, "View3D not found, cannot run operator")
             return {'CANCELLED'}
+
 
     def modal(self, context, event):
         context.area.tag_redraw()
@@ -266,6 +267,10 @@ class MI_StartDraw(bpy.types.Operator):
                     if self.tool_mode == 'ROTATE' or self.tool_mode == 'SCALE':
                         self.extrude_points[-1].update_verts(
                             ut_base.get_selected_bmverts(bm))
+
+                    # update normals after changes
+                    if self.tool_mode != 'IDLE':
+                        bm.normal_update()
 
                     self.tool_mode = 'IDLE'
 
@@ -329,7 +334,9 @@ class MI_StartDraw(bpy.types.Operator):
                 if len(self.extrude_points) == 1:
                     bpy.ops.mesh.dissolve_faces()
 
+                # main extrude things
                 bpy.ops.mesh.extrude_region_move()
+                selected_bmesh = ut_base.get_selected_bmesh(bm)
 
                 # New Extrude center
                 offset_dir = None
@@ -337,7 +344,7 @@ class MI_StartDraw(bpy.types.Operator):
                 bpy.ops.transform.translate(
                     value=(offset_move.x, offset_move.y, offset_move.z), proportional='DISABLED')
 
-                offset_dir = offset_move.copy()
+                offset_dir = offset_move.copy().normalized()
                 up_vec = None
                 cam_dir = None
 
@@ -366,9 +373,14 @@ class MI_StartDraw(bpy.types.Operator):
                     if up_vec.angle(offset_dir) > math.radians(90):
                         rot_angle = -rot_angle
 
-                    # Direction rotate
-                    bpy.ops.transform.rotate(
-                        value=rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
+                    ## Direction rotate
+                    #bpy.ops.transform.rotate(
+                        #value=rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
+
+                    # rotate verts!
+                    rot_mat = Matrix.Rotation(rot_angle, 3,  rotate_dir_vec)
+                    for vert in selected_bmesh[0]:
+                        vert.co = active_obj.matrix_world.inverted() * (rot_mat * ((active_obj.matrix_world * vert.co) - new_pos) + new_pos)
 
                     self.extrude_points[-1].direction = offset_dir
                 else:
@@ -397,16 +409,11 @@ class MI_StartDraw(bpy.types.Operator):
                     fix_up_vec = rotate_dir_vec.cross(fix_dir).normalized()
                     fix_rot_angle = fix_dir.angle(fix_step.direction)
 
-                    selected_bmesh = ut_base.get_selected_bmesh(bm)
                     previous_extrude_verts = get_previous_extrude_verts(
                         bm, context)
 
                     # rotate previous extrude
                     if fix_rot_angle > 0.0:
-                        sel_mode = context.tool_settings.mesh_select_mode
-                        sel_mode = (sel_mode[0], sel_mode[1], sel_mode[2])
-
-                        # bpy.ops.mesh.select_all(action='DESELECT')
                         for vert in selected_bmesh[0]:
                             vert.select = False
                         for edge in selected_bmesh[1]:
@@ -414,24 +421,15 @@ class MI_StartDraw(bpy.types.Operator):
                         for face in selected_bmesh[2]:
                             face.select = False
 
-                        context.tool_settings.mesh_select_mode = (
-                            True, False, False)
-                        # bmesh.update_edit_mesh(active_obj.data)
-                        for vert in previous_extrude_verts:
-                            vert.select = True
-
                         # rotate previous extrude to fix rotation
                         if fix_up_vec.angle((fix_step.direction - fix_dir).normalized()) > math.radians(90):
                             fix_rot_angle = -fix_rot_angle
-                        bpy.ops.transform.rotate(
-                            value=fix_rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
 
-                        # revert selection
+                        # rotate verts!
+                        rot_mat = Matrix.Rotation(fix_rot_angle, 3,  rotate_dir_vec)
                         for vert in previous_extrude_verts:
+                            vert.co = active_obj.matrix_world.inverted() * (rot_mat * ((active_obj.matrix_world * vert.co) - fix_step.position) + fix_step.position)
                             vert.select = False
-
-                        context.tool_settings.mesh_select_mode = (
-                            sel_mode[0], sel_mode[1], sel_mode[2])
 
                         for vert in selected_bmesh[0]:
                             vert.select = True
@@ -452,7 +450,7 @@ class MI_StartDraw(bpy.types.Operator):
                         rotate_all_epoints(
                             active_obj, bm, self.extrude_points, self.rotate_all)
 
-                bm.normal_update()
+                #bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
@@ -512,7 +510,7 @@ class MI_StartDraw(bpy.types.Operator):
 
                         self.deform_mouse_pos = m_coords
 
-                bm.normal_update()
+                #bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
 
                 return {'RUNNING_MODAL'}

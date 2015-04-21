@@ -200,6 +200,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
         elif self.tool_mode in {'SCALE_ALL', 'SCALE_FRONT', 'TAPE'}:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+                bm.normal_update()
                 self.tool_mode = 'IDLE'
             else:
                 # move points
@@ -228,13 +229,14 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                             bm.verts[vert_data[0]].co = vert_data[2] + ( scale_vec * scale_value * apply_value)
 
-                        bm.normal_update()
+                        #bm.normal_update()
                         bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
 
         elif self.tool_mode == 'MOVE_ALL':
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+                bm.normal_update()
                 self.tool_mode = 'IDLE'
             else:
                 mouse_pos_3d = ut_base.get_mouse_on_plane(context, self.lw_tool.start_point.position, None, m_coords)
@@ -248,13 +250,14 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     move_value = vert_data[1]
                     bm.verts[vert_data[0]].co = vert_data[2] + (move_vec * move_value)
 
-                bm.normal_update()
+                #bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
 
         elif self.tool_mode in {'ROTATE_ALL', 'TWIST', 'BEND_ALL', 'BEND_SPIRAL'}:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+                bm.normal_update()
                 self.tool_mode = 'IDLE'
             else:
                 m_coords = Vector(m_coords)  # convert into vector for operations
@@ -262,24 +265,25 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 new_vec_dir = (m_coords - start_2d).normalized()
                 rot_angle = new_vec_dir.angle(self.deform_vec_pos)
 
-                start_3d = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
-                end_3d = active_obj.matrix_world.inverted() * self.lw_tool.end_point.position
+                start_3d = self.lw_tool.start_point.position
+                end_3d = self.lw_tool.end_point.position
 
                 if rot_angle != 0.0:
+                    # check for left or right direction to rotate
                     vec_check_1 = Vector((new_vec_dir[0], new_vec_dir[1], 0))
                     vec_check_2 = Vector((new_vec_dir[0]-self.deform_vec_pos[0], new_vec_dir[1]-self.deform_vec_pos[1], 0))
                     checker_side_dir = vec_check_1.cross(vec_check_2).normalized()[2]
                     if checker_side_dir > 0.0:
                         rot_angle = -rot_angle
 
-                    start_pos = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
+                    start_pos = self.lw_tool.start_point.position
                     rot_dir = None
-                    if self.tool_mode in {'ROTATE_ALL', 'BEND_ALL', 'BEND_SPIRAL'}:
-                        # here we multiply to_quaternion() so that to get right direction
-                        rot_dir = (active_obj.matrix_world.inverted().to_quaternion() * rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
-                    else:
+                    if self.tool_mode == 'ROTATE_FRONT' or self.tool_mode == 'TWIST':
                         # ROTATE_FRONT code
                         rot_dir = (end_3d - start_3d).normalized()
+                    else:
+                        # here we multiply to_quaternion() so that to get right direction
+                        rot_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
 
                     rot_angle += self.deform_mouse_pos  # add rot angle
 
@@ -287,7 +291,8 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     faloff_len = None
                     spiral_value = 0.0  # only for BEND_SPIRAL
                     bend_scale_value = 1.0  # only for BEND_ALL
-                    if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
+
+                    if self.tool_mode == 'BEND_ALL' or self.tool_mode ==  'BEND_SPIRAL':
                         bend_side_dir = (((end_3d - start_3d).normalized()).cross(rot_dir)).normalized()
                         faloff_len = end_3d - start_3d
 
@@ -304,32 +309,45 @@ class MI_Linear_Deformer(bpy.types.Operator):
                             val_scale = ( ( (m_coords - start_2d).length / self.bend_scale_len) )
                             bend_scale_value = (( val_scale) )
 
+                    do_bend = False
+                    if self.tool_mode == 'BEND_ALL' or self.tool_mode ==  'BEND_SPIRAL':
+                        do_bend = True
+
                     for vert_data in self.apply_tool_verts:
                         apply_value = vert_data[1]
-                        rot_mat = Matrix.Rotation(rot_angle * apply_value, 3, rot_dir)
-                        vert = bm.verts[vert_data[0]]
+                        final_apply_value = rot_angle * apply_value
 
-                        if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
-                            vert.co = vert_data[2] - ((faloff_len) * apply_value)
+                        # do rotation
+                        if final_apply_value != 0.0:
+                            rot_mat = Matrix.Rotation(final_apply_value, 3, rot_dir)
+                            vert = bm.verts[vert_data[0]]
 
-                            back_offset = (((faloff_len).length / (rot_angle * apply_value)) + spiral_value) * apply_value * bend_scale_value
-                            vert.co += bend_side_dir * back_offset
-                        else:
-                            # set original position
-                            vert.co[0] = vert_data[2][0]
-                            vert.co[1] = vert_data[2][1]
-                            vert.co[2] = vert_data[2][2]
+                            if do_bend:
+                                vert_temp =  (active_obj.matrix_world * vert_data[2]) - ((faloff_len) * apply_value)
 
-                        vert.co = rot_mat * (vert.co - start_pos) + start_pos
-                        self.deform_vec_pos = new_vec_dir
+                                back_offset = (((faloff_len).length / (final_apply_value)) + spiral_value) * apply_value * bend_scale_value
+                                vert_temp += bend_side_dir * back_offset
+                                vert.co = active_obj.matrix_world.inverted() * vert_temp
+                            else:
+                                # set original position
+                                vert.co[0] = vert_data[2][0]
+                                vert.co[1] = vert_data[2][1]
+                                vert.co[2] = vert_data[2][2]
 
-                        if self.tool_mode in {'BEND_ALL', 'BEND_SPIRAL'}:
-                            back_offset = ((faloff_len).length / (rot_angle * apply_value)) * apply_value * bend_scale_value
-                            vert.co -= bend_side_dir * back_offset
+                            # ROTATE VERTS!
+                            vert.co = rot_mat * ( (active_obj.matrix_world * vert.co) - start_pos) + start_pos
+                            self.deform_vec_pos = new_vec_dir
 
-                        self.deform_mouse_pos = rot_angle  # set new angle rotation for next step
+                            if do_bend:
+                                back_offset = ((faloff_len).length / (final_apply_value)) * apply_value * bend_scale_value
+                                vert.co -= (bend_side_dir * back_offset)
 
-                    bm.normal_update()
+                            # here we invert matrix back to local coordinates
+                            vert.co = active_obj.matrix_world.inverted() * vert.co
+
+                            self.deform_mouse_pos = rot_angle  # set new angle rotation for next step
+
+                    #bm.normal_update()
                     bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
