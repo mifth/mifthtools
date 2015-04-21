@@ -334,16 +334,14 @@ class MI_Linear_Deformer(bpy.types.Operator):
                                 vert.co[2] = vert_data[2][2]
 
                             # ROTATE VERTS!
-                            vert.co = rot_mat * ( (active_obj.matrix_world * vert.co) - start_pos) + start_pos
-                            self.deform_vec_pos = new_vec_dir
-
                             if do_bend:
+                                vert.co = rot_mat * ( (active_obj.matrix_world * vert.co) - start_pos) + start_pos
                                 back_offset = ((faloff_len).length / (final_apply_value)) * apply_value * bend_scale_value
-                                vert.co -= (bend_side_dir * back_offset)
+                                vert.co = active_obj.matrix_world.inverted() * ( vert.co - (bend_side_dir * back_offset))
+                            else:
+                                vert.co = active_obj.matrix_world.inverted() * (rot_mat * ( (active_obj.matrix_world * vert.co) - start_pos) + start_pos)
 
-                            # here we invert matrix back to local coordinates
-                            vert.co = active_obj.matrix_world.inverted() * vert.co
-
+                            self.deform_vec_pos = new_vec_dir
                             self.deform_mouse_pos = rot_angle  # set new angle rotation for next step
 
                     #bm.normal_update()
