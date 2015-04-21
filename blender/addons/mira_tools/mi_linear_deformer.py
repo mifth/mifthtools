@@ -100,6 +100,8 @@ class MI_Linear_Deformer(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
+        context.area.header_text_set("S: Scale, Shift-S: ScaleForward, G: Move, R: Rotate, B: Bend, Shift-B: BendSpiral, T: Tape, Shift-T: Twist")
+
         region = context.region
         rv3d = context.region_data
         m_coords = event.mouse_region_x, event.mouse_region_y

@@ -137,8 +137,9 @@ class MI_CurveStretch(bpy.types.Operator):
 
 
     def modal(self, context, event):
-        #print(context.active_operator)
         context.area.tag_redraw()
+
+        context.area.header_text_set("Del: DeletePoint, Shift+Click: SelectAdditive, Ctrl+Click: NewPoint")
 
         curve_settings = context.scene.mi_curve_settings
         cur_stretch_settings = context.scene.mi_cur_stretch_settings

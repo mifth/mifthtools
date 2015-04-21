@@ -228,6 +228,8 @@ class MI_StartDraw(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
+        context.area.header_text_set("S: Scale, Shift-S: ScaleAll, R: Rotate, Shift-R: RotateAll")
+
         active_obj = context.scene.objects.active
         bm = bmesh.from_edit_mesh(active_obj.data)
 
