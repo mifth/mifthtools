@@ -522,6 +522,7 @@ class MI_StartDraw(bpy.types.Operator):
             # 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(
                 self.mi_extrude_handle_2d, 'WINDOW')
+            context.area.header_text_set()
 
             return {'FINISHED'}
 

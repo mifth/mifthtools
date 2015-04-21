@@ -139,7 +139,7 @@ class MI_CurveStretch(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
-        context.area.header_text_set("Del: DeletePoint, Shift+Click: SelectAdditive, Ctrl+Click: NewPoint")
+        context.area.header_text_set("Ctrl+Click: NewPoint, Shift+Click: SelectAdditive, Del: DeletePoint")
 
         curve_settings = context.scene.mi_curve_settings
         cur_stretch_settings = context.scene.mi_cur_stretch_settings
@@ -257,8 +257,7 @@ class MI_CurveStretch(bpy.types.Operator):
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_deform_handle_2d, 'WINDOW')
             finish_work(self, context)
 
-            # clear
-            #display_bezier = None
+            context.area.header_text_set()
 
             return {'FINISHED'}
 

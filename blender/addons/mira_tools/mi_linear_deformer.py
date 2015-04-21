@@ -362,8 +362,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
             # bpy.types.SpaceView3D.draw_handler_remove(self.lin_deform_handle_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.lin_deform_handle_2d, 'WINDOW')
 
-            # clear
-            #display_bezier = None
+            context.area.header_text_set()
 
             return {'FINISHED'}
 
