@@ -282,7 +282,6 @@ class MI_Linear_Deformer(bpy.types.Operator):
                         # ROTATE_FRONT code
                         rot_dir = (end_3d - start_3d).normalized()
                     else:
-                        # here we multiply to_quaternion() so that to get right direction
                         rot_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
 
                     rot_angle += self.deform_mouse_pos  # add rot angle
