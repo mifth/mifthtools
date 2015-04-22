@@ -38,6 +38,11 @@ from . import mi_color_manager as col_man
 from . import mi_linear_widget as l_widget
 
 
+# Linear Deformer Settings
+class MI_LDeformer_Settings(bpy.types.PropertyGroup):
+    manual_update = BoolProperty(default=False)
+
+
 class MI_Linear_Deformer(bpy.types.Operator):
     """Draw a line with the mouse"""
     bl_idname = "mira.linear_deformer"
@@ -54,6 +59,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
     tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'TAPE', 'ROTATE_ALL', 'BEND_ALL', 'BEND_SPIRAL')
     tool_mode = 'IDLE'
 
+    do_update = None
     lw_tool = None
     active_lw_point = None
     deform_mouse_pos = None
@@ -100,7 +106,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
-        context.area.header_text_set("S: Scale, Shift-S: ScaleForward, G: Move, R: Rotate, B: Bend, Shift-B: BendSpiral, T: Tape, Shift-T: Twist")
+        lin_def_settings = context.scene.mi_ldeformer_settings
 
         region = context.region
         rv3d = context.region_data
@@ -108,7 +114,25 @@ class MI_Linear_Deformer(bpy.types.Operator):
         active_obj = context.scene.objects.active
         bm = bmesh.from_edit_mesh(active_obj.data)
 
-        # make picking
+        # update check
+        if lin_def_settings.manual_update is True:
+            if event.type == 'U':
+                if event.value == 'PRESS':
+                    self.do_update = True
+                else:
+                    self.do_update = False
+        else:
+            self.do_update = True
+
+        # tooltip
+        tooltip_text = None
+        if lin_def_settings.manual_update is True and self.tool_mode not in {'IDLE', 'MOVE_POINT'}:
+            tooltip_text = "Press U key to udate!"
+        else:
+            tooltip_text = "S: Scale, Shift-S: ScaleForward, G: Move, R: Rotate, B: Bend, Shift-B: BendSpiral, T: Tape, Shift-T: Twist"
+        context.area.header_text_set(tooltip_text)
+
+        # key pressed
         if self.tool_mode == 'IDLE' and event.value == 'PRESS':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 if self.lw_tool:
@@ -117,7 +141,6 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     if picked_point:
                         self.deform_mouse_pos = m_coords
                         self.active_lw_point = picked_point
-                        #print(picked_point)
 
                         self.tool_mode = 'MOVE_POINT'
                 else:
@@ -178,10 +201,10 @@ class MI_Linear_Deformer(bpy.types.Operator):
                     if self.tool_mode in {'BEND_SPIRAL', 'BEND_ALL'}:
                         self.bend_scale_len = (Vector(m_coords) - start_2d).length
 
+                #return {'RUNNING_MODAL'}
 
-                return {'RUNNING_MODAL'}
-
-        elif self.tool_mode == 'MOVE_POINT':
+        # TOOL WORK!
+        if self.tool_mode == 'MOVE_POINT':
             if event.value == 'RELEASE':
                 self.tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
@@ -202,7 +225,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 bm.normal_update()
                 self.tool_mode = 'IDLE'
-            else:
+            elif self.do_update:
                 # move points
                 start_point_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.lw_tool.start_point.position)
                 if start_point_2d:
@@ -232,13 +255,14 @@ class MI_Linear_Deformer(bpy.types.Operator):
                         #bm.normal_update()
                         bmesh.update_edit_mesh(active_obj.data)
 
+            self.do_update = False
             return {'RUNNING_MODAL'}
 
         elif self.tool_mode == 'MOVE_ALL':
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 bm.normal_update()
                 self.tool_mode = 'IDLE'
-            else:
+            elif self.do_update:
                 mouse_pos_3d = ut_base.get_mouse_on_plane(context, self.lw_tool.start_point.position, None, m_coords)
                 mouse_pos_3d = active_obj.matrix_world.inverted() * mouse_pos_3d
                 start_pos = active_obj.matrix_world.inverted() * self.lw_tool.start_point.position
@@ -252,6 +276,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                 #bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
+                self.do_update = False
 
             return {'RUNNING_MODAL'}
 
@@ -259,7 +284,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 bm.normal_update()
                 self.tool_mode = 'IDLE'
-            else:
+            elif self.do_update:
                 m_coords = Vector(m_coords)  # convert into vector for operations
                 start_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.lw_tool.start_point.position)
                 new_vec_dir = (m_coords - start_2d).normalized()
@@ -346,6 +371,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                     #bm.normal_update()
                     bmesh.update_edit_mesh(active_obj.data)
+                self.do_update = False
 
             return {'RUNNING_MODAL'}
 
@@ -376,6 +402,7 @@ def reset_params(self):
     self.deform_vec_pos = None
     self.bend_scale_len = None
 
+    self.do_update = False
     self.lw_tool = None
     self.active_lw_point = None
 

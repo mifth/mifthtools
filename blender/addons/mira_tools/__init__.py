@@ -83,9 +83,15 @@ def register():
     )
 
     bpy.types.Scene.mi_extrude_settings = PointerProperty(
-        name="Mira Tool Variables",
+        name="Extrude Variables",
         type=mi_extrude.MI_ExtrudeSettings,
-        description="Mira Curve"
+        description="Extrude Settings"
+    )
+
+    bpy.types.Scene.mi_ldeformer_settings = PointerProperty(
+        name="Linear Deformer Variables",
+        type=mi_linear_deformer.MI_LDeformer_Settings,
+        description="Linear Deformer Settings"
     )
 
 def unregister():
@@ -96,6 +102,7 @@ def unregister():
     del bpy.types.Scene.mi_curve_settings
     del bpy.types.Scene.mi_cur_stretch_settings
     del bpy.types.Scene.mi_extrude_settings
+    del bpy.types.Scene.mi_ldeformer_settings
     bpy.utils.unregister_module(__name__)
 
 
