@@ -136,10 +136,10 @@ class MI_Linear_Deformer(bpy.types.Operator):
         if self.tool_mode == 'IDLE' and event.value == 'PRESS':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 if self.lw_tool:
-                    # pick point test
-                    picked_point = pick_lw_point(context, m_coords, self.lw_tool)
+                    # pick linear widget point
+                    picked_point = l_widget.pick_lw_point(context, m_coords, self.lw_tool)
                     if picked_point:
-                        self.deform_mouse_pos = m_coords
+                        self.deform_mouse_pos = Vector(m_coords)
                         self.active_lw_point = picked_point
 
                         self.tool_mode = 'MOVE_POINT'
@@ -418,28 +418,4 @@ def lin_def_draw_2d(self, context):
         lw_dir = (self.lw_tool.start_point.position - self.lw_tool.end_point.position).normalized()
         cam_view = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
         side_dir = lw_dir.cross(cam_view).normalized()
-        l_widget.draw_lw(context, self.lw_tool, side_dir)
-
-
-def pick_lw_point(context, m_coords, lw):
-    region = context.region
-    rv3d = context.region_data
-
-    return_point = None
-    good_distance = None
-
-    mouse_coords = Vector(m_coords)
-
-    lw_points = [lw.start_point, lw.middle_point, lw.end_point]
-    for lw_point in lw_points:
-        vec_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, lw_point.position)
-        dist = (vec_2d - mouse_coords).length
-        if dist <= 9.0:
-            if not return_point:
-                return_point = lw_point
-                good_distance = dist
-            elif good_distance > dist:
-                return_point = lw_point
-
-    return return_point
-
+        l_widget.draw_lw(context, self.lw_tool, side_dir, True)
