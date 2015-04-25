@@ -55,10 +55,10 @@ class MI_CurveObject():
     # class constructor
     def __init__(self, other_curves):
         self.curve_points = []
-        self.active_point = StringProperty(default="")
+        self.active_point = None  # string
         self.display_bezier = {}  # display bezier curves dictionary
 
-        self.curve_id = StringProperty(default="")
+        self.curve_id = None  # string
 
         other_curve_ids = None
         if other_curves:
@@ -78,7 +78,7 @@ class MI_CurvePoint():
         self.handle1 = None  # Vector
         self.handle2 = None  # Vector
 
-        self.point_id = StringProperty(default="")
+        self.point_id = None  # string
 
         other_points_ids = None
         if other_points:

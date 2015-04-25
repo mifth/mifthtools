@@ -56,6 +56,7 @@ class MI_DeformPanel(bpy.types.Panel):
     def draw(self, context):
         cur_stretch_settings = context.scene.mi_cur_stretch_settings
         lin_def_settings = context.scene.mi_ldeformer_settings
+        curguide_settings = context.scene.mi_curguide_settings
 
         layout = self.layout
         layout.operator("mira.noise", text="Noise")
@@ -71,6 +72,10 @@ class MI_DeformPanel(bpy.types.Panel):
         layout.operator("mira.curve_stretch", text="CurveStretch")
         layout.prop(cur_stretch_settings, "points_number", text='PointsNumber')
         layout.prop(cur_stretch_settings, "spread_mode", text='Spread')
+
+        layout.separator()
+        layout.operator("mira.curve_guide", text="CurveGuideTest")
+        layout.prop(curguide_settings, "points_number", text='PointsNumber')
 
 
 class MI_CurveTest(bpy.types.Panel):

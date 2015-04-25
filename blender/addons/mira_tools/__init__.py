@@ -38,12 +38,14 @@ if "bpy" in locals():
     imp.reload(mi_noise)
     imp.reload(mi_deform)
     imp.reload(mi_linear_deformer)
+    imp.reload(mi_curve_guide)
     imp.reload(mi_extrude)
 else:
     from . import mi_curve_test
     from . import mi_curve_stretch
     from . import mi_curve_settings
     from . import mi_linear_deformer
+    from . import mi_curve_guide
     from . import mi_deform
     from . import mi_gui
     from . import mi_noise
@@ -94,6 +96,12 @@ def register():
         description="Linear Deformer Settings"
     )
 
+    bpy.types.Scene.mi_curguide_settings = PointerProperty(
+        name="Curve Guide Variables",
+        type=mi_curve_guide.MI_CurGuide_Settings,
+        description="Curve Guide Settings"
+    )
+
 def unregister():
     import bpy
 
@@ -103,6 +111,7 @@ def unregister():
     del bpy.types.Scene.mi_cur_stretch_settings
     del bpy.types.Scene.mi_extrude_settings
     del bpy.types.Scene.mi_ldeformer_settings
+    del bpy.types.Scene.mi_curguide_settings
     bpy.utils.unregister_module(__name__)
 
 

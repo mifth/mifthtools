@@ -208,6 +208,46 @@ def get_vertices_center(verts, obj, local_space):
     return Vector((x_orig, y_orig, z_orig))
 
 
+def get_verts_bounds(verts, obj, x_axis, y_axis, z_axis, local_space):
+
+    center = get_vertices_center(verts, obj, local_space)
+
+    x_min = 0.0
+    x_max = 0.0
+    y_min = 0.0
+    y_max = 0.0
+    z_min = 0.0
+    z_max = 0.0
+
+    for vert in verts:
+        vert_world = vert.co
+        if not local_space:
+            vert_world = obj.matrix_world * vert.co
+
+        if x_axis:
+            x_check = mathu.geometry.distance_point_to_plane(vert_world, center, x_axis)
+            if x_check > x_max:
+                x_max = x_check
+            elif x_check < x_min:
+                x_min = x_check
+
+        if y_axis:
+            y_check = mathu.geometry.distance_point_to_plane(vert_world, center, y_axis)
+            if y_check > y_max:
+                y_max = y_check
+            elif y_check < y_min:
+                y_min = y_check
+
+        if z_axis:
+            z_check = mathu.geometry.distance_point_to_plane(vert_world, center, z_axis)
+            if z_check > z_max:
+                z_max = z_check
+            elif z_check < z_min:
+                z_min = z_check
+
+    return ( x_max + abs(x_min), y_max + abs(y_min), z_max + abs(z_min), center )
+
+
 def get_vertices_size(verts, obj):
     # if obj.mode == 'EDIT':
         # bm.verts.ensure_lookup_table()
