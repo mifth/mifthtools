@@ -74,8 +74,10 @@ class MI_DeformPanel(bpy.types.Panel):
         layout.prop(cur_stretch_settings, "spread_mode", text='Spread')
 
         layout.separator()
+        layout.label(text="CurveGuide:")
         layout.operator("mira.curve_guide", text="CurveGuideTest")
         layout.prop(curguide_settings, "points_number", text='PointsNumber')
+        layout.prop(curguide_settings, "deform_type", text='DeformType')
 
 
 class MI_CurveTest(bpy.types.Panel):

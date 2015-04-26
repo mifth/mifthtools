@@ -232,7 +232,7 @@ class MI_CurveStretch(bpy.types.Operator):
                 if new_point_pos and selected_points:
                     move_offset = new_point_pos - act_point.position
                     for point in selected_points:
-                            point.position += move_offset
+                        point.position += move_offset
 
                     if len(selected_points) == 1:
                         cur_main.curve_point_changed(self.active_curve, self.active_curve.curve_points.index(point), curve_settings.curve_resolution, self.active_curve.display_bezier)

@@ -44,6 +44,12 @@ from . import mi_looptools as loop_t
 # Settings
 class MI_CurGuide_Settings(bpy.types.PropertyGroup):
     points_number = IntProperty(default=9, min=3, max=128)
+    deform_type = EnumProperty(
+        items=(('Stretch', 'Stretch', ''),
+               ('Scale', 'Scale', '')
+               ),
+        default = 'Stretch'
+    )
 
 
 class MI_Curve_Guide(bpy.types.Operator):
@@ -66,6 +72,8 @@ class MI_Curve_Guide(bpy.types.Operator):
     lw_tool = None
     active_lw_point = None
     tool_side_vec = None
+    tool_side_vec_len = None
+    tool_up_vec = None
 
     curve_tool = None
 
@@ -92,18 +100,18 @@ class MI_Curve_Guide(bpy.types.Operator):
             bm = bmesh.from_edit_mesh(active_obj.data)
 
             if bm.verts:
-                work_verts = ut_base.get_selected_bmverts(bm)
-                if not work_verts:
-                    work_verts = [v for v in bm.verts if v.hide is False]
+                pre_verts = ut_base.get_selected_bmverts(bm)
+                if not pre_verts:
+                    pre_verts = [v for v in bm.verts if v.hide is False]
 
                 # get verts bounds
                 cam_x = (rv3d.view_rotation * Vector((1.0, 0.0, 0.0))).normalized()
                 cam_y = (rv3d.view_rotation * Vector((0.0, 1.0, 0.0))).normalized()
                 #cam_z = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
-                bounds = ut_base.get_verts_bounds(work_verts, active_obj, cam_x, cam_y, None, False)
+                bounds = ut_base.get_verts_bounds(pre_verts, active_obj, cam_x, cam_y, None, False)
 
                 self.start_work_center = bounds[3]
-                self.work_verts = [vert.index for vert in work_verts]
+                #self.work_verts = [vert.index for vert in pre_verts]
 
                 # create linear deformer
                 self.lw_tool = l_widget.MI_Linear_Widget()
@@ -182,10 +190,11 @@ class MI_Curve_Guide(bpy.types.Operator):
                                 # add point
                                 if event.ctrl and self.curve_tool and self.curve_tool.active_point:
                                     act_point = cur_main.get_point_by_id(self.curve_tool.curve_points, self.curve_tool.active_point)
-                                    new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
+                                    new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, self.tool_up_vec, m_coords)
 
                                     if new_point_pos:
                                         new_point = cur_main.add_point(new_point_pos, self.curve_tool)
+                                        fix_curve_point_pos(self.lw_tool, self.curve_tool, [new_point])
 
                                         self.curve_tool.active_point = new_point.point_id
                                         self.tool_mode = 'MOVE_CUR_POINT'
@@ -196,29 +205,48 @@ class MI_Curve_Guide(bpy.types.Operator):
                     elif event.type == 'RET':
                         # create curve
                         if not self.curve_tool:
-                            # create curve
-                            self.curve_tool = cur_main.MI_CurveObject(None)
 
                             points_number = curguide_settings.points_number
                             points_dir = self.lw_tool.end_point.position - self.lw_tool.start_point.position
+                            lw_tool_dir = points_dir.copy().normalized()
 
                             # get side vec
-                            lw_tool_dir = points_dir.copy().normalized()
                             cam_z = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
-                            vec_x = cam_z.cross(lw_tool_dir).normalized()
-                            verts = [bm.verts[vert_id] for vert_id in self.work_verts]
 
-                            bounds = ut_base.get_verts_bounds(verts, active_obj, vec_x, lw_tool_dir, None, False)
+                            # set tool vecs
+                            self.tool_side_vec = cam_z.cross(lw_tool_dir).normalized()
+                            self.tool_up_vec = lw_tool_dir.cross(self.tool_side_vec).normalized()  # here we set upvec
 
-                            widget_offset = mathu.geometry.distance_point_to_plane(self.lw_tool.middle_point.position, bounds[3], vec_x)
-                            self.tool_side_vec = vec_x * ((bounds[0] * 0.75) + abs(widget_offset))
+                            # get verts
+                            pre_verts = ut_base.get_selected_bmverts(bm)
+                            if not pre_verts:
+                                pre_verts = [v for v in bm.verts if v.hide is False]
 
-                            # create points
-                            for i in range(points_number):
-                                point = cur_main.MI_CurvePoint(self.curve_tool.curve_points)
-                                self.curve_tool.curve_points.append(point)
-                                point.position = Vector(self.lw_tool.start_point.position + ( points_dir * (float(i)/float(points_number-1)) ) ) + self.tool_side_vec
-                            cur_main.generate_bezier_points(self.curve_tool, self.curve_tool.display_bezier, curve_settings.curve_resolution)
+                            self.work_verts = {}
+                            for vert in pre_verts:
+                                v_front_dist = mathu.geometry.distance_point_to_plane(vert.co, self.lw_tool.start_point.position, lw_tool_dir)
+                                if v_front_dist >= 0.0 and v_front_dist <= points_dir.length:
+                                    v_side_dist = mathu.geometry.distance_point_to_plane(vert.co, self.lw_tool.start_point.position, self.tool_side_vec)
+                                    v_up_dist = mathu.geometry.distance_point_to_plane(vert.co, self.lw_tool.start_point.position, self.tool_up_vec)
+                                    self.work_verts[vert.index] = (vert.co.copy(), v_front_dist, v_side_dist, v_up_dist)
+
+                            if self.work_verts:
+                                # create curve
+                                self.curve_tool = cur_main.MI_CurveObject(None)
+
+                                verts = [bm.verts[vert_id] for vert_id in self.work_verts.keys()]
+                                bounds = ut_base.get_verts_bounds(verts, active_obj, self.tool_side_vec, lw_tool_dir, None, False)
+
+                                # set tool vecs
+                                widget_offset = mathu.geometry.distance_point_to_plane(self.lw_tool.middle_point.position, bounds[3], self.tool_side_vec)
+                                self.tool_side_vec_len = ((bounds[0] * 0.75) + abs(widget_offset))  # here we set the length of the side vec
+
+                                # create points
+                                for i in range(points_number):
+                                    point = cur_main.MI_CurvePoint(self.curve_tool.curve_points)
+                                    self.curve_tool.curve_points.append(point)
+                                    point.position = Vector(self.lw_tool.start_point.position + ( points_dir * (float(i)/float(points_number-1)) ) ) + (self.tool_side_vec * self.tool_side_vec_len)
+                                cur_main.generate_bezier_points(self.curve_tool, self.curve_tool.display_bezier, curve_settings.curve_resolution)
 
                     elif event.type == 'DEL':
                         sel_points = cur_main.get_selected_points(self.curve_tool.curve_points)
@@ -271,12 +299,18 @@ class MI_Curve_Guide(bpy.types.Operator):
                 m_coords = event.mouse_region_x, event.mouse_region_y
                 act_point = cur_main.get_point_by_id(self.curve_tool.curve_points, self.curve_tool.active_point)
                 selected_points = cur_main.get_selected_points(self.curve_tool.curve_points)
-                new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
+                new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, self.tool_up_vec, m_coords)
                 if new_point_pos and selected_points:
                     move_offset = new_point_pos - act_point.position
-                    for point in selected_points:
-                            point.position += move_offset
 
+                    # move point
+                    for point in selected_points:
+                        point.position += move_offset
+
+                    # fix points pos
+                    fix_curve_point_pos(self.lw_tool, self.curve_tool, selected_points)
+
+                    # update bezier
                     if len(selected_points) == 1:
                         cur_main.curve_point_changed(self.curve_tool, self.curve_tool.curve_points.index(point), curve_settings.curve_resolution, self.curve_tool.display_bezier)
                     else:
@@ -314,12 +348,43 @@ def reset_params(self):
     self.lw_tool = None
     self.active_lw_point = None
     self.tool_side_vec = None
+    self.tool_side_vec_len = None
+    self.tool_up_vec = None
 
     self.curve_tool = None
 
     self.start_work_center = None
     self.work_verts = None
     self.apply_tool_verts = None
+
+
+def update_mesh_to_curve(lw_tool, curve_tool, work_verts, bm):
+    for vert_id in work_verts.keys():
+        vert = bm.verts[vert_id]
+        vert_data = work_verts[vert_id]
+
+
+# constraint curve point
+def fix_curve_point_pos(lw_tool, curve_tool, points_to_fix):
+    # fix point position point
+    lw_tool_dir = (lw_tool.end_point.position - lw_tool.start_point.position).normalized()
+    for point in points_to_fix:
+        p_idx = curve_tool.curve_points.index(point)
+        p_dist = mathu.geometry.distance_point_to_plane(point.position, lw_tool.start_point.position, lw_tool_dir)
+
+        if p_idx > 0:
+            prev_p = curve_tool.curve_points[p_idx - 1]
+            prev_p_dist = mathu.geometry.distance_point_to_plane(prev_p.position, lw_tool.start_point.position, lw_tool_dir)
+            dist_fix = p_dist - prev_p_dist
+            if dist_fix < 0.0:
+                point.position -= lw_tool_dir * dist_fix
+
+        if p_idx < len(curve_tool.curve_points) - 1:
+            next_p = curve_tool.curve_points[p_idx + 1]
+            next_p_dist = mathu.geometry.distance_point_to_plane(next_p.position, lw_tool.start_point.position, lw_tool_dir)
+            dist_fix = p_dist - next_p_dist
+            if dist_fix > 0.0:
+                point.position -= lw_tool_dir * dist_fix
 
 
 def cur_guide_draw_2d(self, context):

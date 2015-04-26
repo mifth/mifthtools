@@ -250,7 +250,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
                                 scale_vec = vert_data[2] - ( tool_orig + (tool_dir * vert_data[1] * (tool_vec).length) )
                                 scale_value = min(1.0, vert_data[1])
 
-                            bm.verts[vert_data[0]].co = vert_data[2] + ( scale_vec * scale_value * apply_value)
+                            bm.verts[vert_data[0]].co = vert_data[2] + ( scale_vec * (scale_value * apply_value))
 
                         #bm.normal_update()
                         bmesh.update_edit_mesh(active_obj.data)
