@@ -239,7 +239,7 @@ class MI_Curve_Guide(bpy.types.Operator):
 
                                 # set tool vecs
                                 widget_offset = mathu.geometry.distance_point_to_plane(self.lw_tool.middle_point.position, bounds[3], self.tool_side_vec)
-                                self.tool_side_vec_len = ((bounds[0] * 0.75) + abs(widget_offset))  # here we set the length of the side vec
+                                self.tool_side_vec_len = ((bounds[0] * 0.5) + abs(widget_offset) )  # here we set the length of the side vec
 
                                 # create points
                                 for i in range(points_number):
@@ -263,7 +263,7 @@ class MI_Curve_Guide(bpy.types.Operator):
 
         # TOOL WORK!
         if self.tool_mode == 'MOVE_LW_POINT':
-            if event.value == 'RELEASE':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
                 self.tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
@@ -280,7 +280,7 @@ class MI_Curve_Guide(bpy.types.Operator):
                 return {'RUNNING_MODAL'}
 
         elif self.tool_mode == 'SELECT_CUR_POINT':
-            if event.value == 'RELEASE':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
                 self.tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
@@ -291,7 +291,12 @@ class MI_Curve_Guide(bpy.types.Operator):
                     return {'RUNNING_MODAL'}
 
         elif self.tool_mode == 'MOVE_CUR_POINT':
-            if event.value == 'RELEASE':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
+                # update mesh positions
+                update_mesh_to_curve(self.lw_tool, self.curve_tool, self.work_verts, self.tool_side_vec, self.tool_side_vec_len, bm, curguide_settings.deform_type)
+                bm.normal_update()
+                bmesh.update_edit_mesh(active_obj.data)
+
                 self.tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
@@ -358,10 +363,70 @@ def reset_params(self):
     self.apply_tool_verts = None
 
 
-def update_mesh_to_curve(lw_tool, curve_tool, work_verts, bm):
+def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len, bm, deform_type):
+    lw_tool_vec = lw_tool.end_point.position - lw_tool.start_point.position
+    lw_tool_dir = (lw_tool.end_point.position - lw_tool.start_point.position).normalized()
+
+    # get points dists
+    points_dists = []
+    for point in curve_tool.curve_points:
+        bezier_dists = []
+        p_dist = mathu.geometry.distance_point_to_plane(point.position, lw_tool.start_point.position, lw_tool_dir)
+
+        # add bezer dists
+        if curve_tool.curve_points.index(point) > 0:
+            for b_point in curve_tool.display_bezier[point.point_id]:
+                b_p_dist = mathu.geometry.distance_point_to_plane(b_point, lw_tool.start_point.position, lw_tool_dir)
+                b_p_side_dist = mathu.geometry.distance_point_to_plane(b_point, lw_tool.start_point.position, side_dir)
+                bezier_dists.append( (b_p_dist, b_p_side_dist) )
+
+        points_dists.append( (p_dist, bezier_dists) )
+
+    # find the best point for every vert
     for vert_id in work_verts.keys():
         vert = bm.verts[vert_id]
         vert_data = work_verts[vert_id]
+
+        deform_dir = None
+        if deform_type == 'Stretch':
+            deform_dir = side_dir
+        else:
+            deform_dir = (vert_data[0] - (lw_tool.start_point.position + (lw_tool_dir * vert_data[1]))).normalized()
+
+        for i, point_data in enumerate(points_dists):
+            if point_data[0] == vert_data[1]:
+                final_dist = None
+                if i == 0:
+                    final_dist = points_dists[1][1][0][1]
+                else:
+                    final_dist = point_data[1][-1][1]
+
+                #if vert_data[2] < 0:
+                    #final_dist = -final_dist
+
+                vert.co = vert_data[0] + ( deform_dir * ( (vert_data[2] * (final_dist / side_vec_len)) - vert_data[2] ) )
+                break
+            elif point_data[0] > vert_data[1]:
+                best_b_point = None
+                vert_front_pos = lw_tool.start_point.position + (lw_tool_dir * vert_data[1])
+
+                # loop bezier points according to vert
+                for b_point in point_data[1]:
+                    b_point_front_pos = lw_tool.start_point.position + (lw_tool_dir * b_point[0])
+                    pv_dist = (vert_front_pos - b_point_front_pos).length
+                    if not best_b_point:
+                        best_b_point = (b_point, pv_dist)
+                    elif best_b_point[1] > pv_dist:
+                        best_b_point = (b_point, pv_dist)
+
+                final_dist = best_b_point[0][1]
+
+                #if vert_data[2] < 0.0:
+                    #final_dist = -final_dist
+
+                vert.co = vert_data[0] + ( deform_dir * ( (vert_data[2] * (final_dist / side_vec_len)) - vert_data[2] ) )
+                break
+                
 
 
 # constraint curve point
