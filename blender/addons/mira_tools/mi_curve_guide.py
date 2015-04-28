@@ -367,19 +367,27 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, bm):
 # constraint curve point
 def fix_curve_point_pos(lw_tool, curve_tool, points_to_fix):
     # fix point position point
+    lw_tool_vec = lw_tool.end_point.position - lw_tool.start_point.position
     lw_tool_dir = (lw_tool.end_point.position - lw_tool.start_point.position).normalized()
     for point in points_to_fix:
         p_idx = curve_tool.curve_points.index(point)
         p_dist = mathu.geometry.distance_point_to_plane(point.position, lw_tool.start_point.position, lw_tool_dir)
 
-        if p_idx > 0:
+        if p_idx == 0.0:
+            if p_dist != 0.0:
+                point.position -= lw_tool_dir * p_dist
+        elif p_idx == len(curve_tool.curve_points) - 1:
+            if p_dist != lw_tool_vec.length:
+                point.position -= lw_tool_dir * (p_dist - lw_tool_vec.length)
+        else:
+            # constraint to previous point
             prev_p = curve_tool.curve_points[p_idx - 1]
             prev_p_dist = mathu.geometry.distance_point_to_plane(prev_p.position, lw_tool.start_point.position, lw_tool_dir)
             dist_fix = p_dist - prev_p_dist
             if dist_fix < 0.0:
                 point.position -= lw_tool_dir * dist_fix
 
-        if p_idx < len(curve_tool.curve_points) - 1:
+            # constraint to next point
             next_p = curve_tool.curve_points[p_idx + 1]
             next_p_dist = mathu.geometry.distance_point_to_plane(next_p.position, lw_tool.start_point.position, lw_tool_dir)
             dist_fix = p_dist - next_p_dist
