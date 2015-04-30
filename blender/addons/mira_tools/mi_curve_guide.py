@@ -161,8 +161,12 @@ class MI_Curve_Guide(bpy.types.Operator):
         curguide_settings = context.scene.mi_curguide_settings
 
         # tooltip
-        # tooltip_text = None
-        # context.area.header_text_set(tooltip_text)
+        tooltip_text = None
+        if self.curve_tool:
+            tooltip_text = "Ctrl+Click: NewPoint, Shift+Click: SelectAdditive, Del: DeletePoint"
+        else:
+            tooltip_text = "Move Points and press Enter to continue"
+        context.area.header_text_set(tooltip_text)
 
         # key pressed
         if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'RET', 'DEL'}:
@@ -232,11 +236,12 @@ class MI_Curve_Guide(bpy.types.Operator):
 
                             self.work_verts = {}
                             for vert in pre_verts:
-                                v_front_dist = mathu.geometry.distance_point_to_plane(vert.co, self.lw_tool.start_point.position, lw_tool_dir)
+                                vert_world = active_obj.matrix_world * vert.co
+                                v_front_dist = mathu.geometry.distance_point_to_plane(vert_world, self.lw_tool.start_point.position, lw_tool_dir)
                                 if v_front_dist >= 0.0 and v_front_dist <= points_dir.length:
-                                    v_side_dist = mathu.geometry.distance_point_to_plane(vert.co, self.lw_tool.start_point.position, self.tool_side_vec)
-                                    v_up_dist = mathu.geometry.distance_point_to_plane(vert.co, self.lw_tool.start_point.position, self.tool_up_vec)
-                                    self.work_verts[vert.index] = (vert.co.copy(), v_front_dist, v_side_dist, v_up_dist)
+                                    v_side_dist = mathu.geometry.distance_point_to_plane(vert_world, self.lw_tool.start_point.position, self.tool_side_vec)
+                                    v_up_dist = mathu.geometry.distance_point_to_plane(vert_world, self.lw_tool.start_point.position, self.tool_up_vec)
+                                    self.work_verts[vert.index] = (vert_world, v_front_dist, v_side_dist, v_up_dist)
 
                             if self.work_verts:
                                 print(len(self.work_verts))
@@ -302,7 +307,7 @@ class MI_Curve_Guide(bpy.types.Operator):
         elif self.tool_mode == 'MOVE_CUR_POINT':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
                 # update mesh positions
-                update_mesh_to_curve(self.lw_tool, self.curve_tool, self.work_verts, self.tool_side_vec, self.tool_side_vec_len, bm, curguide_settings.deform_type, self.tool_up_vec)
+                update_mesh_to_curve(self.lw_tool, self.curve_tool, self.work_verts, self.tool_side_vec, self.tool_side_vec_len, bm, curguide_settings.deform_type, self.tool_up_vec, active_obj)
                 bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
 
@@ -372,7 +377,7 @@ def reset_params(self):
     self.apply_tool_verts = None
 
 
-def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len, bm, deform_type, up_dir):
+def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len, bm, deform_type, up_dir, obj):
     lw_tool_vec = lw_tool.end_point.position - lw_tool.start_point.position
     lw_tool_dir = (lw_tool.end_point.position - lw_tool.start_point.position).normalized()
 
@@ -444,7 +449,7 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
                     vert_dist_scale = (vert_data[0] - vert_front_pos).length
                     dir_multilpier = abs(vert_dist_scale * (final_dist / side_vec_len)) - vert_dist_scale
 
-                vert.co = vert_data[0] + ( deform_dir *  dir_multilpier)
+                vert.co = obj.matrix_world.inverted() * (vert_data[0] + ( deform_dir *  dir_multilpier))
                 break
                 
 
@@ -482,8 +487,12 @@ def fix_curve_point_pos(lw_tool, curve_tool, points_to_fix):
 
 def cur_guide_draw_2d(self, context):
     # active_obj = context.scene.objects.active
+    region = context.region
     rv3d = context.region_data
     curve_settings = context.scene.mi_curve_settings
+
+    #lw_tool_dir = (self.lw_tool.end_point.position - self.lw_tool.start_point.position).normalized()
+
     if self.lw_tool:
         lw_dir = (self.lw_tool.start_point.position - self.lw_tool.end_point.position).normalized()
         cam_view = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
@@ -491,6 +500,22 @@ def cur_guide_draw_2d(self, context):
         l_widget.draw_lw(context, self.lw_tool, side_dir, False)
 
     if self.curve_tool:
+        # draw start line
+        start_pos = self.lw_tool.start_point.position + (self.tool_side_vec * self.tool_side_vec_len)
+        start_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, start_pos)
+        end_pos = self.lw_tool.end_point.position + (self.tool_side_vec * self.tool_side_vec_len)
+        end_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, end_pos)
+        draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.3, 0.6, 0.99, 1.0))
+
+        # draw points
+        for point in self.curve_tool.curve_points:
+            start_pos = point.position
+            start_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, start_pos)
+            p_dist = mathu.geometry.distance_point_to_plane(start_pos, self.lw_tool.start_point.position, self.tool_side_vec)
+            end_pos = start_pos - (self.tool_side_vec * p_dist)
+            end_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, end_pos)
+            draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.7, 0.5, 0.95, 1.0))
+
         draw_curve_lines_2d(self.curve_tool, context)
         draw_curve_points_2d(self.curve_tool, context, curve_settings)
 
