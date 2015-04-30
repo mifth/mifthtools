@@ -75,7 +75,7 @@ class MI_DeformPanel(bpy.types.Panel):
 
         layout.separator()
         layout.label(text="CurveGuide:")
-        layout.operator("mira.curve_guide", text="CurveGuideTest")
+        layout.operator("mira.curve_guide", text="CurveGuide")
         layout.prop(curguide_settings, "points_number", text='PointsNumber')
         layout.prop(curguide_settings, "deform_type", text='DeformType')
 
