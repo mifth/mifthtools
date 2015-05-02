@@ -163,13 +163,13 @@ class MI_Curve_Guide(bpy.types.Operator):
         # tooltip
         tooltip_text = None
         if self.curve_tool:
-            tooltip_text = "Ctrl+Click: NewPoint, Shift+Click: SelectAdditive, Del: DeletePoint"
+            tooltip_text = "NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del"
         else:
             tooltip_text = "Move Points and press Enter to continue"
         context.area.header_text_set(tooltip_text)
 
         # key pressed
-        if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'RET', 'DEL'}:
+        if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'RET', 'NUMPAD_ENTER', 'DEL'}:
             if event.value == 'PRESS':
                 if self.tool_mode == 'IDLE':
                     if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
@@ -214,7 +214,7 @@ class MI_Curve_Guide(bpy.types.Operator):
 
                                 self.tool_mode = 'MOVE_LW_POINT'
 
-                    elif event.type == 'RET':
+                    elif event.type in {'RET', 'NUMPAD_ENTER'}:
                         # create curve
                         if not self.curve_tool:
 
