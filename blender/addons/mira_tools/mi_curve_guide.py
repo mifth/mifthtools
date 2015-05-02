@@ -455,7 +455,7 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
                 for j, b_point in enumerate(point_data[1]):
                     if not best_b_len:
                         best_b_len = b_point[1]
-                    elif b_point[0] > vert_data[1]:
+                    elif b_point[0] >= vert_data[1]:
                         bp_nor = (b_point[2] - point_data[1][j - 1][2]).normalized()
                         bp_nor = bp_nor.cross(up_dir).normalized()
                         final_pos = mathu.geometry.intersect_line_plane(vert_front_pos - (side_dir * 1000.0), vert_front_pos + (side_dir * 1000.0), b_point[2], bp_nor)
