@@ -262,6 +262,12 @@ class MI_Curve_Guide(bpy.types.Operator):
                                         self.lw_tool_axis = 'X_Left'
                                     elif self.lw_tool_axis == 'X_Left':
                                         l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Right')
+
+                                        # revert direction
+                                        stp = self.lw_tool.start_point.position.copy()
+                                        self.lw_tool.start_point.position = self.lw_tool.end_point.position
+                                        self.lw_tool.end_point.position = stp
+
                                         self.lw_tool_axis = 'X_Right'
                                     elif self.lw_tool_axis == 'X_Right':
                                         l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X')
@@ -279,6 +285,12 @@ class MI_Curve_Guide(bpy.types.Operator):
                                         self.lw_tool_axis = 'Z_Top'
                                     elif self.lw_tool_axis == 'Z_Top':
                                         l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Bottom')
+
+                                        # revert direction
+                                        stp = self.lw_tool.start_point.position.copy()
+                                        self.lw_tool.start_point.position = self.lw_tool.end_point.position
+                                        self.lw_tool.end_point.position = stp
+
                                         self.lw_tool_axis = 'Z_Bottom'
                                     elif self.lw_tool_axis == 'Z_Bottom':
                                         l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z')
