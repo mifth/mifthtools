@@ -58,6 +58,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
     # curve tool mode
     tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'TAPE', 'ROTATE_ALL', 'BEND_ALL', 'BEND_SPIRAL')
     tool_mode = 'IDLE'
+    manipulator = None
 
     do_update = None
     lw_tool = None
@@ -85,16 +86,26 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 if not work_verts:
                     work_verts = [v for v in bm.verts if v.hide is False]
 
-                self.start_work_center = ut_base.get_vertices_center(work_verts, active_obj, False)
-                self.work_verts = [vert.index for vert in work_verts]
+                if work_verts:
+                    self.start_work_center = ut_base.get_vertices_center(work_verts, active_obj, False)
+                    self.work_verts = [vert.index for vert in work_verts]
 
-                # Add the region OpenGL drawing callback
-                # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-                # self.lin_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_3d, args, 'WINDOW', 'POST_VIEW')
-                self.lin_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_2d, args, 'WINDOW', 'POST_PIXEL')
-                context.window_manager.modal_handler_add(self)
+                    # change manipulator
+                    self.manipulator = context.space_data.show_manipulator
+                    context.space_data.show_manipulator = False
 
-                return {'RUNNING_MODAL'}
+                    # Add the region OpenGL drawing callback
+                    # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
+                    # self.lin_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_3d, args, 'WINDOW', 'POST_VIEW')
+                    self.lin_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+                    context.window_manager.modal_handler_add(self)
+
+                    return {'RUNNING_MODAL'}
+
+                else:
+                    self.report({'WARNING'}, "No verts!!")
+                    return {'CANCELLED'}
+
             else:
                 self.report({'WARNING'}, "No verts!!")
                 return {'CANCELLED'}
@@ -382,6 +393,8 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
         # main stuff
         if event.type in {'RIGHTMOUSE', 'ESC'}:
+            context.space_data.show_manipulator = self.manipulator
+
             # bpy.types.SpaceView3D.draw_handler_remove(self.lin_deform_handle_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.lin_deform_handle_2d, 'WINDOW')
 
@@ -398,6 +411,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
 def reset_params(self):
     self.tool_mode = 'IDLE'
+    self.manipulator = None
     self.deform_mouse_pos = None
     self.deform_vec_pos = None
     self.bend_scale_len = None

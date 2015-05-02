@@ -142,3 +142,51 @@ def pick_lw_point(context, m_coords, lw):
                 return_point = lw_point
 
     return return_point
+
+
+def setup_lw_tool(rv3d, lw_tool, active_obj, verts, center_type):
+    # Types
+    # 'Auto', 'X', 'X_Left', 'X_Right', 'Z', 'Z_Top', 'Z_Bottom'
+
+    # get verts bounds
+    cam_x = (rv3d.view_rotation * Vector((1.0, 0.0, 0.0))).normalized()
+    cam_y = (rv3d.view_rotation * Vector((0.0, 1.0, 0.0))).normalized()
+    #cam_z = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()  # Camera Direction
+    bounds = ut_base.get_verts_bounds(verts, active_obj, cam_x, cam_y, None, False)
+
+    # set middle_point
+    middle_p = None
+    if center_type in {'Auto', 'X', 'Z'}:
+        middle_p = bounds[3]
+    elif center_type == 'X_Left':
+        middle_p = bounds[3] + (cam_y * (bounds[1] / 2.0))
+    elif center_type == 'X_Right':
+        middle_p = bounds[3] - (cam_y * (bounds[1] / 2.0))
+    elif center_type == 'Z_Top':
+        middle_p = bounds[3] - (cam_x * (bounds[0] / 2.0))
+    elif center_type == 'Z_Bottom':
+        middle_p = bounds[3] + (cam_x * (bounds[0] / 2.0))
+
+    # set lw_tool points
+    start_p = None
+    end_p = None
+    if center_type == 'Auto':
+        if bounds[0] > bounds[1]:
+            # 1.001 is additive value so that to get points on the top and on the left
+            start_p = middle_p - (cam_x * (bounds[0] / 2.0) * 1.001)
+            end_p = middle_p + (cam_x * (bounds[0] / 2.0) * 1.001)
+        else:
+            start_p = middle_p - (cam_y * (bounds[1] / 2.0) * 1.001)
+            end_p = middle_p + (cam_y * (bounds[1] / 2.0) * 1.001)
+    elif center_type in {'X', 'X_Left', 'X_Right'}:
+        # 1.001 is additive value so that to get points on the top and on the left
+        start_p = middle_p - (cam_x * (bounds[0] / 2.0) * 1.001)
+        end_p = middle_p + (cam_x * (bounds[0] / 2.0) * 1.001)
+    elif center_type in {'Z', 'Z_Top', 'Z_Bottom'}:
+        # 1.001 is additive value so that to get points on the top and on the left
+        start_p = middle_p - (cam_y * (bounds[1] / 2.0) * 1.001)
+        end_p = middle_p + (cam_y * (bounds[1] / 2.0) * 1.001)
+
+    lw_tool.start_point = MI_LW_Point(start_p)
+    lw_tool.middle_point = MI_LW_Point(middle_p)
+    lw_tool.end_point = MI_LW_Point(end_p)

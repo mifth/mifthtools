@@ -551,7 +551,7 @@ def reset_params(self):
 
 def finish_extrude(self, context):
     context.space_data.show_manipulator = self.manipulator
-    bpy.context.scene.tool_settings.use_mesh_automerge = self.mesh_automerge
+    context.scene.tool_settings.use_mesh_automerge = self.mesh_automerge
     self.extrude_points = None
 
 

@@ -71,6 +71,7 @@ class MI_Curve_Guide(bpy.types.Operator):
 
     # linear widget
     lw_tool = None
+    lw_tool_axis = None
     active_lw_point = None
     tool_side_vec = None
     tool_side_vec_len = None
@@ -83,7 +84,6 @@ class MI_Curve_Guide(bpy.types.Operator):
 
     manipulator = None
 
-    start_work_center = None
     work_verts = None
     apply_tool_verts = None
 
@@ -105,39 +105,30 @@ class MI_Curve_Guide(bpy.types.Operator):
                 if not pre_verts:
                     pre_verts = [v for v in bm.verts if v.hide is False]
 
-                # get verts bounds
-                cam_x = (rv3d.view_rotation * Vector((1.0, 0.0, 0.0))).normalized()
-                cam_y = (rv3d.view_rotation * Vector((0.0, 1.0, 0.0))).normalized()
-                #cam_z = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
-                bounds = ut_base.get_verts_bounds(pre_verts, active_obj, cam_x, cam_y, None, False)
+                if pre_verts:
+                    # change manipulator
+                    self.manipulator = context.space_data.show_manipulator
+                    context.space_data.show_manipulator = False
 
-                self.start_work_center = bounds[3]
-                #self.work_verts = [vert.index for vert in pre_verts]
+                    self.work_verts = [vert.index for vert in pre_verts]  # here we add temporaryly verts which can be applied for the tool
 
-                # create linear deformer
-                self.lw_tool = l_widget.MI_Linear_Widget()
+                    # create linear deformer
+                    self.lw_tool = l_widget.MI_Linear_Widget()
 
-                start_p = None
-                end_p = None
-                if bounds[0] > bounds[1]:
-                    # 1.001 is additive value so that to get points on the top and on the left
-                    start_p = self.start_work_center - (cam_x * (bounds[0] / 2.0) * 1.001)
-                    end_p = self.start_work_center + (cam_x * (bounds[0] / 2.0) * 1.001)
+                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Auto')
+
+                    # Add the region OpenGL drawing callback
+                    # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
+                    # self.lin_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_3d, args, 'WINDOW', 'POST_VIEW')
+                    self.cur_guide_handle_2d = bpy.types.SpaceView3D.draw_handler_add(cur_guide_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+                    context.window_manager.modal_handler_add(self)
+
+                    return {'RUNNING_MODAL'}
+
                 else:
-                    start_p = self.start_work_center - (cam_y * (bounds[1] / 2.0) * 1.001)
-                    end_p = self.start_work_center + (cam_y * (bounds[1] / 2.0) * 1.001)
+                    self.report({'WARNING'}, "No verts!!")
+                    return {'CANCELLED'}
 
-                self.lw_tool.start_point = l_widget.MI_LW_Point(start_p)
-                self.lw_tool.middle_point = l_widget.MI_LW_Point(self.start_work_center.copy())
-                self.lw_tool.end_point = l_widget.MI_LW_Point(end_p)
-
-                # Add the region OpenGL drawing callback
-                # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-                # self.lin_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(lin_def_draw_3d, args, 'WINDOW', 'POST_VIEW')
-                self.cur_guide_handle_2d = bpy.types.SpaceView3D.draw_handler_add(cur_guide_draw_2d, args, 'WINDOW', 'POST_PIXEL')
-                context.window_manager.modal_handler_add(self)
-
-                return {'RUNNING_MODAL'}
             else:
                 self.report({'WARNING'}, "No verts!!")
                 return {'CANCELLED'}
@@ -165,11 +156,11 @@ class MI_Curve_Guide(bpy.types.Operator):
         if self.curve_tool:
             tooltip_text = "NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del"
         else:
-            tooltip_text = "Move Points and press Enter to continue"
+            tooltip_text = "X: X-Axis, Z: Z-Axis, Move Points, press Enter to continue"
         context.area.header_text_set(tooltip_text)
 
         # key pressed
-        if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'RET', 'NUMPAD_ENTER', 'DEL'}:
+        if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'RET', 'NUMPAD_ENTER', 'DEL', 'Z', 'X'}:
             if event.value == 'PRESS':
                 if self.tool_mode == 'IDLE':
                     if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
@@ -244,7 +235,6 @@ class MI_Curve_Guide(bpy.types.Operator):
                                     self.work_verts[vert.index] = (vert_world, v_front_dist, v_side_dist, v_up_dist)
 
                             if self.work_verts:
-                                print(len(self.work_verts))
                                 # create curve
                                 self.curve_tool = cur_main.MI_CurveObject(None)
 
@@ -261,6 +251,44 @@ class MI_Curve_Guide(bpy.types.Operator):
                                     self.curve_tool.curve_points.append(point)
                                     point.position = Vector(self.lw_tool.start_point.position + ( points_dir * (float(i)/float(points_number-1)) ) ) + (self.tool_side_vec * self.tool_side_vec_len)
                                 cur_main.generate_bezier_points(self.curve_tool, self.curve_tool.display_bezier, curve_settings.curve_resolution)
+
+                    elif event.type in {'Z', 'X'}:
+                        if not self.curve_tool:
+                            pre_verts = [bm.verts[v_id] for v_id in self.work_verts]
+                            if event.type == 'X':
+                                if self.lw_tool_axis:
+                                    if self.lw_tool_axis == 'X':
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Left')
+                                        self.lw_tool_axis = 'X_Left'
+                                    elif self.lw_tool_axis == 'X_Left':
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Right')
+                                        self.lw_tool_axis = 'X_Right'
+                                    elif self.lw_tool_axis == 'X_Right':
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X')
+                                        self.lw_tool_axis = 'X'
+                                    else:
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X')
+                                        self.lw_tool_axis = 'X'
+                                else:
+                                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X')
+                                    self.lw_tool_axis = 'X'
+                            else:
+                                if self.lw_tool_axis:
+                                    if self.lw_tool_axis == 'Z':
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Top')
+                                        self.lw_tool_axis = 'Z_Top'
+                                    elif self.lw_tool_axis == 'Z_Top':
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Bottom')
+                                        self.lw_tool_axis = 'Z_Bottom'
+                                    elif self.lw_tool_axis == 'Z_Bottom':
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z')
+                                        self.lw_tool_axis = 'Z'
+                                    else:
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z')
+                                        self.lw_tool_axis = 'Z'
+                                else:
+                                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z')
+                                    self.lw_tool_axis = 'Z'
 
                     elif event.type == 'DEL':
                         sel_points = cur_main.get_selected_points(self.curve_tool.curve_points)
@@ -344,6 +372,8 @@ class MI_Curve_Guide(bpy.types.Operator):
 
         # main stuff
         if event.type in {'RIGHTMOUSE', 'ESC'}:
+            context.space_data.show_manipulator = self.manipulator
+
             # bpy.types.SpaceView3D.draw_handler_remove(self.lin_deform_handle_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.cur_guide_handle_2d, 'WINDOW')
 
@@ -365,6 +395,7 @@ def reset_params(self):
     self.manipulator = None
 
     self.lw_tool = None
+    self.lw_tool_axis = None
     self.active_lw_point = None
     self.tool_side_vec = None
     self.tool_side_vec_len = None
@@ -372,7 +403,6 @@ def reset_params(self):
 
     self.curve_tool = None
 
-    self.start_work_center = None
     self.work_verts = None
     self.apply_tool_verts = None
 
