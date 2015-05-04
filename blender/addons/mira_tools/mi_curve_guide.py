@@ -47,7 +47,8 @@ class MI_CurGuide_Settings(bpy.types.PropertyGroup):
     deform_type = EnumProperty(
         items=(('Stretch', 'Stretch', ''),
                ('Scale', 'Scale', ''),
-               ('Shear', 'Shear', '')
+               ('Shear', 'Shear', ''),
+               ('Twist', 'Twist', '')
                ),
         default = 'Stretch'
     )
@@ -460,38 +461,44 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
                 #vert.co = vert_data[0] + ( deform_dir * ( (vert_data[2] * (final_dist / side_vec_len)) - vert_data[2] ) )
                 #break
             if point_data[0] >= vert_data[1]:
-                best_b_len = None
+                best_bezier_len = None
                 vert_front_pos = lw_tool.start_point.position + (lw_tool_dir * vert_data[1])
 
                 # loop bezier points according to vert
                 for j, b_point in enumerate(point_data[1]):
-                    if not best_b_len:
-                        best_b_len = b_point[1]
+                    if not best_bezier_len:
+                        best_bezier_len = b_point[1]
                     elif b_point[0] >= vert_data[1]:
                         bp_nor = (b_point[2] - point_data[1][j - 1][2]).normalized()
                         bp_nor = bp_nor.cross(up_dir).normalized()
                         final_pos = mathu.geometry.intersect_line_plane(vert_front_pos - (side_dir * 1000.0), vert_front_pos + (side_dir * 1000.0), b_point[2], bp_nor)
 
-                        best_b_len = (final_pos - vert_front_pos).length  # the length!
+                        best_bezier_len = (final_pos - vert_front_pos).length  # the length!
 
-                        if deform_type == 'Shear':
+                        if deform_type in {'Shear', 'Twist'}:
                             if (final_pos - vert_front_pos).normalized().angle(side_dir) > math.radians(90):
-                                best_b_len = -best_b_len
+                                best_bezier_len = -best_bezier_len
                         break
 
-                final_dist = best_b_len
+                #final_dist = best_bezier_len
 
                 # multiplier for the vert
                 dir_multilpier = None
                 if deform_type == 'Stretch':
-                    dir_multilpier = (vert_data[2] * (final_dist / side_vec_len)) - vert_data[2]
-                elif deform_type == 'Shear':
-                    dir_multilpier = final_dist - side_vec_len
+                    dir_multilpier = (vert_data[2] * (best_bezier_len / side_vec_len)) - vert_data[2]
+                elif deform_type in {'Shear', 'Twist'}:
+                    dir_multilpier = best_bezier_len - side_vec_len
                 else:
                     vert_dist_scale = (vert_data[0] - vert_front_pos).length
-                    dir_multilpier = abs(vert_dist_scale * (final_dist / side_vec_len)) - vert_dist_scale
+                    dir_multilpier = abs(vert_dist_scale * (best_bezier_len / side_vec_len)) - vert_dist_scale
 
-                vert.co = obj.matrix_world.inverted() * (vert_data[0] + ( deform_dir *  dir_multilpier))
+                # modify vert position
+                if deform_type == 'Twist':
+                    twist_angle = dir_multilpier * math.radians(90)
+                    rot_mat = Matrix.Rotation(twist_angle, 3, lw_tool_dir)
+                    vert.co = obj.matrix_world.inverted() * (rot_mat * (vert_data[0] - lw_tool.start_point.position) + lw_tool.start_point.position)
+                else:
+                    vert.co = obj.matrix_world.inverted() * (vert_data[0] + ( deform_dir *  dir_multilpier))
                 break
                 
 
