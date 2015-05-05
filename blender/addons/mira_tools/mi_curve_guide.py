@@ -48,7 +48,8 @@ class MI_CurGuide_Settings(bpy.types.PropertyGroup):
         items=(('Stretch', 'Stretch', ''),
                ('Scale', 'Scale', ''),
                ('Shear', 'Shear', ''),
-               ('Twist', 'Twist', '')
+               ('Twist', 'Twist', ''),
+               ('Deform', 'Deform', '')
                ),
         default = 'Stretch'
     )
@@ -183,11 +184,19 @@ class MI_Curve_Guide(bpy.types.Operator):
                                 # add point
                                 if event.ctrl and self.curve_tool and self.curve_tool.active_point:
                                     act_point = cur_main.get_point_by_id(self.curve_tool.curve_points, self.curve_tool.active_point)
-                                    new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, self.tool_up_vec, m_coords)
+
+                                    new_point_pos = None
+                                    if curguide_settings.deform_type != 'Deform':
+                                        new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, self.tool_up_vec, m_coords)
+                                    else:
+                                        new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
 
                                     if new_point_pos:
                                         new_point = cur_main.add_point(new_point_pos, self.curve_tool)
-                                        fix_curve_point_pos(self.lw_tool, self.curve_tool, [new_point])
+
+                                        # fix position
+                                        if curguide_settings.deform_type != 'Deform':
+                                            fix_curve_point_pos(self.lw_tool, self.curve_tool, [new_point])
 
                                         self.curve_tool.active_point = new_point.point_id
 
@@ -199,12 +208,13 @@ class MI_Curve_Guide(bpy.types.Operator):
 
                         # pick linear widget point
                         if curve_picked is False:
-                            picked_point = l_widget.pick_lw_point(context, m_coords, self.lw_tool)
-                            if picked_point:
-                                self.deform_mouse_pos = Vector(m_coords)
-                                self.active_lw_point = picked_point
+                            if curguide_settings.deform_type != 'Deform' and self.curve_tool:
+                                picked_point = l_widget.pick_lw_point(context, m_coords, self.lw_tool)
+                                if picked_point:
+                                    self.deform_mouse_pos = Vector(m_coords)
+                                    self.active_lw_point = picked_point
 
-                                self.tool_mode = 'MOVE_LW_POINT'
+                                    self.tool_mode = 'MOVE_LW_POINT'
 
                     elif event.type in {'RET', 'NUMPAD_ENTER'}:
                         # create curve
@@ -250,7 +260,10 @@ class MI_Curve_Guide(bpy.types.Operator):
                                 for i in range(points_number):
                                     point = cur_main.MI_CurvePoint(self.curve_tool.curve_points)
                                     self.curve_tool.curve_points.append(point)
-                                    point.position = Vector(self.lw_tool.start_point.position + ( points_dir * (float(i)/float(points_number-1)) ) ) + (self.tool_side_vec * self.tool_side_vec_len)
+                                    if curguide_settings.deform_type == 'Deform':
+                                        point.position = Vector(self.lw_tool.start_point.position + ( points_dir * (float(i)/float(points_number-1)) ) )
+                                    else:
+                                        point.position = Vector(self.lw_tool.start_point.position + ( points_dir * (float(i)/float(points_number-1)) ) ) + (self.tool_side_vec * self.tool_side_vec_len)
                                 cur_main.generate_bezier_points(self.curve_tool, self.curve_tool.display_bezier, curve_settings.curve_resolution)
 
                     elif event.type in {'Z', 'X'}:
@@ -359,7 +372,14 @@ class MI_Curve_Guide(bpy.types.Operator):
                 m_coords = event.mouse_region_x, event.mouse_region_y
                 act_point = cur_main.get_point_by_id(self.curve_tool.curve_points, self.curve_tool.active_point)
                 selected_points = cur_main.get_selected_points(self.curve_tool.curve_points)
-                new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, self.tool_up_vec, m_coords)
+
+                # get new point position
+                new_point_pos = None
+                if curguide_settings.deform_type != 'Deform':
+                    new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, self.tool_up_vec, m_coords)
+                else:
+                    new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
+
                 if new_point_pos and selected_points:
                     move_offset = new_point_pos - act_point.position
 
@@ -368,7 +388,8 @@ class MI_Curve_Guide(bpy.types.Operator):
                         point.position += move_offset
 
                     # fix points pos
-                    fix_curve_point_pos(self.lw_tool, self.curve_tool, selected_points)
+                    if curguide_settings.deform_type != 'Deform':
+                        fix_curve_point_pos(self.lw_tool, self.curve_tool, selected_points)
 
                     # update bezier
                     if len(selected_points) == 1:
@@ -424,83 +445,123 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
     lw_tool_vec = lw_tool.end_point.position - lw_tool.start_point.position
     lw_tool_dir = (lw_tool.end_point.position - lw_tool.start_point.position).normalized()
 
-    # get points dists
-    points_dists = []
-    for point in curve_tool.curve_points:
-        bezier_dists = []
-        p_dist = mathu.geometry.distance_point_to_plane(point.position, lw_tool.start_point.position, lw_tool_dir)
+    if deform_type == 'Deform':  # DEFORM TYPE ONLY
+        deform_lines, points_indexes = get_bezier_area_data(curve_tool)
+        line_len = deform_lines[-1][1]
 
-        # add bezer dists
-        if curve_tool.curve_points.index(point) > 0:
-            for b_point in curve_tool.display_bezier[point.point_id]:
-                b_p_dist = mathu.geometry.distance_point_to_plane(b_point, lw_tool.start_point.position, lw_tool_dir)
-                b_p_side_dist = mathu.geometry.distance_point_to_plane(b_point, lw_tool.start_point.position, side_dir)
-                bezier_dists.append( (b_p_dist, b_p_side_dist, b_point) )
+        # find the best point for every vert
+        for vert_id in work_verts.keys():
+            vert = bm.verts[vert_id]
+            vert_data = work_verts[vert_id]
 
-        points_dists.append( (p_dist, bezier_dists) )
+            for i, point in enumerate(curve_tool.curve_points):
+                if i > 0:
+                    point_len = deform_lines[points_indexes.get(point.point_id)][1] / line_len
+                    vert_len = vert_data[1] / lw_tool_vec.length
+                    if point_len >= vert_len:
+                        # max is for the first point
+                        first_index = 0
+                        if i > 1:
+                            first_index = points_indexes.get( curve_tool.curve_points[i-1].point_id )
 
-    # find the best point for every vert
-    for vert_id in work_verts.keys():
-        vert = bm.verts[vert_id]
-        vert_data = work_verts[vert_id]
+                        # get the best point
+                        for j, b_point in enumerate(deform_lines, start=first_index):
+                            if b_point[1] / line_len >= vert_len:
+                                b_point_dir = b_point[3]
+                                b_point_up = b_point_dir.cross(side_dir).normalized()
+                                b_point_side = b_point_dir.cross(b_point_up).normalized()
+                                vert.co = obj.matrix_world.inverted() * ( b_point[0] + (b_point_up * vert_data[3]) - (b_point_side * vert_data[2]) )
+                                break
 
-        deform_dir = None
-        if deform_type == 'Scale':
-            deform_dir = (vert_data[0] - (lw_tool.start_point.position + (lw_tool_dir * vert_data[1]))).normalized()
-        else:
-            deform_dir = side_dir
+    else:  # ALL OTHER TYPES
+        # get points dists
+        points_dists = []
+        for point in curve_tool.curve_points:
+            bezier_dists = []
+            p_dist = mathu.geometry.distance_point_to_plane(point.position, lw_tool.start_point.position, lw_tool_dir)
 
-        for i, point_data in enumerate(points_dists):
-            #if point_data[0] == vert_data[1]:
-                #final_dist = None
-                #if i == 0:
-                    #final_dist = points_dists[1][1][0][1]
-                #else:
-                    #final_dist = point_data[1][-1][1]
+            # add bezer dists
+            if curve_tool.curve_points.index(point) > 0:
+                for b_point in curve_tool.display_bezier[point.point_id]:
+                    b_p_dist = mathu.geometry.distance_point_to_plane(b_point, lw_tool.start_point.position, lw_tool_dir)
+                    b_p_side_dist = mathu.geometry.distance_point_to_plane(b_point, lw_tool.start_point.position, side_dir)
+                    bezier_dists.append( (b_p_dist, b_p_side_dist, b_point) )
 
-                #vert.co = vert_data[0] + ( deform_dir * ( (vert_data[2] * (final_dist / side_vec_len)) - vert_data[2] ) )
-                #break
-            if point_data[0] >= vert_data[1]:
-                best_bezier_len = None
-                vert_front_pos = lw_tool.start_point.position + (lw_tool_dir * vert_data[1])
+            points_dists.append( (p_dist, bezier_dists) )
 
-                # loop bezier points according to vert
-                for j, b_point in enumerate(point_data[1]):
-                    if not best_bezier_len:
-                        best_bezier_len = b_point[1]
-                    elif b_point[0] >= vert_data[1]:
-                        bp_nor = (b_point[2] - point_data[1][j - 1][2]).normalized()
-                        bp_nor = bp_nor.cross(up_dir).normalized()
-                        final_pos = mathu.geometry.intersect_line_plane(vert_front_pos - (side_dir * 1000.0), vert_front_pos + (side_dir * 1000.0), b_point[2], bp_nor)
 
-                        best_bezier_len = (final_pos - vert_front_pos).length  # the length!
+        # find the best point for every vert
+        for vert_id in work_verts.keys():
+            vert = bm.verts[vert_id]
+            vert_data = work_verts[vert_id]
 
-                        if deform_type in {'Shear', 'Twist'}:
-                            if (final_pos - vert_front_pos).normalized().angle(side_dir) > math.radians(90):
-                                best_bezier_len = -best_bezier_len
-                        break
+            deform_dir = None
+            if deform_type == 'Scale':
+                deform_dir = (vert_data[0] - (lw_tool.start_point.position + (lw_tool_dir * vert_data[1]))).normalized()
+            else:
+                deform_dir = side_dir
 
-                #final_dist = best_bezier_len
+            for i, point_data in enumerate(points_dists):
+                if point_data[0] >= vert_data[1]:
+                    best_bezier_len = None
+                    vert_front_pos = lw_tool.start_point.position + (lw_tool_dir * vert_data[1])
 
-                # multiplier for the vert
-                dir_multilpier = None
-                if deform_type == 'Stretch':
-                    dir_multilpier = (vert_data[2] * (best_bezier_len / side_vec_len)) - vert_data[2]
-                elif deform_type in {'Shear', 'Twist'}:
-                    dir_multilpier = best_bezier_len - side_vec_len
-                else:
-                    vert_dist_scale = (vert_data[0] - vert_front_pos).length
-                    dir_multilpier = abs(vert_dist_scale * (best_bezier_len / side_vec_len)) - vert_dist_scale
+                    # loop bezier points according to vert
+                    for j, b_point in enumerate(point_data[1]):
+                        if not best_bezier_len:
+                            best_bezier_len = b_point[1]
+                        elif b_point[0] >= vert_data[1]:
+                            bp_nor = (b_point[2] - point_data[1][j - 1][2]).normalized()
+                            bp_nor = bp_nor.cross(up_dir).normalized()
+                            final_pos = mathu.geometry.intersect_line_plane(vert_front_pos - (side_dir * 1000.0), vert_front_pos + (side_dir * 1000.0), b_point[2], bp_nor)
 
-                # modify vert position
-                if deform_type == 'Twist':
-                    twist_angle = dir_multilpier * math.radians(90)
-                    rot_mat = Matrix.Rotation(twist_angle, 3, lw_tool_dir)
-                    vert.co = obj.matrix_world.inverted() * (rot_mat * (vert_data[0] - lw_tool.start_point.position) + lw_tool.start_point.position)
-                else:
-                    vert.co = obj.matrix_world.inverted() * (vert_data[0] + ( deform_dir *  dir_multilpier))
-                break
-                
+                            best_bezier_len = (final_pos - vert_front_pos).length  # the length!
+
+                            if deform_type in {'Shear', 'Twist'}:
+                                if (final_pos - vert_front_pos).normalized().angle(side_dir) > math.radians(90):
+                                    best_bezier_len = -best_bezier_len
+                            break
+
+                    #final_dist = best_bezier_len
+
+                    # multiplier for the vert
+                    dir_multilpier = None
+                    if deform_type == 'Stretch':
+                        dir_multilpier = (vert_data[2] * (best_bezier_len / side_vec_len)) - vert_data[2]
+                    elif deform_type in {'Shear', 'Twist'}:
+                        dir_multilpier = best_bezier_len - side_vec_len
+                    else:
+                        vert_dist_scale = (vert_data[0] - vert_front_pos).length
+                        dir_multilpier = abs(vert_dist_scale * (best_bezier_len / side_vec_len)) - vert_dist_scale
+
+                    # modify vert position
+                    if deform_type == 'Twist':
+                        twist_angle = dir_multilpier * math.radians(90)
+                        rot_mat = Matrix.Rotation(twist_angle, 3, lw_tool_dir)
+                        vert.co = obj.matrix_world.inverted() * (rot_mat * (vert_data[0] - lw_tool.start_point.position) + lw_tool.start_point.position)
+                    else:
+                        vert.co = obj.matrix_world.inverted() * (vert_data[0] + ( deform_dir *  dir_multilpier))
+                    break
+
+
+def get_bezier_area_data(curve):
+    curve_vecs = []
+    points_indexes = {}
+    for point in curve.curve_points:
+        b_points = curve.display_bezier.get(point.point_id)
+        if b_points:
+            for b_p in b_points:
+                # get all points but not the last one
+                if b_points.index(b_p) != len(b_points) - 1 or curve.curve_points.index(point) == len(curve.curve_points) - 1:
+                    curve_vecs.append(b_p)
+
+            # add index of the curve point according to last bezier point
+            if point.point_id not in points_indexes:
+                # we use max for first point
+                points_indexes[point.point_id] = max(0, len(curve_vecs) - 1)
+
+    besier_line = cur_main.pass_line(curve_vecs, False)
+    return besier_line, points_indexes
 
 
 # constraint curve point
@@ -539,6 +600,7 @@ def cur_guide_draw_2d(self, context):
     region = context.region
     rv3d = context.region_data
     curve_settings = context.scene.mi_curve_settings
+    curguide_settings = context.scene.mi_curguide_settings
 
     #lw_tool_dir = (self.lw_tool.end_point.position - self.lw_tool.start_point.position).normalized()
 
@@ -549,21 +611,22 @@ def cur_guide_draw_2d(self, context):
         l_widget.draw_lw(context, self.lw_tool, side_dir, False)
 
     if self.curve_tool:
-        # draw start line
-        start_pos = self.lw_tool.start_point.position + (self.tool_side_vec * self.tool_side_vec_len)
-        start_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, start_pos)
-        end_pos = self.lw_tool.end_point.position + (self.tool_side_vec * self.tool_side_vec_len)
-        end_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, end_pos)
-        draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.3, 0.6, 0.99, 1.0))
-
-        # draw points
-        for point in self.curve_tool.curve_points:
-            start_pos = point.position
+        if curguide_settings.deform_type != 'Deform':
+            # draw start line
+            start_pos = self.lw_tool.start_point.position + (self.tool_side_vec * self.tool_side_vec_len)
             start_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, start_pos)
-            p_dist = mathu.geometry.distance_point_to_plane(start_pos, self.lw_tool.start_point.position, self.tool_side_vec)
-            end_pos = start_pos - (self.tool_side_vec * p_dist)
+            end_pos = self.lw_tool.end_point.position + (self.tool_side_vec * self.tool_side_vec_len)
             end_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, end_pos)
-            draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.7, 0.5, 0.95, 1.0))
+            draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.3, 0.6, 0.99, 1.0))
+
+            # draw points
+            for point in self.curve_tool.curve_points:
+                start_pos = point.position
+                start_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, start_pos)
+                p_dist = mathu.geometry.distance_point_to_plane(start_pos, self.lw_tool.start_point.position, self.tool_side_vec)
+                end_pos = start_pos - (self.tool_side_vec * p_dist)
+                end_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, end_pos)
+                draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.7, 0.5, 0.95, 1.0))
 
         draw_curve_lines_2d(self.curve_tool, context)
         draw_curve_points_2d(self.curve_tool, context, curve_settings)

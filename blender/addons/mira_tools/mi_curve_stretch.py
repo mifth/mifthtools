@@ -101,8 +101,8 @@ class MI_CurveStretch(bpy.types.Operator):
 
                 for loop in self.loops:
                     loop_verts = [active_obj.matrix_world * bm.verts[i].co for i in loop[0]]
-                    loop_line = pass_line(loop_verts, loop[1])
-                    new_curve = create_curve_to_line(cur_stretch_settings.points_number, loop_line, self.all_curves, loop[1])
+                    loop_line = cur_main.pass_line(loop_verts, loop[1])
+                    new_curve = cur_main.create_curve_to_line(cur_stretch_settings.points_number, loop_line, self.all_curves, loop[1])
 
                     # set closed curve
                     if loop[1] is True:
@@ -113,7 +113,7 @@ class MI_CurveStretch(bpy.types.Operator):
 
                     cur_main.generate_bezier_points(self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
 
-                    self.original_verts_data.append( pass_line([bm.verts[i].co for i in loop[0]] , loop[1]) )
+                    self.original_verts_data.append( cur_main.pass_line([bm.verts[i].co for i in loop[0]] , loop[1]) )
 
                     # move point to the curve
                     update_curve_line(active_obj, self.active_curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
@@ -284,129 +284,13 @@ def finish_work(self, context):
 
 
 def update_curve_line(active_obj, curve_to_update, loops, all_curves, bm, spread_mode, original_verts_data):
-    curve_vecs = []
-
-    for point in curve_to_update.curve_points:
-        if curve_to_update.curve_points.index(point) == 0 and curve_to_update.closed is True:
-            continue  # only for closed curve
-
-        b_points = curve_to_update.display_bezier.get(point.point_id)
-        if b_points:
-            #b_points = b_points.copy()
-            for b_p in b_points:
-                curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
-
-    # only for closed curve to apply last bezier points
-    if curve_to_update.closed is True:
-        b_points = curve_to_update.display_bezier.get(curve_to_update.curve_points[0].point_id)
-        if b_points:
-            #b_points = b_points.copy()
-            for b_p in b_points:
-                curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
-
-    line = pass_line(curve_vecs, curve_to_update.closed)
+    line = cur_main.get_bezier_line(curve_to_update, active_obj, True)
     loop_verts = [bm.verts[i] for i in loops[all_curves.index(curve_to_update)][0]]
 
     if spread_mode == 'ORIGINAL':
-        verts_to_line(loop_verts, line, original_verts_data, curve_to_update.closed)
+        cur_main.verts_to_line(loop_verts, line, original_verts_data, curve_to_update.closed)
     else:
-        verts_to_line(loop_verts, line, None, curve_to_update.closed)
-
-
-def pass_line(vecs, is_closed_line):
-    line_length = 0.0
-    line_data = []
-    vecs_len = len(vecs)
-
-    for i, vec in enumerate(vecs):
-        if i == vecs_len - 1 and is_closed_line is False:
-            line_data.append((vec, line_length, 0.0, None))
-        else:
-            vec_area = None
-            if i == vecs_len - 1:
-                vec_area = vecs[0] - vec
-            else:
-                vec_area = vecs[i+1] - vec
-
-            area_length = vec_area.length
-            vec_dir = vec_area.normalized()
-            line_data.append((vec, line_length, area_length, vec_dir))
-
-            line_length += area_length
-
-    # last point line of closed curve
-    if is_closed_line:
-        vec_area = vecs[0] - vecs[-1]
-        area_length = vec_area.length
-        vec_dir = vec_area.normalized()
-        line_data.append((vecs[0], line_length, 0.0, None))
-
-    return line_data
-
-
-def create_curve_to_line(points_number, line_data, all_curves, is_closed_line):
-    curve = cur_main.MI_CurveObject(all_curves)
-    line_len = line_data[-1][1]
-
-    point_passed = 0
-    for i in range(points_number):
-        if i == 0:
-            curve_point = cur_main.MI_CurvePoint(curve.curve_points)
-            curve_point.position = line_data[0][0].copy()
-            curve.curve_points.append(curve_point)
-            continue
-        elif i == points_number - 1 and is_closed_line is False:
-            curve_point = cur_main.MI_CurvePoint(curve.curve_points)
-            curve_point.position = line_data[-1][0].copy()
-            curve.curve_points.append(curve_point)
-            continue
-            break
-
-        if is_closed_line:
-            point_len = ((line_len/ (points_number)) * (i))
-        else:
-            point_len = (line_len/ (points_number - 1)) * (i)
-
-        for j, point_data in enumerate(line_data, start=point_passed):
-            if line_data[j+1][1] >= point_len:
-                curve_point = cur_main.MI_CurvePoint(curve.curve_points)
-                curve_point.position = line_data[j][0] + (line_data[j][3] * (point_len - line_data[j][1]))
-                curve.curve_points.append(curve_point)
-                point_passed = j
-                break
-
-    return curve
-
-
-def verts_to_line(verts, line_data, verts_data, is_closed_line):
-    line_len = line_data[-1][1]
-
-    verts_number = len(verts)
-    if is_closed_line:
-        verts_number += 1  # only for uniform interpolation
-
-    point_passed = 0
-    for i, vert in enumerate(verts):
-        if i == 0:
-            vert.co = line_data[0][0].copy()
-            continue
-        elif i == verts_number - 1 and is_closed_line is False:
-            vert.co = line_data[-1][0].copy()
-            break
-
-        point_len = None
-        if verts_data:
-            #if is_closed_line is False:
-            point_len = (verts_data[i][1]/ verts_data[-1][1] ) * line_len
-            #else:
-                #point_len = ((verts_data[i][1]/ (verts_data[-1][1] + verts_data[-2][2]) ) * (line_len) )
-        else:
-            point_len = (line_len/ (verts_number - 1)) * (i)
-        for j, point_data in enumerate(line_data, start=point_passed):
-            if line_data[j+1][1] >= point_len:
-                vert.co = line_data[j][0] + (line_data[j][3] * (point_len - line_data[j][1]))
-                point_passed = j
-                break
+        cur_main.verts_to_line(loop_verts, line, None, curve_to_update.closed)
 
 
 def mi_curve_draw_2d(self, context):
