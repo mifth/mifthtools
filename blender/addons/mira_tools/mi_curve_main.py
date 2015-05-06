@@ -449,7 +449,8 @@ def create_curve_to_line(points_number, line_data, all_curves, is_closed_line):
         else:
             point_len = (line_len/ (points_number - 1)) * (i)
 
-        for j, point_data in enumerate(line_data, start=point_passed):
+        for point_data in line_data[point_passed:]:
+            j = line_data.index(point_data)
             if line_data[j+1][1] >= point_len:
                 curve_point = MI_CurvePoint(curve.curve_points)
                 curve_point.position = line_data[j][0] + (line_data[j][3] * (point_len - line_data[j][1]))
@@ -485,7 +486,8 @@ def verts_to_line(verts, line_data, verts_data, is_closed_line):
                 #point_len = ((verts_data[i][1]/ (verts_data[-1][1] + verts_data[-2][2]) ) * (line_len) )
         else:
             point_len = (line_len/ (verts_number - 1)) * (i)
-        for j, point_data in enumerate(line_data, start=point_passed):
+        for point_data in line_data[point_passed:]:
+            j = line_data.index(point_data)
             if line_data[j+1][1] >= point_len:
                 vert.co = line_data[j][0] + (line_data[j][3] * (point_len - line_data[j][1]))
                 point_passed = j

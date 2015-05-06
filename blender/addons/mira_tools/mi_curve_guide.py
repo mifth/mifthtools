@@ -461,17 +461,41 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
                     if point_len >= vert_len:
                         # max is for the first point
                         first_index = 0
-                        if i > 1:
-                            first_index = points_indexes.get( curve_tool.curve_points[i-1].point_id )
+                        if i > 0:
+                            first_index = points_indexes.get( curve_tool.curve_points[curve_tool.curve_points.index(point) - 1].point_id )
 
                         # get the best point
-                        for j, b_point in enumerate(deform_lines, start=first_index):
-                            if b_point[1] / line_len >= vert_len:
-                                b_point_dir = b_point[3]
-                                b_point_up = b_point_dir.cross(side_dir).normalized()
-                                b_point_side = b_point_dir.cross(b_point_up).normalized()
-                                vert.co = obj.matrix_world.inverted() * ( b_point[0] + (b_point_up * vert_data[3]) - (b_point_side * vert_data[2]) )
-                                break
+                        b_point_up = None
+                        b_point_side = None
+                        best_pos = None
+                        for b_point in deform_lines[first_index:]:
+                            j = deform_lines.index(b_point)
+                            #print(j, jj)
+                            if j > 0:
+                                b_point_len = b_point[1] / line_len
+                                if b_point_len >= vert_len:
+
+                                    # bezier point direction
+                                    b_point_dir = None
+                                    if j < len(deform_lines) - 1:
+                                        b_point_dir = deform_lines[j-1][3]
+                                    else:
+                                        b_point_dir = b_point[3]
+
+                                    b_point_up = b_point_dir.cross(side_dir).normalized()
+                                    b_point_side = b_point_dir.cross(b_point_up).normalized()
+
+                                    # best position
+                                    if b_point_len == vert_len:
+                                        best_pos = b_point[0]
+                                    else:
+                                        previous_pos_len = deform_lines[j-1][1] / line_len
+                                        best_pos = deform_lines[j-1][0] + (( (vert_len - previous_pos_len) * line_len) * b_point_dir)
+
+                                    break
+
+                        vert.co = obj.matrix_world.inverted() * ( best_pos + (b_point_up * vert_data[3]) - (b_point_side * vert_data[2]) )
+                        break
 
     else:  # ALL OTHER TYPES
         # get points dists
@@ -555,10 +579,10 @@ def get_bezier_area_data(curve):
                 if b_points.index(b_p) != len(b_points) - 1 or curve.curve_points.index(point) == len(curve.curve_points) - 1:
                     curve_vecs.append(b_p)
 
-            # add index of the curve point according to last bezier point
-            if point.point_id not in points_indexes:
-                # we use max for first point
-                points_indexes[point.point_id] = max(0, len(curve_vecs) - 1)
+        # add index of the curve point according to last bezier point
+        if point.point_id not in points_indexes:
+            # we use max for first point
+            points_indexes[point.point_id] = max(0, len(curve_vecs) - 1)
 
     besier_line = cur_main.pass_line(curve_vecs, False)
     return besier_line, points_indexes
