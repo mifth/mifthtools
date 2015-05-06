@@ -449,6 +449,26 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
         deform_lines, points_indexes = get_bezier_area_data(curve_tool)
         line_len = deform_lines[-1][1]
 
+        ## get upvec of every curve point
+        #curv_up_vecs = {}
+        #pre_dir = lw_tool_dir.copy()
+        #pre_up = up_dir.copy()
+        #for i, point in enumerate(curve_tool.curve_points):
+            ##if i < len(deform_lines) - 1:
+            #p_dir = deform_lines[ points_indexes[point.point_id] ][3]
+            #rot_angle = p_dir.angle(pre_dir)
+            #if rot_angle != 0.0:
+                #rot_dir = (p_dir.cross(pre_dir)).normalized()
+                ##rot_mat = Matrix.Rotation(rot_angle, 3, rot_dir)
+                #rot_up = (p_dir.cross(rot_dir)).normalized()
+            #else:
+                #rot_dir = pre_dir.copy()
+                #rot_up = pre_up.copy()
+
+            #curv_up_vecs[point.point_id] = rot_up.copy()
+            #pre_dir = rot_dir
+            #pre_up = rot_up
+
         # find the best point for every vert
         for vert_id in work_verts.keys():
             vert = bm.verts[vert_id]
@@ -468,11 +488,11 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
                         b_point_up = None
                         b_point_side = None
                         best_pos = None
-                        for b_point in deform_lines[first_index:]:
-                            j = deform_lines.index(b_point)
+                        for b_point_data in deform_lines[first_index:]:
+                            j = deform_lines.index(b_point_data)
                             #print(j, jj)
                             if j > 0:
-                                b_point_len = b_point[1] / line_len
+                                b_point_len = b_point_data[1] / line_len
                                 if b_point_len >= vert_len:
 
                                     # bezier point direction
@@ -480,14 +500,33 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
                                     if j < len(deform_lines) - 1:
                                         b_point_dir = deform_lines[j-1][3]
                                     else:
-                                        b_point_dir = b_point[3]
+                                        b_point_dir = b_point_data[3]
 
-                                    b_point_up = b_point_dir.cross(side_dir).normalized()
+                                    #if deform_lines[j-1][3].angle(b_point_data[3]) != 0.0:
+                                        #b_point_side = deform_lines[j-1][3].cross(b_point_data[3]).normalized()
+                                        #b_point_up = b_point_side.cross(b_point_data[3]).normalized()
+                                    #else:
+                                    check_side = abs(mathu.geometry.distance_point_to_plane(b_point_dir, Vector( (0.0,0.0,0.0) ), side_dir))
+                                    check_up = abs(mathu.geometry.distance_point_to_plane(b_point_dir, Vector( (0.0,0.0,0.0) ), up_dir))
+                                    check_front = abs(mathu.geometry.distance_point_to_plane(b_point_dir, Vector( (0.0,0.0,0.0) ), lw_tool_dir))
+                                    if check_side < check_up:
+                                        b_point_up = b_point_dir.cross(side_dir).normalized()
+                                    else:
+                                        b_point_up = b_point_dir.cross(up_dir).normalized()
+                                        b_point_up = b_point_dir.cross(b_point_up).normalized()  # cross again
+                                        b_point_up.negate()
+                                    #else:
+                                        #b_point_up = b_point_dir.cross(lw_tool_dir).normalized()
+                                        #b_point_up = b_point_dir.cross(b_point_up).normalized()  # cross again
+                                        ##b_point_up.negate()
                                     b_point_side = b_point_dir.cross(b_point_up).normalized()
+
+                                    #b_point_up = curv_up_vecs.get(point.point_id)
+                                    #b_point_side = b_point_dir.cross(b_point_up).normalized()
 
                                     # best position
                                     if b_point_len == vert_len:
-                                        best_pos = b_point[0]
+                                        best_pos = b_point_data[0]
                                     else:
                                         previous_pos_len = deform_lines[j-1][1] / line_len
                                         best_pos = deform_lines[j-1][0] + (( (vert_len - previous_pos_len) * line_len) * b_point_dir)
