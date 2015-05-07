@@ -208,7 +208,7 @@ class MI_Curve_Guide(bpy.types.Operator):
 
                         # pick linear widget point
                         if curve_picked is False:
-                            if curguide_settings.deform_type != 'Deform' and self.curve_tool:
+                            if (curguide_settings.deform_type != 'Deform' and self.curve_tool) or not self.curve_tool:
                                 picked_point = l_widget.pick_lw_point(context, m_coords, self.lw_tool)
                                 if picked_point:
                                     self.deform_mouse_pos = Vector(m_coords)
@@ -449,6 +449,8 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
         deform_lines, points_indexes = get_bezier_area_data(curve_tool)
         line_len = deform_lines[-1][1]
 
+        zero_vec = Vector( (0.0,0.0,0.0) )
+
         ## get upvec of every curve point
         #curv_up_vecs = {}
         #pre_dir = lw_tool_dir.copy()
@@ -502,23 +504,43 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
                                     else:
                                         b_point_dir = b_point_data[3]
 
-                                    #if deform_lines[j-1][3].angle(b_point_data[3]) != 0.0:
-                                        #b_point_side = deform_lines[j-1][3].cross(b_point_data[3]).normalized()
-                                        #b_point_up = b_point_side.cross(b_point_data[3]).normalized()
-                                    #else:
-                                    check_side = abs(mathu.geometry.distance_point_to_plane(b_point_dir, Vector( (0.0,0.0,0.0) ), side_dir))
-                                    check_up = abs(mathu.geometry.distance_point_to_plane(b_point_dir, Vector( (0.0,0.0,0.0) ), up_dir))
-                                    check_front = abs(mathu.geometry.distance_point_to_plane(b_point_dir, Vector( (0.0,0.0,0.0) ), lw_tool_dir))
-                                    if check_side < check_up:
-                                        b_point_up = b_point_dir.cross(side_dir).normalized()
-                                    else:
-                                        b_point_up = b_point_dir.cross(up_dir).normalized()
-                                        b_point_up = b_point_dir.cross(b_point_up).normalized()  # cross again
-                                        b_point_up.negate()
+                                    #b_point_side = deform_lines[j-1][3].cross(b_point_data[3]).normalized()
+                                    #b_point_up = b_point_side.cross(b_point_data[3]).normalized()
+                                    #v_check = (deform_lines[j-1][3] - b_point_data[3]).normalized()
+                                    #if v_check.length > 0 and b_point_up.length > 0 and v_check.angle(b_point_up) > math.radians(90):
+                                        #b_point_side.negate()
+                                        #b_point_up.negate()
+
+
+                                    check_side = abs(mathu.geometry.distance_point_to_plane(b_point_dir, zero_vec, side_dir))
+                                    check_up = abs(mathu.geometry.distance_point_to_plane(b_point_dir, zero_vec, up_dir))
+                                    #check_front = abs(mathu.geometry.distance_point_to_plane(b_point_dir, zero_vec, lw_tool_dir))
+
+                                    # calculate using sidedir vec
+                                    b_point_up_side = b_point_dir.cross(side_dir).normalized()
+                                    b_point_up = b_point_up_side
+
+                                    # calculate using updir vec
+                                    if (check_up < 0.5 and check_up < check_side):
+                                        b_point_up_up = b_point_dir.cross(up_dir).normalized()
+                                        b_point_up_up = b_point_dir.cross(b_point_up_up).normalized()  # cross again
+                                        b_point_up_up.negate()
+
+                                        if b_point_up_up.length > 0.0:
+                                            #temp_lerp = 0.5
+                                            #if check_side > 0.0:
+                                            temp_lerp = 1.0 - ( (check_up) )
+
+                                            if b_point_up.length == 0.0:
+                                                b_point_up = b_point_up_up
+                                            else:
+                                                b_point_up = (b_point_up_side.lerp(b_point_up_up,  (temp_lerp) )).normalized()
+
                                     #else:
                                         #b_point_up = b_point_dir.cross(lw_tool_dir).normalized()
                                         #b_point_up = b_point_dir.cross(b_point_up).normalized()  # cross again
                                         ##b_point_up.negate()
+
                                     b_point_side = b_point_dir.cross(b_point_up).normalized()
 
                                     #b_point_up = curv_up_vecs.get(point.point_id)
