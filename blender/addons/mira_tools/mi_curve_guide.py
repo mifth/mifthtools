@@ -467,10 +467,6 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
             #check_up = abs(mathu.geometry.distance_point_to_plane(b_point_dir, zero_vec, up_dir))
             #check_front = abs(mathu.geometry.distance_point_to_plane(b_point_dir, zero_vec, lw_tool_dir))
 
-            # calculate using sidedir vec
-            b_point_up_side = b_point_dir.cross(side_dir).normalized()
-            b_point_up = b_point_up_side
-
             # calculate using updir vec
             check_angle = b_point_dir.angle(side_dir)
             if (check_angle < math.radians(25.0) or check_angle > math.radians(155.0)):
@@ -478,12 +474,15 @@ def update_mesh_to_curve(lw_tool, curve_tool, work_verts, side_dir, side_vec_len
                 b_point_up_up = b_point_dir.cross(b_point_up_up).normalized()  # cross again
                 b_point_up_up.negate()
 
-                if b_point_up_up.length > 0.0:
+                #if b_point_up_up.length > 0.0:
                     #temp_lerp = 1.0 - ( (check_up) )
                     #if b_point_up.length == 0.0:
-                    b_point_up = b_point_up_up
+                b_point_up = b_point_up_up
                     #else:
                         #b_point_up = (b_point_up_side.lerp(b_point_up_up,  (temp_lerp) )).normalized()
+            else:
+                # calculate using sidedir vec
+                b_point_up = b_point_dir.cross(side_dir).normalized()                
 
             # another approach
             #pzv = up_dir.project(b_point_dir)  # here we project the direction to get upVec
