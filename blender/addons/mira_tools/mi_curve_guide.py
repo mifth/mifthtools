@@ -481,27 +481,23 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
             else:
                 b_point_dir = b_point_data[3]
 
+            ## upVec approach by me
+            ## calculate using side_dir vec
+            #check_angle = b_point_dir.angle(self.tool_up_vec)
+            #if (check_angle < math.radians(25.0) or check_angle > math.radians(155.0)):
+                #b_point_up_up = b_point_dir.cross(self.tool_side_vec).normalized()
+                #b_point_up = b_point_up_up
 
-            #check_side = abs(mathu.geometry.distance_point_to_plane(b_point_dir, zero_vec, self.tool_side_vec))
-            #check_up = abs(mathu.geometry.distance_point_to_plane(b_point_dir, zero_vec, self.tool_up_vec))
-            #check_front = abs(mathu.geometry.distance_point_to_plane(b_point_dir, zero_vec, lw_tool_dir))
+            #else:
+                ## calculate using up_dir vec
+                #b_point_up = b_point_dir.cross(self.tool_up_vec).normalized()                
+                #b_point_up = b_point_dir.cross(b_point_up).normalized()  # cross again
+                #b_point_up.negate()
 
-            # calculate using side_dir vec
-            check_angle = b_point_dir.angle(self.tool_up_vec)
-            if (check_angle < math.radians(25.0) or check_angle > math.radians(155.0)):
-                b_point_up_up = b_point_dir.cross(self.tool_side_vec).normalized()
-                b_point_up = b_point_up_up
-
-            else:
-                # calculate using up_dir vec
-                b_point_up = b_point_dir.cross(self.tool_up_vec).normalized()                
-                b_point_up = b_point_dir.cross(b_point_up).normalized()  # cross again
-                b_point_up.negate()
-
-            ## another approach
-            #pzv = self.tool_up_vec.project(b_point_dir)  # here we project the direction to get upVec
-            #dot = self.tool_up_vec.dot(b_point_dir)
-            #b_point_up = (self.tool_up_vec - pzv).normalized()
+            # upVec approach by mano-wii
+            dot = self.tool_up_vec.dot(b_point_dir)
+            pzv = dot * b_point_dir  # here we project the direction to get upVec
+            b_point_up = (self.tool_up_vec - pzv).normalized()
 
             # invert direction feature
             if self.invert_deform_upvec is True:
