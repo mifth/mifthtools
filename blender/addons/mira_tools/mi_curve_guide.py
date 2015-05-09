@@ -613,12 +613,12 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                     # multiplier for the vert
                     dir_multilpier = None
                     if deform_type == 'Stretch':
-                        dir_multilpier = (vert_data[2] * (best_bezier_len / self.side_vec_len)) - vert_data[2]
+                        dir_multilpier = (vert_data[2] * (best_bezier_len / self.tool_side_vec_len)) - vert_data[2]
                     elif deform_type in {'Shear', 'Twist'}:
-                        dir_multilpier = best_bezier_len - self.side_vec_len
+                        dir_multilpier = best_bezier_len - self.tool_side_vec_len
                     else:
                         vert_dist_scale = (vert_data[0] - vert_front_pos).length
-                        dir_multilpier = abs(vert_dist_scale * (best_bezier_len / self.side_vec_len)) - vert_dist_scale
+                        dir_multilpier = abs(vert_dist_scale * (best_bezier_len / self.tool_side_vec_len)) - vert_dist_scale
 
                     # modify vert position
                     if deform_type == 'Twist':
