@@ -494,9 +494,13 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                 #b_point_up = b_point_dir.cross(b_point_up).normalized()  # cross again
                 #b_point_up.negate()
 
-            # upVec approach by mano-wii
+            ## upVec approach by mano-wii version 1
+            #pzv = self.tool_up_vec.project(b_point_dir)  # here we project the direction to get upVec
+            #b_point_up = (self.tool_up_vec - pzv).normalized()
+
+            # upVec approach by mano-wii version 2
             dot = self.tool_up_vec.dot(b_point_dir)
-            pzv = dot * b_point_dir  # here we project the direction to get upVec
+            pzv = dot * b_point_dir  # here we dot the direction to get upVec
             b_point_up = (self.tool_up_vec - pzv).normalized()
 
             # invert direction feature
