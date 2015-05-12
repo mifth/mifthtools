@@ -71,6 +71,7 @@ class MFTPanelPlaykot(bpy.types.Panel):
 
         layout.operator("mft.render_scene_2x", text="Render2X")
         layout.operator("mft.cropnoderegion", text="CropNodeRegion")
+        layout.operator("mft.crop_to_viewport", text="CropToViewport")
 
         layout.separator()
         layout.operator("mft.outputcreator", text="Create Output")
@@ -145,6 +146,46 @@ class MFTCropNodeRegion(bpy.types.Operator):
                         scene.render.resolution_y
                     cropGroupNode.max_y = scene.render.border_min_y * \
                         scene.render.resolution_y
+        else:
+            self.report({'INFO'}, "Select Crop Node!")
+
+        return {'FINISHED'}
+
+class MFTCropToViewport(bpy.types.Operator):
+    bl_idname = "mft.crop_to_viewport"
+    bl_label = "Crop To Viewport"
+    bl_description = "Crop To Viewport..."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        scene = bpy.context.scene
+        nodes = scene.node_tree.nodes
+        cropNode = nodes.active
+
+        if cropNode != None:
+            if cropNode.type == 'CROP':
+                scene.render.border_min_x = cropNode.min_x / \
+                    scene.render.resolution_x
+                scene.render.border_max_x = cropNode.max_x / \
+                    scene.render.resolution_x
+                scene.render.border_max_y = cropNode.min_y / \
+                    scene.render.resolution_y
+                scene.render.border_min_y = cropNode.max_y / \
+                    scene.render.resolution_y
+
+            elif cropNode.type == 'GROUP':
+                cropGroupNode = cropNode.node_tree.nodes.active
+
+                if cropGroupNode != None and cropGroupNode.type == 'CROP':
+                    scene.render.border_min_x = cropGroupNode.min_x / \
+                    scene.render.resolution_x
+                    scene.render.border_max_x = cropGroupNode.max_x / \
+                    scene.render.resolution_x
+                    scene.render.border_max_y = cropGroupNode.min_y / \
+                    scene.render.resolution_y
+                    scene.render.border_min_y = cropGroupNode.max_y / \
+                    scene.render.resolution_y
         else:
             self.report({'INFO'}, "Select Crop Node!")
 
