@@ -69,6 +69,7 @@ class MFTPanelPlaykot(bpy.types.Panel):
         layout = self.layout
         mifthTools = bpy.context.scene.mifthTools
 
+        layout.operator("mft.render_scene_2x", text="Render2X")
         layout.operator("mft.cropnoderegion", text="CropNodeRegion")
 
         layout.separator()
@@ -79,6 +80,34 @@ class MFTPanelPlaykot(bpy.types.Panel):
         row.prop(mifthTools, "doOutputSubFolder", text='')
         layout.prop(mifthTools, "outputSequence")
         layout.prop(mifthTools, "outputSequenceSize")
+
+
+class MFTSceneRender2X(bpy.types.Operator):
+    bl_idname = "mft.render_scene_2x"
+    bl_label = "Render2X"
+    bl_description = "Render2X..."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        scene = bpy.context.scene
+        nodes = scene.node_tree.nodes
+        mifthTools = bpy.context.scene.mifthTools
+
+        crop_nodes_2x(nodes)
+
+        return {'FINISHED'}
+
+
+def crop_nodes_2x(nodes):
+    for node in nodes:
+        if node.type == 'GROUP':
+            crop_nodes_2x(node.node_tree.nodes)
+        elif node.type == 'CROP':
+            node.min_x *= 2.0
+            node.max_x *= 2.0
+            node.min_y *= 2.0
+            node.max_y *= 2.0
 
 
 class MFTCropNodeRegion(bpy.types.Operator):
