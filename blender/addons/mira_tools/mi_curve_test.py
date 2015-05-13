@@ -156,6 +156,12 @@ class MI_CurveTest(bpy.types.Operator):
                     self.active_curve.active_point = picked_point.point_id
                     additive_sel = event.shift
 
+                    if additive_sel is False:
+                        for curve in self.all_curves:
+                            if curve is not self.active_curve and picked_point.select is False:
+                                cur_main.select_all_points(curve.curve_points, False)  # deselect points
+                                curve.active_point = None
+
                     cur_main.select_point(self.active_curve, picked_point, additive_sel)
 
                     self.curve_tool_mode = 'SELECT_POINT'
@@ -166,6 +172,11 @@ class MI_CurveTest(bpy.types.Operator):
                         new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
 
                         if new_point_pos:
+                            for curve in self.all_curves:
+                                if curve is not self.active_curve:
+                                    cur_main.select_all_points(curve.curve_points, False)  # deselect points
+                                    curve.active_point = None
+
                             new_point = cur_main.add_point(new_point_pos, self.active_curve)
 
                             self.active_curve.active_point = new_point.point_id
@@ -177,17 +188,18 @@ class MI_CurveTest(bpy.types.Operator):
                 return {'RUNNING_MODAL'}
 
             elif event.type in {'DEL'} and event.value == 'PRESS':
-                sel_points = cur_main.get_selected_points(self.active_curve.curve_points)
-                if sel_points:
-                    for point in sel_points:
-                        #the_act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
-                        #the_act_point_index = self.active_curve.curve_points.index(point)
+                for curve in self.all_curves:
+                    sel_points = cur_main.get_selected_points(curve.curve_points)
+                    if sel_points:
+                        for point in sel_points:
+                            #the_act_point = cur_main.get_point_by_id(curve.curve_points, curve.active_point)
+                            #the_act_point_index = curve.curve_points.index(point)
 
-                        cur_main.delete_point(point, self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
+                            cur_main.delete_point(point, curve, curve.display_bezier, curve_settings.curve_resolution)
 
-                    self.active_curve.display_bezier.clear()
-                    cur_main.generate_bezier_points(self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
-                    self.active_curve.active_point = None
+                        curve.display_bezier.clear()
+                        cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
+                        curve.active_point = None
 
                 return {'RUNNING_MODAL'}
 
@@ -210,17 +222,19 @@ class MI_CurveTest(bpy.types.Operator):
                 # move points
                 m_coords = event.mouse_region_x, event.mouse_region_y
                 act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
-                selected_points = cur_main.get_selected_points(self.active_curve.curve_points)
                 new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
-                if new_point_pos and selected_points:
+                if new_point_pos:
                     move_offset = new_point_pos - act_point.position
-                    for point in selected_points:
-                        point.position += move_offset
+                    for curve in self.all_curves:
+                        selected_points = cur_main.get_selected_points(curve.curve_points)
+                        if selected_points:
+                            for point in selected_points:
+                                point.position += move_offset
 
-                    if len(selected_points) == 1:
-                        cur_main.curve_point_changed(self.active_curve, self.active_curve.curve_points.index(point), curve_settings.curve_resolution, self.active_curve.display_bezier)
-                    else:
-                        cur_main.generate_bezier_points(self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
+                            if len(selected_points) == 1:
+                                cur_main.curve_point_changed(curve, curve.curve_points.index(point), curve_settings.curve_resolution, curve.display_bezier)
+                            else:
+                                cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
 
                 return {'RUNNING_MODAL'}
 
