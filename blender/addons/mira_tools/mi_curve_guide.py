@@ -481,27 +481,20 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
             else:
                 b_point_dir = b_point_data[3]
 
-            ## upVec approach by me
-            ## calculate using side_dir vec
             #check_angle = b_point_dir.angle(self.tool_up_vec)
-            #if (check_angle < math.radians(25.0) or check_angle > math.radians(155.0)):
-                #b_point_up_up = b_point_dir.cross(self.tool_side_vec).normalized()
-                #b_point_up = b_point_up_up
 
-            #else:
-                ## calculate using up_dir vec
-                #b_point_up = b_point_dir.cross(self.tool_up_vec).normalized()                
-                #b_point_up = b_point_dir.cross(b_point_up).normalized()  # cross again
-                #b_point_up.negate()
+            ## upVec approach by me
+            # calculate using cross vec
+            b_point_up = b_point_dir.cross(self.tool_up_vec).normalized()                
 
             ## upVec approach by mano-wii version 1
             #pzv = self.tool_up_vec.project(b_point_dir)  # here we project the direction to get upVec
             #b_point_up = (self.tool_up_vec - pzv).normalized()
 
-            # upVec approach by mano-wii version 2
-            dot = self.tool_up_vec.dot(b_point_dir)
-            pzv = dot * b_point_dir  # here we dot the direction to get upVec
-            b_point_up = (self.tool_up_vec - pzv).normalized()
+            ## upVec approach by mano-wii version 2
+            #dot = self.tool_up_vec.dot(b_point_dir)
+            #pzv = dot * b_point_dir  # here we dot the direction to get upVec
+            #b_point_up = (self.tool_up_vec - pzv).normalized()
 
             # invert direction feature
             if self.invert_deform_upvec is True:
@@ -556,7 +549,7 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
 
                                     break
 
-                        vert.co = obj.matrix_world.inverted() * ( best_pos + (b_point_dirs[1] * vert_data[3]) - (b_point_dirs[2] * vert_data[2]) )
+                        vert.co = obj.matrix_world.inverted() * ( best_pos - (b_point_dirs[2] * vert_data[3]) - (b_point_dirs[1] * vert_data[2]) )
                         break
 
     else:  # ALL OTHER TYPES
