@@ -166,26 +166,26 @@ class MFTCropToViewport(bpy.types.Operator):
         if cropNode != None:
             if cropNode.type == 'CROP':
                 scene.render.border_min_x = cropNode.min_x / \
-                    scene.render.resolution_x
+                    scene.render.resolution_x / (float(scene.render.resolution_percentage) / 100.0)
                 scene.render.border_max_x = cropNode.max_x / \
-                    scene.render.resolution_x
+                    scene.render.resolution_x / (float(scene.render.resolution_percentage) / 100.0)
                 scene.render.border_max_y = cropNode.min_y / \
-                    scene.render.resolution_y
-                scene.render.border_min_y = cropNode.max_y / \
-                    scene.render.resolution_y
+                    scene.render.resolution_y / (float(scene.render.resolution_percentage) / 100.0)
+                scene.render.border_min_y = (cropNode.max_y / \
+                    scene.render.resolution_y) / (float(scene.render.resolution_percentage) / 100.0)
 
             elif cropNode.type == 'GROUP':
                 cropGroupNode = cropNode.node_tree.nodes.active
 
                 if cropGroupNode != None and cropGroupNode.type == 'CROP':
-                    scene.render.border_min_x = cropGroupNode.min_x / \
-                    scene.render.resolution_x
-                    scene.render.border_max_x = cropGroupNode.max_x / \
-                    scene.render.resolution_x
-                    scene.render.border_max_y = cropGroupNode.min_y / \
-                    scene.render.resolution_y
-                    scene.render.border_min_y = cropGroupNode.max_y / \
-                    scene.render.resolution_y
+                    scene.render.border_min_x = (cropGroupNode.min_x / \
+                    scene.render.resolution_x) / (float(scene.render.resolution_percentage) / 100.0)
+                    scene.render.border_max_x = (cropGroupNode.max_x / \
+                    scene.render.resolution_x) / (float(scene.render.resolution_percentage) / 100.0)
+                    scene.render.border_max_y = (cropGroupNode.min_y / \
+                    scene.render.resolution_y) / (float(scene.render.resolution_percentage) / 100.0)
+                    scene.render.border_min_y = (cropGroupNode.max_y / \
+                    scene.render.resolution_y) / (float(scene.render.resolution_percentage) / 100.0)
         else:
             self.report({'INFO'}, "Select Crop Node!")
 
