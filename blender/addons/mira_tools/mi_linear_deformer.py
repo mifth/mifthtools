@@ -73,6 +73,10 @@ class MI_Linear_Deformer(bpy.types.Operator):
     work_verts = None
     apply_tool_verts = None
 
+    # history
+    h_undo = None
+    h_redo = None
+
     def invoke(self, context, event):
         reset_params(self)
 
@@ -83,13 +87,16 @@ class MI_Linear_Deformer(bpy.types.Operator):
             bm = bmesh.from_edit_mesh(active_obj.data)
 
             if bm.verts:
-                work_verts = ut_base.get_selected_bmverts(bm)
-                if not work_verts:
-                    work_verts = [v for v in bm.verts if v.hide is False]
+                pre_work_verts = ut_base.get_selected_bmverts(bm)
+                if not pre_work_verts:
+                    pre_work_verts = [v for v in bm.verts if v.hide is False]
 
-                if work_verts:
-                    self.start_work_center = ut_base.get_vertices_center(work_verts, active_obj, False)
-                    self.work_verts = [vert.index for vert in work_verts]
+                if pre_work_verts:
+                    self.start_work_center = ut_base.get_vertices_center(pre_work_verts, active_obj, False)
+                    self.work_verts = [vert.index for vert in pre_work_verts]
+
+                    # add original vert to history
+                    add_history(pre_work_verts, self.h_undo)
 
                     # change manipulator
                     self.manipulator = context.space_data.show_manipulator
@@ -141,7 +148,7 @@ class MI_Linear_Deformer(bpy.types.Operator):
         if lin_def_settings.manual_update is True and self.tool_mode not in {'IDLE', 'MOVE_POINT'}:
             tooltip_text = "Press U key to udate!"
         else:
-            tooltip_text = "I:Invert, Z:Z-Constraint, X:X-Constraint, S:Scale, Shift-S:ScaleForward, G:Move, R:Rotate, B:Bend, Shift-B:BendSpiral, T:Tape, Shift-T:Twist"
+            tooltip_text = "I:Invert, Z:Z-Constraint, X:X-Constraint, S:Scale, Shift-S:ScaleForward, G:Move, R:Rotate, B:Bend, Shift-B:BendSpiral, T:Tape, Shift-T:Twist, Ctrl+Z:Undo, Ctrl+Shift+Z:Redo"
         context.area.header_text_set(tooltip_text)
 
         # key pressed
@@ -193,9 +200,9 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 # get tool verts
                 if self.tool_mode in {'SCALE_FRONT', 'TAPE'}:
                     # do not clamp for SCALE_FRONT mode
-                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, False)
+                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, False, True)
                 else:
-                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, True)
+                    self.apply_tool_verts = l_widget.get_tool_verts(self.lw_tool, self.work_verts, bm, active_obj, True, True)
 
                 # set some settings for tools
                 if self.tool_mode in {'SCALE_ALL', 'SCALE_FRONT', 'TAPE'}:
@@ -216,53 +223,60 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 #return {'RUNNING_MODAL'}
 
             elif event.type in {'Z', 'X'} and self.lw_tool:
-                pre_verts = [bm.verts[v_id] for v_id in self.work_verts]
-                if event.type == 'X':
-                    if self.lw_tool_axis:
-                        if self.lw_tool_axis == 'X':
-                            l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Left', 1.0)
-                            self.lw_tool_axis = 'X_Left'
-                        elif self.lw_tool_axis == 'X_Left':
-                            l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Right', 1.0)
-
-                            ## revert direction
-                            #stp = self.lw_tool.start_point.position.copy()
-                            #self.lw_tool.start_point.position = self.lw_tool.end_point.position
-                            #self.lw_tool.end_point.position = stp
-
-                            self.lw_tool_axis = 'X_Right'
-                        elif self.lw_tool_axis == 'X_Right':
-                            l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X', 1.0)
-                            self.lw_tool_axis = 'X'
-                        else:
-                            l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X', 1.0)
-                            self.lw_tool_axis = 'X'
+                if event.type == 'Z' and event.ctrl:
+                    if event.shift:
+                        redo_history(bm, self.h_undo, self.h_redo, active_obj)
                     else:
-                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X', 1.0)
-                        self.lw_tool_axis = 'X'
+                        undo_history(bm, self.h_undo, self.h_redo, active_obj)
+
                 else:
-                    if self.lw_tool_axis:
-                        if self.lw_tool_axis == 'Z':
-                            l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Top', 1.0)
-                            self.lw_tool_axis = 'Z_Top'
-                        elif self.lw_tool_axis == 'Z_Top':
-                            l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Bottom', 1.0)
+                    pre_verts = [bm.verts[v_id] for v_id in self.work_verts]
+                    if event.type == 'X':
+                        if self.lw_tool_axis:
+                            if self.lw_tool_axis == 'X':
+                                l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Left', 1.0)
+                                self.lw_tool_axis = 'X_Left'
+                            elif self.lw_tool_axis == 'X_Left':
+                                l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Right', 1.0)
 
-                            ## revert direction
-                            #stp = self.lw_tool.start_point.position.copy()
-                            #self.lw_tool.start_point.position = self.lw_tool.end_point.position
-                            #self.lw_tool.end_point.position = stp
+                                ## revert direction
+                                #stp = self.lw_tool.start_point.position.copy()
+                                #self.lw_tool.start_point.position = self.lw_tool.end_point.position
+                                #self.lw_tool.end_point.position = stp
 
-                            self.lw_tool_axis = 'Z_Bottom'
-                        elif self.lw_tool_axis == 'Z_Bottom':
-                            l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z', 1.0)
-                            self.lw_tool_axis = 'Z'
+                                self.lw_tool_axis = 'X_Right'
+                            elif self.lw_tool_axis == 'X_Right':
+                                l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X', 1.0)
+                                self.lw_tool_axis = 'X'
+                            else:
+                                l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X', 1.0)
+                                self.lw_tool_axis = 'X'
+                        else:
+                            l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X', 1.0)
+                            self.lw_tool_axis = 'X'
+                    else:
+                        if self.lw_tool_axis:
+                            if self.lw_tool_axis == 'Z':
+                                l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Top', 1.0)
+                                self.lw_tool_axis = 'Z_Top'
+                            elif self.lw_tool_axis == 'Z_Top':
+                                l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Bottom', 1.0)
+
+                                ## revert direction
+                                #stp = self.lw_tool.start_point.position.copy()
+                                #self.lw_tool.start_point.position = self.lw_tool.end_point.position
+                                #self.lw_tool.end_point.position = stp
+
+                                self.lw_tool_axis = 'Z_Bottom'
+                            elif self.lw_tool_axis == 'Z_Bottom':
+                                l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z', 1.0)
+                                self.lw_tool_axis = 'Z'
+                            else:
+                                l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z', 1.0)
+                                self.lw_tool_axis = 'Z'
                         else:
                             l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z', 1.0)
                             self.lw_tool_axis = 'Z'
-                    else:
-                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z', 1.0)
-                        self.lw_tool_axis = 'Z'
 
             elif event.type == 'I' and self.lw_tool:
                 start_copy = self.lw_tool.start_point.position.copy()
@@ -291,7 +305,14 @@ class MI_Linear_Deformer(bpy.types.Operator):
         elif self.tool_mode in {'SCALE_ALL', 'SCALE_FRONT', 'TAPE'}:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 bm.normal_update()
+
+                # add to undo history
+                self.h_redo.clear()
+                pre_work_verts = [bm.verts[v_id] for v_id in self.work_verts]
+                add_history(pre_work_verts, self.h_undo)
+
                 self.tool_mode = 'IDLE'
+
             elif self.do_update:
                 # move points
                 start_point_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.lw_tool.start_point.position)
@@ -328,7 +349,14 @@ class MI_Linear_Deformer(bpy.types.Operator):
         elif self.tool_mode == 'MOVE_ALL':
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 bm.normal_update()
+
+                # add to undo history
+                self.h_redo.clear()
+                pre_work_verts = [bm.verts[v_id] for v_id in self.work_verts]
+                add_history(pre_work_verts, self.h_undo)
+
                 self.tool_mode = 'IDLE'
+
             elif self.do_update:
                 mouse_pos_3d = ut_base.get_mouse_on_plane(context, self.lw_tool.start_point.position, None, m_coords)
                 mouse_pos_3d = active_obj.matrix_world.inverted() * mouse_pos_3d
@@ -350,7 +378,14 @@ class MI_Linear_Deformer(bpy.types.Operator):
         elif self.tool_mode in {'ROTATE_ALL', 'TWIST', 'BEND_ALL', 'BEND_SPIRAL'}:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 bm.normal_update()
+
+                # add to undo history
+                self.h_redo.clear()
+                pre_work_verts = [bm.verts[v_id] for v_id in self.work_verts]
+                add_history(pre_work_verts, self.h_undo)
+
                 self.tool_mode = 'IDLE'
+
             elif self.do_update:
                 m_coords = Vector(m_coords)  # convert into vector for operations
                 start_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.lw_tool.start_point.position)
@@ -416,9 +451,9 @@ class MI_Linear_Deformer(bpy.types.Operator):
                             if do_bend:
                                 vert_temp =  (active_obj.matrix_world * vert_data[2]) - ((faloff_len) * apply_value)
 
-                                back_offset = (((faloff_len).length / (final_apply_value)) + spiral_value) * apply_value * bend_scale_value
+                                back_offset = (((faloff_len).length / (final_apply_value)) + spiral_value) * (apply_value * bend_scale_value)
                                 vert_temp += bend_side_dir * back_offset
-                                vert.co = active_obj.matrix_world.inverted() * vert_temp
+                                vert.co =  vert_temp
                             else:
                                 # set original position
                                 vert.co[0] = vert_data[2][0]
@@ -427,14 +462,14 @@ class MI_Linear_Deformer(bpy.types.Operator):
 
                             # ROTATE VERTS!
                             if do_bend:
-                                vert.co = rot_mat * ( (active_obj.matrix_world * vert.co) - start_pos) + start_pos
-                                back_offset = ((faloff_len).length / (final_apply_value)) * apply_value * bend_scale_value
+                                vert.co = rot_mat * ( (vert.co) - start_pos) + start_pos
+                                back_offset = ((faloff_len).length / (final_apply_value)) * (apply_value * bend_scale_value)
                                 vert.co = active_obj.matrix_world.inverted() * ( vert.co - (bend_side_dir * back_offset))
                             else:
                                 vert.co = active_obj.matrix_world.inverted() * (rot_mat * ( (active_obj.matrix_world * vert.co) - start_pos) + start_pos)
 
-                            self.deform_vec_pos = new_vec_dir
-                            self.deform_mouse_pos = rot_angle  # set new angle rotation for next step
+                    self.deform_vec_pos = new_vec_dir
+                    self.deform_mouse_pos = rot_angle  # set new angle rotation for next step
 
                     #bm.normal_update()
                     bmesh.update_edit_mesh(active_obj.data)
@@ -480,6 +515,45 @@ def reset_params(self):
     self.start_work_center = None
     self.work_verts = None
     self.apply_tool_verts = None
+
+    self.h_undo = []
+    self.h_redo = []
+
+
+def add_history(verts, h_undo):
+    history = []
+    for vert in verts:
+        history.append( (vert.index, vert.co.copy()) )
+
+    h_undo.append(history)
+
+
+def undo_history(bm, h_undo, h_redo, active_obj):
+    if h_undo:
+        pre_history = h_undo[-1]
+        if len(h_undo) > 1:  # 0 index is always original verts
+            h_undo.remove(pre_history)
+            h_redo.append(pre_history)
+
+        history = h_undo[-1]
+        for h_vert in history:
+            bm.verts[h_vert[0]].co = h_vert[1].copy()
+
+        bm.normal_update()
+        bmesh.update_edit_mesh(active_obj.data)
+
+
+def redo_history(bm, h_undo, h_redo, active_obj):
+    if h_redo:
+        history = h_redo[-1]
+        for h_vert in history:
+            bm.verts[h_vert[0]].co = h_vert[1].copy()
+
+        h_redo.remove(history)
+        h_undo.append(history)
+
+        bm.normal_update()
+        bmesh.update_edit_mesh(active_obj.data)
 
 
 def lin_def_draw_2d(self, context):

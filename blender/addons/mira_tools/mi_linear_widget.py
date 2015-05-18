@@ -59,7 +59,7 @@ def update_middle_point(lw_tool):
     lw_tool.middle_point.position = lw_tool.start_point.position + (lw_dir * (lw_len / 2.0))
 
 
-def get_tool_verts(lw_tool, verts_ids, bm, obj, do_clamp):
+def get_tool_verts(lw_tool, verts_ids, bm, obj, do_clamp, local_coords):
     apply_tool_verts = []
     final_dir = ( lw_tool.end_point.position - lw_tool.start_point.position )
     max_dist = final_dir.length
@@ -71,7 +71,12 @@ def get_tool_verts(lw_tool, verts_ids, bm, obj, do_clamp):
                 value = 1.0
             else:
                 value /= max_dist
-            apply_tool_verts.append( (vert_id, value, bm.verts[vert_id].co.copy()) )
+
+            pos_final = v_pos
+            if local_coords is True:
+                pos_final = bm.verts[vert_id].co.copy()
+
+            apply_tool_verts.append( (vert_id, value, pos_final) )
 
     return apply_tool_verts
 
