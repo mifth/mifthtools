@@ -118,7 +118,7 @@ class MI_Curve_Guide(bpy.types.Operator):
                     # create linear deformer
                     self.lw_tool = l_widget.MI_Linear_Widget()
 
-                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Auto')
+                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Auto', 1.0001)
 
                     # Add the region OpenGL drawing callback
                     # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
@@ -277,10 +277,10 @@ class MI_Curve_Guide(bpy.types.Operator):
                             if event.type == 'X':
                                 if self.lw_tool_axis:
                                     if self.lw_tool_axis == 'X':
-                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Left')
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Left', 1.0001)
                                         self.lw_tool_axis = 'X_Left'
                                     elif self.lw_tool_axis == 'X_Left':
-                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Right')
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X_Right', 1.0001)
 
                                         # revert direction
                                         stp = self.lw_tool.start_point.position.copy()
@@ -289,21 +289,21 @@ class MI_Curve_Guide(bpy.types.Operator):
 
                                         self.lw_tool_axis = 'X_Right'
                                     elif self.lw_tool_axis == 'X_Right':
-                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X')
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X', 1.0001)
                                         self.lw_tool_axis = 'X'
                                     else:
-                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X')
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X', 1.0001)
                                         self.lw_tool_axis = 'X'
                                 else:
-                                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X')
+                                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'X', 1.0001)
                                     self.lw_tool_axis = 'X'
                             else:
                                 if self.lw_tool_axis:
                                     if self.lw_tool_axis == 'Z':
-                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Top')
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Top', 1.0001)
                                         self.lw_tool_axis = 'Z_Top'
                                     elif self.lw_tool_axis == 'Z_Top':
-                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Bottom')
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z_Bottom', 1.0001)
 
                                         # revert direction
                                         stp = self.lw_tool.start_point.position.copy()
@@ -312,13 +312,13 @@ class MI_Curve_Guide(bpy.types.Operator):
 
                                         self.lw_tool_axis = 'Z_Bottom'
                                     elif self.lw_tool_axis == 'Z_Bottom':
-                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z')
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z', 1.0001)
                                         self.lw_tool_axis = 'Z'
                                     else:
-                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z')
+                                        l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z', 1.0001)
                                         self.lw_tool_axis = 'Z'
                                 else:
-                                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z')
+                                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Z', 1.0001)
                                     self.lw_tool_axis = 'Z'
 
                     # invert upvec

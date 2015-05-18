@@ -144,7 +144,7 @@ def pick_lw_point(context, m_coords, lw):
     return return_point
 
 
-def setup_lw_tool(rv3d, lw_tool, active_obj, verts, center_type):
+def setup_lw_tool(rv3d, lw_tool, active_obj, verts, center_type, scale_size):
     # Types
     # 'Auto', 'X', 'X_Left', 'X_Right', 'Z', 'Z_Top', 'Z_Bottom'
 
@@ -172,20 +172,20 @@ def setup_lw_tool(rv3d, lw_tool, active_obj, verts, center_type):
     end_p = None
     if center_type == 'Auto':
         if bounds[0] > bounds[1]:
-            # 1.001 is additive value so that to get points on the top and on the left
-            start_p = middle_p - (cam_x * (bounds[0] / 2.0) * 1.001)
-            end_p = middle_p + (cam_x * (bounds[0] / 2.0) * 1.001)
+            # scale_size is additive value so that to get points on the top and on the left
+            start_p = middle_p - (cam_x * (bounds[0] / 2.0) * scale_size)
+            end_p = middle_p + (cam_x * (bounds[0] / 2.0) * scale_size)
         else:
-            start_p = middle_p - (cam_y * (bounds[1] / 2.0) * 1.001)
-            end_p = middle_p + (cam_y * (bounds[1] / 2.0) * 1.001)
+            start_p = middle_p - (cam_y * (bounds[1] / 2.0) * scale_size)
+            end_p = middle_p + (cam_y * (bounds[1] / 2.0) * scale_size)
     elif center_type in {'X', 'X_Left', 'X_Right'}:
-        # 1.001 is additive value so that to get points on the top and on the left
-        start_p = middle_p - (cam_x * (bounds[0] / 2.0) * 1.001)
-        end_p = middle_p + (cam_x * (bounds[0] / 2.0) * 1.001)
+        # scale_size is additive value so that to get points on the top and on the left
+        start_p = middle_p - (cam_x * (bounds[0] / 2.0) * scale_size)
+        end_p = middle_p + (cam_x * (bounds[0] / 2.0) * scale_size)
     elif center_type in {'Z', 'Z_Top', 'Z_Bottom'}:
-        # 1.001 is additive value so that to get points on the top and on the left
-        start_p = middle_p - (cam_y * (bounds[1] / 2.0) * 1.001)
-        end_p = middle_p + (cam_y * (bounds[1] / 2.0) * 1.001)
+        # scale_size is additive value so that to get points on the top and on the left
+        start_p = middle_p - (cam_y * (bounds[1] / 2.0) * scale_size)
+        end_p = middle_p + (cam_y * (bounds[1] / 2.0) * scale_size)
 
     lw_tool.start_point = MI_LW_Point(start_p)
     lw_tool.middle_point = MI_LW_Point(middle_p)
