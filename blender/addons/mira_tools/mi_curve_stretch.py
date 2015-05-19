@@ -48,6 +48,7 @@ class MI_CurveStretchSettings(bpy.types.PropertyGroup):
                 ),
         default = 'ORIGINAL'
     )
+    surface_snap = BoolProperty(default=False)
 
 
 class MI_CurveStretch(bpy.types.Operator):
@@ -69,6 +70,7 @@ class MI_CurveStretch(bpy.types.Operator):
     all_curves = None
     active_curve = None
     deform_mouse_pos = None
+    picked_meshes = None
 
     # loops code
     loops = None
@@ -118,6 +120,13 @@ class MI_CurveStretch(bpy.types.Operator):
                     # move point to the curve
                     for curve in self.all_curves:
                         update_curve_line(active_obj, self.active_curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
+
+                    # get meshes for snapping
+                    sel_objects = [
+                        obj for obj in context.selected_objects if obj != active_obj]
+                    if sel_objects:
+                        self.picked_meshes = ut_base.get_obj_dup_meshes(
+                            sel_objects, context)
 
                 self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
                 self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
@@ -243,7 +252,17 @@ class MI_CurveStretch(bpy.types.Operator):
                 # move points
                 m_coords = event.mouse_region_x, event.mouse_region_y
                 act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
+
+                #new_point_pos = None
+
                 new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
+
+                #if self.picked_meshes:
+                    #best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(
+                        #context, self.picked_meshes, m_coords, 10000.0)
+                    #if hit_position:
+                        #new_point_pos = hit_position
+
                 if new_point_pos:
                     move_offset = new_point_pos - act_point.position
                     for curve in self.all_curves:
@@ -292,6 +311,8 @@ def reset_params(self):
     self.all_curves = []
     self.active_curve = None
     self.deform_mouse_pos = None
+
+    self.picked_meshes = None
 
     # loops code
     self.loops = None
