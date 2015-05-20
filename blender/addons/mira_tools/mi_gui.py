@@ -80,7 +80,7 @@ class MI_DeformPanel(bpy.types.Panel):
         layout.prop(curguide_settings, "deform_type", text='DeformType')
 
 
-class MI_CurveTest(bpy.types.Panel):
+class MI_CurveSettingsPanel(bpy.types.Panel):
     bl_label = "CurveSettings"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
@@ -92,6 +92,7 @@ class MI_CurveTest(bpy.types.Panel):
         layout = self.layout
         curve_settings = context.scene.mi_curve_settings
 
+        layout.prop(curve_settings, "surface_snap", text='SurfaceSnapping')
         layout.prop(curve_settings, "curve_resolution", text='Resolution')
         layout.prop(curve_settings, "draw_handlers", text='Handlers')
         layout.operator("mira.curve_test", text="Curve Test")

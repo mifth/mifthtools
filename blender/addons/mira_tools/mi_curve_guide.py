@@ -80,6 +80,7 @@ class MI_Curve_Guide(bpy.types.Operator):
     tool_up_vec = None
 
     curve_tool = None
+    picked_meshes = None
 
     deform_mouse_pos = None
     deform_vec_pos = None
@@ -102,6 +103,7 @@ class MI_Curve_Guide(bpy.types.Operator):
             m_coords = event.mouse_region_x, event.mouse_region_y
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
+            curve_settings = context.scene.mi_curve_settings
 
             if bm.verts:
                 pre_verts = ut_base.get_selected_bmverts(bm)
@@ -119,6 +121,14 @@ class MI_Curve_Guide(bpy.types.Operator):
                     self.lw_tool = l_widget.MI_Linear_Widget()
 
                     l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Auto', 1.0001)
+
+                    # get meshes for snapping
+                    if curve_settings.surface_snap is True:
+                        sel_objects = [
+                            obj for obj in context.selected_objects if obj != active_obj]
+                        if sel_objects:
+                            self.picked_meshes = ut_base.get_obj_dup_meshes(
+                                sel_objects, context)
 
                     # Add the region OpenGL drawing callback
                     # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
@@ -151,13 +161,16 @@ class MI_Curve_Guide(bpy.types.Operator):
         active_obj = context.scene.objects.active
         bm = bmesh.from_edit_mesh(active_obj.data)
 
+        region = context.region
+        rv3d = context.region_data
+
         curve_settings = context.scene.mi_curve_settings
         curguide_settings = context.scene.mi_curguide_settings
 
         # tooltip
         tooltip_text = None
         if self.curve_tool:
-            tooltip_text = "NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del"
+            tooltip_text = "NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+S"
 
             if curguide_settings.deform_type == 'Deform':
                 tooltip_text = "InvertUpVec: I, " + tooltip_text
@@ -166,7 +179,7 @@ class MI_Curve_Guide(bpy.types.Operator):
         context.area.header_text_set(tooltip_text)
 
         # key pressed
-        if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'RET', 'NUMPAD_ENTER', 'DEL', 'Z', 'X', 'I'}:
+        if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'RET', 'NUMPAD_ENTER', 'DEL', 'Z', 'X', 'I', 'S'}:
             if event.value == 'PRESS':
                 if self.tool_mode == 'IDLE':
                     if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
@@ -334,7 +347,7 @@ class MI_Curve_Guide(bpy.types.Operator):
                         bmesh.update_edit_mesh(active_obj.data)
 
                     # delete curve point
-                    elif event.type == 'DEL':
+                    elif event.type == 'DEL' and self.curve_tool:
                         sel_points = cur_main.get_selected_points(self.curve_tool.curve_points)
                         if sel_points:
                             for point in sel_points:
@@ -346,6 +359,19 @@ class MI_Curve_Guide(bpy.types.Operator):
                             self.curve_tool.display_bezier.clear()
                             cur_main.generate_bezier_points(self.curve_tool, self.curve_tool.display_bezier, curve_settings.curve_resolution)
                             self.curve_tool.active_point = None
+
+                    elif event.type in {'S'} and event.shift and self.curve_tool:
+                        if curve_settings.surface_snap is True:
+                            curve_settings.surface_snap = False
+                        else:
+                            curve_settings.surface_snap = True
+                            if not self.picked_meshes:
+                                # get meshes for snapping
+                                sel_objects = [
+                                    obj for obj in context.selected_objects if obj != active_obj]
+                                if sel_objects:
+                                    self.picked_meshes = ut_base.get_obj_dup_meshes(
+                                        sel_objects, context)
 
         # TOOL WORK!
         if self.tool_mode == 'MOVE_LW_POINT':
@@ -401,17 +427,30 @@ class MI_Curve_Guide(bpy.types.Operator):
                 if new_point_pos and selected_points:
                     move_offset = new_point_pos - act_point.position
 
-                    # move point
-                    for point in selected_points:
-                        point.position += move_offset
+                    # Snap to Surface
+                    if curguide_settings.deform_type == 'Deform' and curve_settings.surface_snap is True:
+                        camera_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
+                        if self.picked_meshes:
+                            for point in selected_points:
+                                # get the ray from the viewport and mouse
+                                point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, point.position + move_offset)
+                                if point_pos_2d:
+                                    best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, point_pos_2d, 10000.0)
+                                    #best_obj, hit_normal, hit_position = ut_base.get_3dpoint_raycast(context, self.picked_meshes, point.position + move_offset, camera_dir, 10000.0)
+                                if hit_position:
+                                    point.position = hit_position
+                    else:
+                        # move point
+                        for point in selected_points:
+                            point.position += move_offset
 
-                    # fix points pos
-                    if curguide_settings.deform_type != 'Deform':
-                        fix_curve_point_pos(self.lw_tool, self.curve_tool, selected_points)
+                        # fix points pos
+                        if curguide_settings.deform_type != 'Deform':
+                            fix_curve_point_pos(self.lw_tool, self.curve_tool, selected_points)
 
                     # update bezier
                     if len(selected_points) == 1:
-                        cur_main.curve_point_changed(self.curve_tool, self.curve_tool.curve_points.index(point), curve_settings.curve_resolution, self.curve_tool.display_bezier)
+                        cur_main.curve_point_changed(self.curve_tool, self.curve_tool.curve_points.index(selected_points[0]), curve_settings.curve_resolution, self.curve_tool.display_bezier)
                     else:
                         cur_main.generate_bezier_points(self.curve_tool, self.curve_tool.display_bezier, curve_settings.curve_resolution)
 
@@ -454,6 +493,7 @@ def reset_params(self):
     self.tool_up_vec = None
 
     self.curve_tool = None
+    self.picked_meshes = None
 
     self.work_verts = None
     self.apply_tool_verts = None

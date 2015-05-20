@@ -35,7 +35,7 @@ def get_obj_dup_meshes(objects_array, context):
     return listObjMatrix
 
 
-# mesh picking
+# mesh picking from screen
 def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
     region = context.region
     rv3d = context.region_data
@@ -51,7 +51,7 @@ def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
             region, rv3d, coords_2d)
 
         # Do RayCast! t1,t2,t3,t4 - temp values
-        t1, t2, t3 = obj_ray_cast(
+        t1, t2, t3 = obj_raycast(
             obj, matrix, view_vector, ray_origin, ray_max)
         if t1 is not None and t3 < best_length_squared:
             best_obj, hit_normal, hit_position = obj, t1, t2
@@ -60,8 +60,24 @@ def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
     return best_obj, hit_normal, hit_position
 
 
+# mesh picking from 3d space
+def get_3dpoint_raycast(context, objects_list, vec_pos, vec_dir, ray_max):
+    best_obj, hit_normal, hit_position = None, None, None
+    best_length_squared = ray_max * ray_max
+
+    for obj, matrix in objects_list:
+        # Do RayCast! t1,t2,t3,t4 - temp values
+        t1, t2, t3 = obj_raycast(
+            obj, matrix, vec_dir, vec_pos, ray_max)
+        if t1 is not None and t3 < best_length_squared:
+            best_obj, hit_normal, hit_position = obj, t1, t2
+            best_length_squared = t3
+
+    return best_obj, hit_normal, hit_position
+
+
 # mesh picking
-def obj_ray_cast(obj, matrix, view_vector, ray_origin, ray_max):
+def obj_raycast(obj, matrix, view_vector, ray_origin, ray_max):
     """Wrapper for ray casting that moves the ray into object space"""
 
     ray_target = ray_origin + (view_vector * ray_max)

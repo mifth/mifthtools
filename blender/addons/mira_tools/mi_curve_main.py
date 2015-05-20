@@ -380,7 +380,7 @@ def pass_line(vecs, is_closed_line):
         else:
             vec_dir = vec_area.normalized()
 
-        line_data.append((vec, line_length, area_length, vec_dir))
+        line_data.append((vec.copy(), line_length, area_length, vec_dir))
 
         line_length += area_length
 
@@ -419,7 +419,7 @@ def get_bezier_line(curve, active_obj, local_coords):
                 if local_coords is True:
                     curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
                 else:
-                    curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
+                    curve_vecs.append(b_p)
 
     line = pass_line(curve_vecs, curve.closed)
     return line

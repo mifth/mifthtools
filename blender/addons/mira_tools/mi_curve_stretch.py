@@ -48,7 +48,6 @@ class MI_CurveStretchSettings(bpy.types.PropertyGroup):
                 ),
         default = 'ORIGINAL'
     )
-    surface_snap = BoolProperty(default=False)
 
 
 class MI_CurveStretch(bpy.types.Operator):
@@ -122,11 +121,12 @@ class MI_CurveStretch(bpy.types.Operator):
                         update_curve_line(active_obj, self.active_curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
 
                     # get meshes for snapping
-                    sel_objects = [
-                        obj for obj in context.selected_objects if obj != active_obj]
-                    if sel_objects:
-                        self.picked_meshes = ut_base.get_obj_dup_meshes(
-                            sel_objects, context)
+                    if curve_settings.surface_snap is True:
+                        sel_objects = [
+                            obj for obj in context.selected_objects if obj != active_obj]
+                        if sel_objects:
+                            self.picked_meshes = ut_base.get_obj_dup_meshes(
+                                sel_objects, context)
 
                 self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
                 self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
@@ -149,16 +149,19 @@ class MI_CurveStretch(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
-        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del")
+        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+S")
 
         curve_settings = context.scene.mi_curve_settings
         cur_stretch_settings = context.scene.mi_cur_stretch_settings
         active_obj = context.scene.objects.active
         bm = bmesh.from_edit_mesh(active_obj.data)
 
+        region = context.region
+        rv3d = context.region_data
+
         # make picking
-        if self.curve_tool_mode == 'IDLE':
-            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
+        if self.curve_tool_mode == 'IDLE' and event.value == 'PRESS':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 # pick point test
                 m_coords = event.mouse_region_x, event.mouse_region_y
                 picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
@@ -197,9 +200,9 @@ class MI_CurveStretch(bpy.types.Operator):
                             # add to display
                             cur_main.curve_point_changed(self.active_curve, self.active_curve.curve_points.index(new_point), curve_settings.curve_resolution, self.active_curve.display_bezier)
 
-                return {'RUNNING_MODAL'}
+                #return {'RUNNING_MODAL'}
 
-            elif event.type in {'DEL'} and event.value == 'PRESS':
+            elif event.type in {'DEL'}:
                 for curve in self.all_curves:
                     sel_points = cur_main.get_selected_points(curve.curve_points)
                     if sel_points:
@@ -222,10 +225,24 @@ class MI_CurveStretch(bpy.types.Operator):
                     bm.normal_update()
                     bmesh.update_edit_mesh(active_obj.data)
 
-                return {'RUNNING_MODAL'}
+                #return {'RUNNING_MODAL'}
 
-        elif self.curve_tool_mode == 'SELECT_POINT':
-            if event.value == 'RELEASE':
+            elif event.type in {'S'} and event.shift:
+                if curve_settings.surface_snap is True:
+                    curve_settings.surface_snap = False
+                else:
+                    curve_settings.surface_snap = True
+                    if not self.picked_meshes:
+                        # get meshes for snapping
+                        sel_objects = [
+                            obj for obj in context.selected_objects if obj != active_obj]
+                        if sel_objects:
+                            self.picked_meshes = ut_base.get_obj_dup_meshes(
+                                sel_objects, context)
+
+        # TOOLS WORK
+        if self.curve_tool_mode == 'SELECT_POINT':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
                 self.curve_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
@@ -236,7 +253,7 @@ class MI_CurveStretch(bpy.types.Operator):
                     return {'RUNNING_MODAL'}
 
         elif self.curve_tool_mode == 'MOVE_POINT':
-            if event.value == 'RELEASE':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
                 # move point to the curve
                 for curve in self.all_curves:
                     selected_points = cur_main.get_selected_points(curve.curve_points)
@@ -252,27 +269,35 @@ class MI_CurveStretch(bpy.types.Operator):
                 # move points
                 m_coords = event.mouse_region_x, event.mouse_region_y
                 act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
-
-                #new_point_pos = None
-
                 new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
-
-                #if self.picked_meshes:
-                    #best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(
-                        #context, self.picked_meshes, m_coords, 10000.0)
-                    #if hit_position:
-                        #new_point_pos = hit_position
 
                 if new_point_pos:
                     move_offset = new_point_pos - act_point.position
+                    camera_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
+
                     for curve in self.all_curves:
                         selected_points = cur_main.get_selected_points(curve.curve_points)
                         if selected_points:
-                            for point in selected_points:
-                                point.position += move_offset
+
+                            # Snap to Surface
+                            if curve_settings.surface_snap is True:
+                                if self.picked_meshes:
+                                    for point in selected_points:
+                                        # get the ray from the viewport and mouse
+                                        point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, point.position + move_offset)
+                                        if point_pos_2d:
+                                            best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, point_pos_2d, 10000.0)
+                                            #best_obj, hit_normal, hit_position = ut_base.get_3dpoint_raycast(context, self.picked_meshes, point.position + move_offset, camera_dir, 10000.0)
+                                        if hit_position:
+                                            point.position = hit_position
+
+                            # Move Points without Snapping
+                            else:
+                                for point in selected_points:
+                                    point.position += move_offset
 
                             if len(selected_points) == 1:
-                                cur_main.curve_point_changed(curve, curve.curve_points.index(point), curve_settings.curve_resolution, curve.display_bezier)
+                                cur_main.curve_point_changed(curve, curve.curve_points.index(selected_points[0]), curve_settings.curve_resolution, curve.display_bezier)
                             else:
                                 cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
 
@@ -283,8 +308,8 @@ class MI_CurveStretch(bpy.types.Operator):
             #return {'RUNNING_MODAL'}
 
         else:
-            if event.value == 'RELEASE':
-                self.curve_tool_mode = 'IDLE'
+            if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
+                self.curve_tool_mode = 'IDLE'            
                 return {'RUNNING_MODAL'}
 
 
@@ -317,6 +342,7 @@ def reset_params(self):
     # loops code
     self.loops = None
     self.original_verts_data = []
+
 
 def finish_work(self, context):
     context.space_data.show_manipulator = self.manipulator

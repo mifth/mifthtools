@@ -232,7 +232,7 @@ class MI_CurveTest(bpy.types.Operator):
                                 point.position += move_offset
 
                             if len(selected_points) == 1:
-                                cur_main.curve_point_changed(curve, curve.curve_points.index(point), curve_settings.curve_resolution, curve.display_bezier)
+                                cur_main.curve_point_changed(curve, curve.curve_points.index(selected_points[0]), curve_settings.curve_resolution, curve.display_bezier)
                             else:
                                 cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
 
