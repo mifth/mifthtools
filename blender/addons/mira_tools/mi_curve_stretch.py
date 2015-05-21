@@ -149,7 +149,7 @@ class MI_CurveStretch(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
-        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+S")
+        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab")
 
         curve_settings = context.scene.mi_curve_settings
         cur_stretch_settings = context.scene.mi_cur_stretch_settings
@@ -227,7 +227,7 @@ class MI_CurveStretch(bpy.types.Operator):
 
                 #return {'RUNNING_MODAL'}
 
-            elif event.type in {'S'} and event.shift:
+            elif event.type in {'TAB'} and event.shift:
                 if curve_settings.surface_snap is True:
                     curve_settings.surface_snap = False
                 else:

@@ -170,7 +170,7 @@ class MI_Curve_Guide(bpy.types.Operator):
         # tooltip
         tooltip_text = None
         if self.curve_tool:
-            tooltip_text = "NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+S"
+            tooltip_text = "NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab"
 
             if curguide_settings.deform_type == 'Deform':
                 tooltip_text = "InvertUpVec: I, " + tooltip_text
@@ -179,7 +179,7 @@ class MI_Curve_Guide(bpy.types.Operator):
         context.area.header_text_set(tooltip_text)
 
         # key pressed
-        if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'RET', 'NUMPAD_ENTER', 'DEL', 'Z', 'X', 'I', 'S'}:
+        if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'RET', 'NUMPAD_ENTER', 'DEL', 'Z', 'X', 'I', 'TAB'}:
             if event.value == 'PRESS':
                 if self.tool_mode == 'IDLE':
                     if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
@@ -360,7 +360,7 @@ class MI_Curve_Guide(bpy.types.Operator):
                             cur_main.generate_bezier_points(self.curve_tool, self.curve_tool.display_bezier, curve_settings.curve_resolution)
                             self.curve_tool.active_point = None
 
-                    elif event.type in {'S'} and event.shift and self.curve_tool:
+                    elif event.type in {'TAB'} and event.shift and self.curve_tool:
                         if curve_settings.surface_snap is True:
                             curve_settings.surface_snap = False
                         else:
