@@ -65,8 +65,8 @@ class MI_CurveTest(bpy.types.Operator):
             args = (self, context)
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-            self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
-            self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+            self.mi_curve_test_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
+            self.mi_curve_test_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
 
             ## test looptools
             #active_obj = context.scene.objects.active
@@ -142,13 +142,15 @@ class MI_CurveTest(bpy.types.Operator):
         #print(context.active_operator)
         context.area.tag_redraw()
 
+        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L")
+
         curve_settings = context.scene.mi_curve_settings
+        m_coords = event.mouse_region_x, event.mouse_region_y
 
         # make picking
         if self.curve_tool_mode == 'IDLE':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
                 # pick point test
-                m_coords = event.mouse_region_x, event.mouse_region_y
                 picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
                 if picked_point:
                     self.deform_mouse_pos = m_coords
@@ -185,7 +187,7 @@ class MI_CurveTest(bpy.types.Operator):
                             # add to display
                             cur_main.curve_point_changed(self.active_curve, self.active_curve.curve_points.index(new_point), curve_settings.curve_resolution, self.active_curve.display_bezier)
 
-                return {'RUNNING_MODAL'}
+                #return {'RUNNING_MODAL'}
 
             elif event.type in {'DEL'} and event.value == 'PRESS':
                 for curve in self.all_curves:
@@ -201,15 +203,29 @@ class MI_CurveTest(bpy.types.Operator):
                         cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
                         curve.active_point = None
 
-                return {'RUNNING_MODAL'}
+                #return {'RUNNING_MODAL'}
 
-        elif self.curve_tool_mode == 'SELECT_POINT':
+            # Select Linked
+            elif event.type == 'L':
+                picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
+
+                if picked_point:
+                    if not event.shift:
+                        for curve in self.all_curves:
+                            if curve is not picked_curve:
+                                cur_main.select_all_points(curve.curve_points, False)
+                                curve.active_point = None
+
+                    cur_main.select_all_points(picked_curve.curve_points, True)
+                    picked_curve.active_point = picked_point.point_id
+
+        # TOOL WORK
+        if self.curve_tool_mode == 'SELECT_POINT':
             if event.value == 'RELEASE':
                 self.curve_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
                 # set to move point
-                m_coords = event.mouse_region_x, event.mouse_region_y
                 if ( Vector((m_coords[0], m_coords[1])) - Vector((self.deform_mouse_pos[0], self.deform_mouse_pos[1])) ).length > 4.0:
                     self.curve_tool_mode = 'MOVE_POINT'
                     return {'RUNNING_MODAL'}
@@ -220,7 +236,6 @@ class MI_CurveTest(bpy.types.Operator):
                 return {'RUNNING_MODAL'}
             else:
                 # move points
-                m_coords = event.mouse_region_x, event.mouse_region_y
                 act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
                 new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
                 if new_point_pos:
@@ -243,15 +258,15 @@ class MI_CurveTest(bpy.types.Operator):
             #return {'RUNNING_MODAL'}
 
         else:
-            if event.value == 'RELEASE':
+            if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 self.curve_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
 
 
         # main stuff
         if event.type in {'RIGHTMOUSE', 'ESC'}:
-            bpy.types.SpaceView3D.draw_handler_remove(self.mi_deform_handle_3d, 'WINDOW')
-            bpy.types.SpaceView3D.draw_handler_remove(self.mi_deform_handle_2d, 'WINDOW')
+            bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_test_3d, 'WINDOW')
+            bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_test_2d, 'WINDOW')
 
             # clear
             #display_bezier = None

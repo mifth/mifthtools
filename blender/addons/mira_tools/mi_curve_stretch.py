@@ -149,7 +149,7 @@ class MI_CurveStretch(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
-        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab")
+        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L")
 
         curve_settings = context.scene.mi_curve_settings
         cur_stretch_settings = context.scene.mi_cur_stretch_settings
@@ -158,12 +158,12 @@ class MI_CurveStretch(bpy.types.Operator):
 
         region = context.region
         rv3d = context.region_data
+        m_coords = event.mouse_region_x, event.mouse_region_y
 
         # make picking
         if self.curve_tool_mode == 'IDLE' and event.value == 'PRESS':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 # pick point test
-                m_coords = event.mouse_region_x, event.mouse_region_y
                 picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
                 if picked_point:
                     self.deform_mouse_pos = m_coords
@@ -240,6 +240,20 @@ class MI_CurveStretch(bpy.types.Operator):
                             self.picked_meshes = ut_base.get_obj_dup_meshes(
                                 sel_objects, context)
 
+            # Select Linked
+            elif event.type == 'L':
+                picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
+
+                if picked_point:
+                    if not event.shift:
+                        for curve in self.all_curves:
+                            if curve is not picked_curve:
+                                cur_main.select_all_points(curve.curve_points, False)
+                                curve.active_point = None
+
+                    cur_main.select_all_points(picked_curve.curve_points, True)
+                    picked_curve.active_point = picked_point.point_id
+
         # TOOLS WORK
         if self.curve_tool_mode == 'SELECT_POINT':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
@@ -247,7 +261,6 @@ class MI_CurveStretch(bpy.types.Operator):
                 return {'RUNNING_MODAL'}
             else:
                 # set to move point
-                m_coords = event.mouse_region_x, event.mouse_region_y
                 if ( Vector((m_coords[0], m_coords[1])) - Vector((self.deform_mouse_pos[0], self.deform_mouse_pos[1])) ).length > 4.0:
                     self.curve_tool_mode = 'MOVE_POINT'
                     return {'RUNNING_MODAL'}
@@ -267,7 +280,6 @@ class MI_CurveStretch(bpy.types.Operator):
                 return {'RUNNING_MODAL'}
             else:
                 # move points
-                m_coords = event.mouse_region_x, event.mouse_region_y
                 act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
                 new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
 
