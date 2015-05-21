@@ -118,7 +118,7 @@ class MI_CurveStretch(bpy.types.Operator):
 
                     # move point to the curve
                     for curve in self.all_curves:
-                        update_curve_line(active_obj, self.active_curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
+                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
 
                     # get meshes for snapping
                     if curve_settings.surface_snap is True:
