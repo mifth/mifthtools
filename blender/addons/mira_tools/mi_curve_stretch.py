@@ -149,7 +149,7 @@ class MI_CurveStretch(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
-        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L")
+        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L, SpreadMode: M")
 
         curve_settings = context.scene.mi_curve_settings
         cur_stretch_settings = context.scene.mi_cur_stretch_settings
@@ -254,6 +254,16 @@ class MI_CurveStretch(bpy.types.Operator):
                     cur_main.select_all_points(picked_curve.curve_points, True)
                     picked_curve.active_point = picked_point.point_id
 
+            # Change Spread Type
+            elif event.type == 'M':
+                if cur_stretch_settings.spread_mode == 'ORIGINAL':
+                    cur_stretch_settings.spread_mode = 'UNIFORM'
+                else:
+                    cur_stretch_settings.spread_mode = 'ORIGINAL'
+
+                for curve in self.all_curves:
+                    update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
+
         # TOOLS WORK
         if self.curve_tool_mode == 'SELECT_POINT':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
@@ -271,7 +281,7 @@ class MI_CurveStretch(bpy.types.Operator):
                 for curve in self.all_curves:
                     selected_points = cur_main.get_selected_points(curve.curve_points)
                     if selected_points:
-                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(self.active_curve)])
+                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
 
                 bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
