@@ -304,7 +304,7 @@ def mi_curve_draw_3d(self, context):
         for curve in self.all_curves:
             for cur_point in curve.curve_points:
                 if cur_point.point_id in curve.display_bezier:
-                    mi_curve_draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base)
+                    mi_curve_draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
 
 
 # TODO MOVE TO UTILITIES
@@ -328,9 +328,12 @@ def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
 
 
 # TODO MOVE TO UTILITIES
-def mi_curve_draw_3d_polyline(points, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
+def mi_curve_draw_3d_polyline(points, p_size, p_col, x_ray):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glLineWidth(1)
+
+    if x_ray is True:
+        bgl.glDisable(bgl.GL_DEPTH_TEST)
 
     bgl.glPointSize(p_size)
 #    bgl.glBegin(bgl.GL_LINE_LOOP)
@@ -340,6 +343,9 @@ def mi_curve_draw_3d_polyline(points, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
 
     for point in points:
         bgl.glVertex3f(point[0], point[1], point[2])
+
+    if x_ray is True:
+        bgl.glEnable(bgl.GL_DEPTH_TEST)
 
     bgl.glEnd()
 
@@ -358,30 +364,32 @@ def draw_curve_2d(curves, context):
         for cu_point in curve.curve_points:
             point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
 
-            p_col = col_man.cur_point_base
-            if curve.closed is True:
-                if curve.curve_points.index(cu_point) == 0:
-                    p_col = col_man.cur_point_closed_start
-                elif curve.curve_points.index(cu_point) == len(curve.curve_points) - 1:
-                    p_col = col_man.cur_point_closed_end
+            if point_pos_2d:
+                p_col = col_man.cur_point_base
+                if curve.closed is True:
+                    if curve.curve_points.index(cu_point) == 0:
+                        p_col = col_man.cur_point_closed_start
+                    elif curve.curve_points.index(cu_point) == len(curve.curve_points) - 1:
+                        p_col = col_man.cur_point_closed_end
 
-            if cu_point.select:
-                p_col = col_man.cur_point_selected
-            if cu_point.point_id == curve.active_point:
-                p_col = col_man.cur_point_active
-            mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
+                if cu_point.select:
+                    p_col = col_man.cur_point_selected
+                if cu_point.point_id == curve.active_point:
+                    p_col = col_man.cur_point_active
+                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
-            # Handlers
-            if curve_settings.draw_handlers:
-            #if curve.curve_points.index(cu_point) < len(curve.curve_points)-1:
-                if cu_point.handle1:
-                    point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
-                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, col_man.cur_handle_1_base)
-            #if curve.curve_points.index(cu_point) > 0:
-                if cu_point.handle2:
-                    point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
-                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 3, col_man.cur_handle_2_base)
-
+                # Handlers
+                if curve_settings.draw_handlers:
+                #if curve.curve_points.index(cu_point) < len(curve.curve_points)-1:
+                    if cu_point.handle1:
+                        handle_1_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
+                        if handle_1_pos_2d:
+                            mi_draw_2d_point(handle_1_pos_2d.x, handle_1_pos_2d.y, 3, col_man.cur_handle_1_base)
+                #if curve.curve_points.index(cu_point) > 0:
+                    if cu_point.handle2:
+                        handle_2_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
+                        if handle_2_pos_2d:
+                            mi_draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, 3, col_man.cur_handle_2_base)
 
 # --------------------------------------- OLD STUFF
 
