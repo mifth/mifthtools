@@ -45,6 +45,10 @@ class MI_ExtrudePanel(bpy.types.Panel):
             if extrude_settings.do_symmetry:
                 layout.prop(extrude_settings, "symmetry_axys", text='Axys')
 
+        layout.separator()
+        #layout.label(text="CurveSurface:")
+        layout.operator("mira.curve_surfaces", text="CurveSurfacesTest")
+
 
 class MI_DeformPanel(bpy.types.Panel):
     bl_label = "Deform"
@@ -68,16 +72,18 @@ class MI_DeformPanel(bpy.types.Panel):
         layout.prop(lin_def_settings, "manual_update", text='ManualUpdate')
 
         layout.separator()
-        layout.label(text="CurveStretch:")
+        #layout.label(text="CurveStretch:")
         layout.operator("mira.curve_stretch", text="CurveStretch")
-        layout.prop(cur_stretch_settings, "points_number", text='PointsNumber')
-        layout.prop(cur_stretch_settings, "spread_mode", text='Spread')
+        row = layout.row()
+        row.prop(cur_stretch_settings, "points_number", text='Points')
+        row.prop(cur_stretch_settings, "spread_mode", text='')
 
         layout.separator()
-        layout.label(text="CurveGuide:")
+        #layout.label(text="CurveGuide:")
         layout.operator("mira.curve_guide", text="CurveGuide")
-        layout.prop(curguide_settings, "points_number", text='PointsNumber')
-        layout.prop(curguide_settings, "deform_type", text='DeformType')
+        row = layout.row()
+        row.prop(curguide_settings, "points_number", text='Points')
+        row.prop(curguide_settings, "deform_type", text='')
 
 
 class MI_CurveSettingsPanel(bpy.types.Panel):

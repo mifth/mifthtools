@@ -670,6 +670,7 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                     break
 
 
+# we could use cur_main.get_bezier_line() method but we need some modifications to get point's index
 def get_bezier_area_data(curve):
     curve_vecs = []
     points_indexes = {}

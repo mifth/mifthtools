@@ -398,28 +398,37 @@ def pass_line(vecs, is_closed_line):
 def get_bezier_line(curve, active_obj, local_coords):
     curve_vecs = []
     for point in curve.curve_points:
+        # 0 point has b_points in only closed curve
         if curve.curve_points.index(point) == 0 and curve.closed is True:
             continue  # only for closed curve
 
         b_points = curve.display_bezier.get(point.point_id)
         if b_points:
+            # get lengths
+            b_point_len =  len(b_points)
+            curve_points_len = len(curve.curve_points)
             #b_points = b_points.copy()
+
             for b_p in b_points:
-                if local_coords is True:
-                    curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
-                else:
-                    curve_vecs.append(b_p)
+                # if b_p is not the last in the point. But if b_p is the last in the end of the curve.
+                if b_points.index(b_p) != b_point_len - 1 or curve.curve_points.index(point) == curve_points_len - 1:
+                    if local_coords is True:
+                        curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
+                    else:
+                        curve_vecs.append(b_p)
 
     # only for closed curve to apply last bezier points
     if curve.closed is True:
         b_points = curve.display_bezier.get(curve.curve_points[0].point_id)
         if b_points:
             #b_points = b_points.copy()
+
             for b_p in b_points:
-                if local_coords is True:
-                    curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
-                else:
-                    curve_vecs.append(b_p)
+                if b_points.index(b_p) != 0:
+                    if local_coords is True:
+                        curve_vecs.append(active_obj.matrix_world.inverted() * b_p)
+                    else:
+                        curve_vecs.append(b_p)
 
     line = pass_line(curve_vecs, curve.closed)
     return line

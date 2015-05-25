@@ -73,8 +73,9 @@ class MI_CurveStretch(bpy.types.Operator):
 
     # loops code
     loops = None
-    manipulator = None
     original_verts_data = None
+
+    manipulator = None
 
     def invoke(self, context, event):
         reset_params(self)
