@@ -243,9 +243,10 @@ def pick_curve_point(curve, context, mouse_coords):
 
     picked_point = None
     picked_point_length = None
+    mouse_vec = Vector(mouse_coords)
     for cu_point in curve.curve_points:
         point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
-        the_length = (point_pos_2d - Vector(mouse_coords)).length
+        the_length = (point_pos_2d - mouse_vec).length
         if the_length <= 9.0:
             if picked_point is None:
                 picked_point = cu_point

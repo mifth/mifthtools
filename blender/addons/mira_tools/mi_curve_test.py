@@ -218,6 +218,7 @@ class MI_CurveTest(bpy.types.Operator):
 
                     cur_main.select_all_points(picked_curve.curve_points, True)
                     picked_curve.active_point = picked_point.point_id
+                    self.active_curve = picked_curve
 
         # TOOL WORK
         if self.curve_tool_mode == 'SELECT_POINT':

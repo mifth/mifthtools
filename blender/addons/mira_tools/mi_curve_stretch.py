@@ -43,10 +43,10 @@ class MI_CurveStretchSettings(bpy.types.PropertyGroup):
     points_number = IntProperty(default=5, min=2, max=128)
     spread_mode = EnumProperty(
         name = "Spread Mode",
-        items = (('ORIGINAL', 'ORIGINAL', ''),
-                ('UNIFORM', 'UNIFORM', '')
+        items = (('Original', 'Original', ''),
+                ('Uniform', 'Uniform', '')
                 ),
-        default = 'ORIGINAL'
+        default = 'Original'
     )
 
 
@@ -254,13 +254,14 @@ class MI_CurveStretch(bpy.types.Operator):
 
                     cur_main.select_all_points(picked_curve.curve_points, True)
                     picked_curve.active_point = picked_point.point_id
+                    self.active_curve = picked_curve
 
             # Change Spread Type
             elif event.type == 'M':
-                if cur_stretch_settings.spread_mode == 'ORIGINAL':
-                    cur_stretch_settings.spread_mode = 'UNIFORM'
+                if cur_stretch_settings.spread_mode == 'Original':
+                    cur_stretch_settings.spread_mode = 'Uniform'
                 else:
-                    cur_stretch_settings.spread_mode = 'ORIGINAL'
+                    cur_stretch_settings.spread_mode = 'Original'
 
                 for curve in self.all_curves:
                     update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
@@ -375,7 +376,7 @@ def update_curve_line(active_obj, curve_to_update, loops, all_curves, bm, spread
     line = cur_main.get_bezier_line(curve_to_update, active_obj, True)
     loop_verts = [bm.verts[i] for i in loops[all_curves.index(curve_to_update)][0]]
 
-    if spread_mode == 'ORIGINAL':
+    if spread_mode == 'Original':
         cur_main.verts_to_line(loop_verts, line, original_verts_data, curve_to_update.closed)
     else:
         cur_main.verts_to_line(loop_verts, line, None, curve_to_update.closed)
@@ -384,7 +385,7 @@ def update_curve_line(active_obj, curve_to_update, loops, all_curves, bm, spread
 def mi_curve_draw_2d(self, context):
     active_obj = context.scene.objects.active
     if self.all_curves:
-        draw_curve_2d(self.all_curves, context)
+        draw_curve_2d(self.all_curves, self.active_curve, context)
 
 
 def mi_curve_draw_3d(self, context):
@@ -399,7 +400,7 @@ def mi_curve_draw_3d(self, context):
                     mi_curve_draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
 
 
-def draw_curve_2d(curves, context):
+def draw_curve_2d(curves, active_cur, context):
     region = context.region
     rv3d = context.region_data
     curve_settings = context.scene.mi_curve_settings
@@ -418,7 +419,7 @@ def draw_curve_2d(curves, context):
 
                 if cu_point.select:
                     p_col = col_man.cur_point_selected
-                if cu_point.point_id == curve.active_point:
+                if cu_point.point_id == curve.active_point and curve is active_cur:
                     p_col = col_man.cur_point_active
                 mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 

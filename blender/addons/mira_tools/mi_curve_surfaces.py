@@ -38,6 +38,98 @@ from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
 from . import mi_looptools as loop_t
 
+
+#class MI_CurveSurfacesSettings(bpy.types.PropertyGroup):
+    #points_number = IntProperty(default=5, min=2, max=128)
+    #spread_mode = EnumProperty(
+        #name = "Spread Mode",
+        #items = (('Original', 'Original', ''),
+                #('Uniform', 'Uniform', '')
+                #),
+        #default = 'Original'
+    #)
+
+
+class MI_SurfaceObject():
+
+    # class constructor
+    def __init__(self, other_surfaces, main_loop, surf_type, bm, obj):
+
+        self.main_loop = main_loop
+        self.main_loop_center = None
+        # main_loop_center WILL BE STORED IN WORLD COORDINATES
+        if main_loop:
+            loop_verts_pos = [bm.verts[vert_id] for vert_id in main_loop[0]]
+            self.main_loop_center = ut_base.get_vertices_center(loop_verts_pos, obj, False)
+
+        self.all_curves = []
+        self.active_curve = None
+
+        # surf_type is a type of loops to draw
+        self.surf_type = surf_type
+        self.surf_id = None  # string
+
+        other_surfs_ids = None
+        if other_surfaces:
+            other_surfs_ids = get_surfs_ids(other_surfaces)
+        self.surf_id = ut_base.generate_id(other_surfs_ids)
+
+
+def get_surfs_ids(surfaces):
+    other_ids = []
+    for surf in surfaces:
+        other_ids.append(surf.surf_id)
+
+    return other_ids
+
+
+def pick_all_surfs_point(all_surfs, context, mouse_coords):
+    best_point = None
+    best_length = None
+    choosen_curve = None
+    choosen_surf = None
+
+    for surf in all_surfs:
+        picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(surf.all_curves, context, mouse_coords)
+
+        if picked_point is not None:
+            if best_point is None:
+                choosen_surf = surf
+                choosen_curve = picked_curve
+                best_point = picked_point
+                best_length = picked_length
+            elif picked_length < best_length:
+                choosen_surf = surf
+                choosen_curve = picked_curve
+                best_point = picked_point
+                best_length = picked_length
+
+    return best_point, choosen_curve, choosen_surf
+
+
+def pick_surf(all_surfs, context, mouse_coords):
+    region = context.region
+    rv3d = context.region_data
+
+    picked_surf = None
+    picked_point_length = None
+    mouse_vec = Vector(mouse_coords)
+    for surf in all_surfs:
+        if surf.main_loop_center:
+            point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, surf.main_loop_center)
+            the_length = (point_pos_2d - mouse_vec).length
+            if the_length <= 9.0:
+                if picked_surf is None:
+                    picked_surf = surf
+                    picked_point_length = the_length
+                else:
+                    if the_length < picked_point_length:
+                        picked_surf = surf
+                        picked_point_length = the_length                    
+
+    return picked_surf
+
+
 class MI_CurveSurfaces(bpy.types.Operator):
     """Draw a line with the mouse"""
     bl_idname = "mira.curve_surfaces"
@@ -51,15 +143,15 @@ class MI_CurveSurfaces(bpy.types.Operator):
                  'MOUSEMOVE']
 
     # curve tool mode
-    curve_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT')
-    curve_tool_mode = 'IDLE'
+    surf_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT')
+    surf_tool_mode = 'IDLE'
 
-    all_curves = None
-    active_curve = None
+    all_surfs = None
+    active_surf = None
     deform_mouse_pos = None
 
     # loops code
-    loops = None
+    #loops = None
     #original_verts_data = None
 
     manipulator = None
@@ -77,16 +169,19 @@ class MI_CurveSurfaces(bpy.types.Operator):
             bm = bmesh.from_edit_mesh(active_obj.data)
 
             # get loops
-            self.loops = loop_t.get_connected_input(bm)
-            self.loops = loop_t.check_loops(self.loops, bm)
+            all_loops = loop_t.get_connected_input(bm)
+            all_loops = loop_t.check_loops(all_loops, bm)
+            for loop in all_loops:
+                surf = MI_SurfaceObject(self.all_surfs, loop, None, bm, active_obj)
+                self.all_surfs.append(surf)
 
             self.manipulator = context.space_data.show_manipulator
             context.space_data.show_manipulator = False
 
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-            self.mi_curve_test_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
-            self.mi_curve_test_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+            self.mi_curve_surf_3d = bpy.types.SpaceView3D.draw_handler_add(mi_surf_draw_3d, args, 'WINDOW', 'POST_VIEW')
+            self.mi_curve_surf_2d = bpy.types.SpaceView3D.draw_handler_add(mi_surf_draw_2d, args, 'WINDOW', 'POST_PIXEL')
 
             context.window_manager.modal_handler_add(self)
             return {'RUNNING_MODAL'}
@@ -105,125 +200,135 @@ class MI_CurveSurfaces(bpy.types.Operator):
         m_coords = event.mouse_region_x, event.mouse_region_y
 
         # make picking
-        if self.curve_tool_mode == 'IDLE':
+        if self.surf_tool_mode == 'IDLE':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
                 # pick point test
-                picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
+                picked_point, picked_curve, picked_surf = pick_all_surfs_point(self.all_surfs, context, m_coords)
                 if picked_point:
                     self.deform_mouse_pos = m_coords
-                    self.active_curve = picked_curve
-                    self.active_curve.active_point = picked_point.point_id
+                    self.active_surf = picked_surf
+                    self.active_surf.active_curve = picked_curve
+                    self.active_surf.active_curve.active_point = picked_point.point_id
                     additive_sel = event.shift
 
                     if additive_sel is False:
-                        for curve in self.all_curves:
-                            if curve is not self.active_curve and picked_point.select is False:
-                                cur_main.select_all_points(curve.curve_points, False)  # deselect points
-                                curve.active_point = None
-
-                    cur_main.select_point(self.active_curve, picked_point, additive_sel)
-
-                    self.curve_tool_mode = 'SELECT_POINT'
-                else:
-                    # add point
-                    if event.ctrl and self.active_curve and self.active_curve.active_point:
-                        act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
-                        new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
-
-                        if new_point_pos:
-                            for curve in self.all_curves:
-                                if curve is not self.active_curve:
+                        for surf in self.all_surfs:
+                            for curve in surf.all_curves:
+                                if curve is not surf.active_curve and picked_point.select is False:
                                     cur_main.select_all_points(curve.curve_points, False)  # deselect points
                                     curve.active_point = None
 
-                            new_point = cur_main.add_point(new_point_pos, self.active_curve)
+                    cur_main.select_point(self.active_surf.active_curve, picked_point, additive_sel)
 
-                            self.active_curve.active_point = new_point.point_id
-                            self.curve_tool_mode = 'MOVE_POINT'
+                    self.surf_tool_mode = 'SELECT_POINT'
+                else:
+                    # add point
+                    if event.ctrl and self.active_surf and self.active_surf.active_curve and self.active_surf.active_curve.active_point:
+                        act_point = cur_main.get_point_by_id(self.active_surf.active_curve.curve_points, self.active_surf.active_curve.active_point)
+                        new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
+
+                        if new_point_pos:
+                            for curve in self.active_surf.all_curves:
+                                if curve is not self.active_surf.active_curve:
+                                    cur_main.select_all_points(curve.curve_points, False)  # deselect points
+                                    curve.active_point = None
+
+                            new_point = cur_main.add_point(new_point_pos, self.active_surf.active_curve)
+
+                            self.active_surf.active_curve.active_point = new_point.point_id
+                            self.surf_tool_mode = 'MOVE_POINT'
 
                             # add to display
-                            cur_main.curve_point_changed(self.active_curve, self.active_curve.curve_points.index(new_point), curve_settings.curve_resolution, self.active_curve.display_bezier)
+                            cur_main.curve_point_changed(self.active_surf.active_curve, self.active_surf.active_curve.curve_points.index(new_point), curve_settings.curve_resolution, self.active_surf.active_curve.display_bezier)
+
+                    # pick surf
+                    else:
+                        picked_surf = pick_surf(self.all_surfs, context, m_coords)
+                        if picked_surf:
+                            self.active_surf = picked_surf
 
                 #return {'RUNNING_MODAL'}
 
-            elif event.type in {'DEL'} and event.value == 'PRESS':
-                for curve in self.all_curves:
-                    sel_points = cur_main.get_selected_points(curve.curve_points)
-                    if sel_points:
-                        for point in sel_points:
-                            #the_act_point = cur_main.get_point_by_id(curve.curve_points, curve.active_point)
-                            #the_act_point_index = curve.curve_points.index(point)
+            #elif event.type in {'DEL'} and event.value == 'PRESS':
+                #for curve in self.all_curves:
+                    #sel_points = cur_main.get_selected_points(curve.curve_points)
+                    #if sel_points:
+                        #for point in sel_points:
+                            ##the_act_point = cur_main.get_point_by_id(curve.curve_points, curve.active_point)
+                            ##the_act_point_index = curve.curve_points.index(point)
 
-                            cur_main.delete_point(point, curve, curve.display_bezier, curve_settings.curve_resolution)
+                            #cur_main.delete_point(point, curve, curve.display_bezier, curve_settings.curve_resolution)
 
-                        curve.display_bezier.clear()
-                        cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
-                        curve.active_point = None
+                        #curve.display_bezier.clear()
+                        #cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
+                        #curve.active_point = None
 
-                #return {'RUNNING_MODAL'}
+                ##return {'RUNNING_MODAL'}
 
-            # Select Linked
-            elif event.type == 'L':
-                picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
+            ## Select Linked
+            #elif event.type == 'L':
+                #picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
 
-                if picked_point:
-                    if not event.shift:
-                        for curve in self.all_curves:
-                            if curve is not picked_curve:
-                                cur_main.select_all_points(curve.curve_points, False)
-                                curve.active_point = None
+                #if picked_point:
+                    #if not event.shift:
+                        #for curve in self.all_curves:
+                            #if curve is not picked_curve:
+                                #cur_main.select_all_points(curve.curve_points, False)
+                                #curve.active_point = None
 
-                    cur_main.select_all_points(picked_curve.curve_points, True)
-                    picked_curve.active_point = picked_point.point_id
+                    #cur_main.select_all_points(picked_curve.curve_points, True)
+                    #picked_curve.active_point = picked_point.point_id
+                    #self.active_curve = picked_curve
 
         # TOOL WORK
-        if self.curve_tool_mode == 'SELECT_POINT':
+        if self.surf_tool_mode == 'SELECT_POINT':
             if event.value == 'RELEASE':
-                self.curve_tool_mode = 'IDLE'
+                self.surf_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
                 # set to move point
                 if ( Vector((m_coords[0], m_coords[1])) - Vector((self.deform_mouse_pos[0], self.deform_mouse_pos[1])) ).length > 4.0:
-                    self.curve_tool_mode = 'MOVE_POINT'
+                    self.surf_tool_mode = 'MOVE_POINT'
                     return {'RUNNING_MODAL'}
 
-        elif self.curve_tool_mode == 'MOVE_POINT':
+        elif self.surf_tool_mode == 'MOVE_POINT':
             if event.value == 'RELEASE':
-                self.curve_tool_mode = 'IDLE'
+                self.surf_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
                 # move points
-                act_point = cur_main.get_point_by_id(self.active_curve.curve_points, self.active_curve.active_point)
+                act_point = cur_main.get_point_by_id(self.active_surf.active_curve.curve_points, self.active_surf.active_curve.active_point)
                 new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
                 if new_point_pos:
                     move_offset = new_point_pos - act_point.position
-                    for curve in self.all_curves:
-                        selected_points = cur_main.get_selected_points(curve.curve_points)
-                        if selected_points:
-                            for point in selected_points:
-                                point.position += move_offset
+                    for surf in self.all_surfs:
+                        for curve in surf.all_curves:
+                            selected_points = cur_main.get_selected_points(curve.curve_points)
+                            if selected_points:
+                                for point in selected_points:
+                                    point.position += move_offset
 
-                            if len(selected_points) == 1:
-                                cur_main.curve_point_changed(curve, curve.curve_points.index(selected_points[0]), curve_settings.curve_resolution, curve.display_bezier)
-                            else:
-                                cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
+                                if len(selected_points) == 1:
+                                    cur_main.curve_point_changed(curve, curve.curve_points.index(selected_points[0]), curve_settings.curve_resolution, curve.display_bezier)
+                                else:
+                                    cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
 
                 return {'RUNNING_MODAL'}
 
-        #elif self.curve_tool_mode == 'ADD_POINT':
-            #self.curve_tool_mode = 'MOVE_POINT'
+        #elif self.surf_tool_mode == 'ADD_POINT':
+            #self.surf_tool_mode = 'MOVE_POINT'
             #return {'RUNNING_MODAL'}
 
         else:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
-                self.curve_tool_mode = 'IDLE'
+                self.surf_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
 
 
         # main stuff
         if event.type in {'RIGHTMOUSE', 'ESC'}:
-            bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_test_3d, 'WINDOW')
-            bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_test_2d, 'WINDOW')
+            bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_surf_3d, 'WINDOW')
+            bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_surf_2d, 'WINDOW')
 
             # clear
             finish_work(self, context)
@@ -239,34 +344,83 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
 def reset_params(self):
     # reset base curve_settings
-    self.curve_tool_mode = 'IDLE'
-    self.all_curves = []
-    self.active_curve = None
+    self.surf_tool_mode = 'IDLE'
+    self.all_surfs = []
+    self.active_surf = None
     self.deform_mouse_pos = None
 
-    self.loops = None
+    #self.loops = None
 
 
 def finish_work(self, context):
     context.space_data.show_manipulator = self.manipulator
 
 
-def mi_curve_draw_2d(self, context):
+def mi_surf_draw_2d(self, context):
     active_obj = context.scene.objects.active
-    if self.all_curves:
-        draw_curve_2d(self.all_curves, context)
+    if self.all_surfs:
+        draw_surf_2d(self.all_surfs, self.active_surf, context)
 
 
-def mi_curve_draw_3d(self, context):
+def mi_surf_draw_3d(self, context):
     active_obj = context.scene.objects.active
-    if self.all_curves:
-        # test1
-        region = context.region
-        rv3d = context.region_data
-        for curve in self.all_curves:
-            for cur_point in curve.curve_points:
-                if cur_point.point_id in curve.display_bezier:
-                    mi_curve_draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
+    for surf in self.all_surfs:
+        if surf.all_curves:
+            # test1
+            region = context.region
+            rv3d = context.region_data
+            for curve in surf.all_curves:
+                for cur_point in curve.curve_points:
+                    if cur_point.point_id in curve.display_bezier:
+                        mi_draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
+
+
+def draw_surf_2d(surfs, active_surf, context):
+    region = context.region
+    rv3d = context.region_data
+    curve_settings = context.scene.mi_curve_settings
+    # coord = event.mouse_region_x, event.mouse_region_y
+    for surf in surfs:
+        # draw loops center
+        if surf.main_loop_center:
+            surf_center_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, surf.main_loop_center)
+            if surf_center_2d:
+                if surf is active_surf:
+                    mi_draw_2d_point(surf_center_2d.x, surf_center_2d.y, 6, (0.7,0.75,0.95,1.0))
+                else:
+                    mi_draw_2d_point(surf_center_2d.x, surf_center_2d.y, 6, (0.5,0.5,0.8,1.0))
+
+        # draw curves points
+        for curve in surf.all_curves:
+            for cu_point in curve.curve_points:
+                point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
+
+                if point_pos_2d:
+                    p_col = col_man.cur_point_base
+                    if curve.closed is True:
+                        if curve.curve_points.index(cu_point) == 0:
+                            p_col = col_man.cur_point_closed_start
+                        elif curve.curve_points.index(cu_point) == len(curve.curve_points) - 1:
+                            p_col = col_man.cur_point_closed_end
+
+                    if cu_point.select:
+                        p_col = col_man.cur_point_selected
+                    if active_surf and cu_point.point_id == curve.active_point and curve is active_surf.active_curve:
+                        p_col = col_man.cur_point_active
+                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
+
+                    # Handlers
+                    if curve_settings.draw_handlers:
+                    #if curve.curve_points.index(cu_point) < len(curve.curve_points)-1:
+                        if cu_point.handle1:
+                            handle_1_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
+                            if handle_1_pos_2d:
+                                mi_draw_2d_point(handle_1_pos_2d.x, handle_1_pos_2d.y, 3, col_man.cur_handle_1_base)
+                    #if curve.curve_points.index(cu_point) > 0:
+                        if cu_point.handle2:
+                            handle_2_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
+                            if handle_2_pos_2d:
+                                mi_draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, 3, col_man.cur_handle_2_base)
 
 
 # TODO MOVE TO UTILITIES
@@ -290,7 +444,7 @@ def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
 
 
 # TODO MOVE TO UTILITIES
-def mi_curve_draw_3d_polyline(points, p_size, p_col, x_ray):
+def mi_draw_3d_polyline(points, p_size, p_col, x_ray):
     bgl.glEnable(bgl.GL_BLEND)
     bgl.glLineWidth(1)
 
@@ -315,41 +469,4 @@ def mi_curve_draw_3d_polyline(points, p_size, p_col, x_ray):
     bgl.glLineWidth(1)
     bgl.glDisable(bgl.GL_BLEND)
     bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
-
-
-def draw_curve_2d(curves, context):
-    region = context.region
-    rv3d = context.region_data
-    curve_settings = context.scene.mi_curve_settings
-    # coord = event.mouse_region_x, event.mouse_region_y
-    for curve in curves:
-        for cu_point in curve.curve_points:
-            point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
-
-            if point_pos_2d:
-                p_col = col_man.cur_point_base
-                if curve.closed is True:
-                    if curve.curve_points.index(cu_point) == 0:
-                        p_col = col_man.cur_point_closed_start
-                    elif curve.curve_points.index(cu_point) == len(curve.curve_points) - 1:
-                        p_col = col_man.cur_point_closed_end
-
-                if cu_point.select:
-                    p_col = col_man.cur_point_selected
-                if cu_point.point_id == curve.active_point:
-                    p_col = col_man.cur_point_active
-                mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
-
-                # Handlers
-                if curve_settings.draw_handlers:
-                #if curve.curve_points.index(cu_point) < len(curve.curve_points)-1:
-                    if cu_point.handle1:
-                        handle_1_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
-                        if handle_1_pos_2d:
-                            mi_draw_2d_point(handle_1_pos_2d.x, handle_1_pos_2d.y, 3, col_man.cur_handle_1_base)
-                #if curve.curve_points.index(cu_point) > 0:
-                    if cu_point.handle2:
-                        handle_2_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
-                        if handle_2_pos_2d:
-                            mi_draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, 3, col_man.cur_handle_2_base)
 
