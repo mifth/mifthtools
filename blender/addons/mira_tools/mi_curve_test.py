@@ -57,12 +57,27 @@ class MI_CurveTest(bpy.types.Operator):
     active_curve = None
     deform_mouse_pos = None
 
+    picked_meshes = None
+
     def invoke(self, context, event):
         reset_params(self)
 
         if context.area.type == 'VIEW_3D':
             # the arguments we pass the the callbackection
             args = (self, context)
+
+            curve_settings = context.scene.mi_curve_settings
+            active_obj = context.scene.objects.active
+            bm = bmesh.from_edit_mesh(active_obj.data)
+
+            # get meshes for snapping
+            if curve_settings.surface_snap is True:
+                sel_objects = [
+                    obj for obj in context.selected_objects if obj != active_obj]
+                if sel_objects:
+                    self.picked_meshes = ut_base.get_obj_dup_meshes(
+                        sel_objects, context)
+
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
             self.mi_curve_test_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
@@ -147,9 +162,15 @@ class MI_CurveTest(bpy.types.Operator):
         curve_settings = context.scene.mi_curve_settings
         m_coords = event.mouse_region_x, event.mouse_region_y
 
+        active_obj = context.scene.objects.active
+        bm = bmesh.from_edit_mesh(active_obj.data)
+
+        region = context.region
+        rv3d = context.region_data
+
         # make picking
-        if self.curve_tool_mode == 'IDLE':
-            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
+        if self.curve_tool_mode == 'IDLE' and event.value == 'PRESS':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 # pick point test
                 picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
                 if picked_point:
@@ -203,7 +224,18 @@ class MI_CurveTest(bpy.types.Operator):
                         cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
                         curve.active_point = None
 
-                #return {'RUNNING_MODAL'}
+            elif event.type in {'TAB'} and event.shift:
+                if curve_settings.surface_snap is True:
+                    curve_settings.surface_snap = False
+                else:
+                    curve_settings.surface_snap = True
+                    if not self.picked_meshes:
+                        # get meshes for snapping
+                        sel_objects = [
+                            obj for obj in context.selected_objects if obj != active_obj]
+                        if sel_objects:
+                            self.picked_meshes = ut_base.get_obj_dup_meshes(
+                                sel_objects, context)
 
             # Select Linked
             elif event.type == 'L':
@@ -222,7 +254,7 @@ class MI_CurveTest(bpy.types.Operator):
 
         # TOOL WORK
         if self.curve_tool_mode == 'SELECT_POINT':
-            if event.value == 'RELEASE':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
                 self.curve_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
@@ -232,7 +264,7 @@ class MI_CurveTest(bpy.types.Operator):
                     return {'RUNNING_MODAL'}
 
         elif self.curve_tool_mode == 'MOVE_POINT':
-            if event.value == 'RELEASE':
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
                 self.curve_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
@@ -244,8 +276,22 @@ class MI_CurveTest(bpy.types.Operator):
                     for curve in self.all_curves:
                         selected_points = cur_main.get_selected_points(curve.curve_points)
                         if selected_points:
-                            for point in selected_points:
-                                point.position += move_offset
+                            # Snap to Surface
+                            if curve_settings.surface_snap is True:
+                                if self.picked_meshes:
+                                    for point in selected_points:
+                                        # get the ray from the viewport and mouse
+                                        point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, point.position + move_offset)
+                                        if point_pos_2d:
+                                            best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, point_pos_2d, 10000.0)
+                                            #best_obj, hit_normal, hit_position = ut_base.get_3dpoint_raycast(context, self.picked_meshes, point.position + move_offset, camera_dir, 10000.0)
+                                        if hit_position:
+                                            point.position = hit_position
+
+                            # Move Points without Snapping
+                            else:
+                                for point in selected_points:
+                                    point.position += move_offset
 
                             if len(selected_points) == 1:
                                 cur_main.curve_point_changed(curve, curve.curve_points.index(selected_points[0]), curve_settings.curve_resolution, curve.display_bezier)
@@ -287,7 +333,7 @@ def reset_params(self):
     self.all_curves = []
     self.active_curve = None
     self.deform_mouse_pos = None
-    #self.display_bezier = {}
+    self.picked_meshes = None
 
 
 def mi_curve_draw_2d(self, context):

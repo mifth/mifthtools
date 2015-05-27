@@ -354,6 +354,13 @@ def get_selected_points(points):
     return sel_points
 
 
+def deselect_all_curves(all_curves, reset_acive_point):
+    for curve in all_curves:
+        select_all_points(curve.curve_points, False)  # deselect points
+        if reset_acive_point is True:
+            curve.active_point = None
+
+
 # CODE FOR LOOPS
 def pass_line(vecs, is_closed_line):
     line_length = 0.0
