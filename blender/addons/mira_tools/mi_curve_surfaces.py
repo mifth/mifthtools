@@ -172,12 +172,17 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     self.active_surf.active_curve.active_point = picked_point.point_id
                     additive_sel = event.shift
 
-                    if additive_sel is False:
+                    if additive_sel is False and picked_point.select is False:
                         for surf in self.all_surfs:
-                            for curve in surf.all_curves:
-                                if curve is not surf.active_curve and picked_point.select is False:
+                            if surf is not self.active_surf:
+                                for curve in surf.all_curves:
                                     cur_main.select_all_points(curve.curve_points, False)  # deselect points
                                     curve.active_point = None
+                            else:
+                                for curve in surf.all_curves:
+                                    if curve is not self.active_surf.active_curve:
+                                        cur_main.select_all_points(curve.curve_points, False)  # deselect points
+                                        curve.active_point = None                                
 
                     cur_main.select_point(self.active_surf.active_curve, picked_point, additive_sel)
 

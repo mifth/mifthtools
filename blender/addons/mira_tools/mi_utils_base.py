@@ -43,13 +43,13 @@ def get_mouse_raycast(context, objects_list, coords_2d, ray_max):
     best_obj, hit_normal, hit_position = None, None, None
     best_length_squared = ray_max * ray_max
 
-    for obj, matrix in objects_list:
-        # get the ray from the viewport and mouse
-        view_vector = view3d_utils.region_2d_to_vector_3d(
-            region, rv3d, coords_2d)
-        ray_origin = view3d_utils.region_2d_to_origin_3d(
-            region, rv3d, coords_2d)
+    # get the ray from the viewport and mouse
+    view_vector = view3d_utils.region_2d_to_vector_3d(
+        region, rv3d, coords_2d)
+    ray_origin = view3d_utils.region_2d_to_origin_3d(
+        region, rv3d, coords_2d)
 
+    for obj, matrix in objects_list:
         # Do RayCast! t1,t2,t3,t4 - temp values
         t1, t2, t3 = obj_raycast(
             obj, matrix, view_vector, ray_origin, ray_max)
@@ -96,8 +96,8 @@ def obj_raycast(obj, matrix, view_vector, ray_origin, ray_max):
         length_squared = (hit_world - ray_origin).length_squared
 
         if face_index != -1:
-            normal_world = matrix.to_quaternion() * normal
-            return normal_world.normalized(), hit_world, length_squared
+            normal_world = (matrix.to_quaternion() * normal).normalized()
+            return normal_world, hit_world, length_squared
 
     return None, None, None
 
