@@ -269,7 +269,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     #self.active_curve = picked_curve
 
             # Create Curve
-            elif event.type == 'N' and self.active_surf:
+            elif event.type == 'A' and self.active_surf:
                self.surf_tool_mode = 'CREATE_CURVE'
 
         # TOOL WORK
@@ -357,7 +357,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                         self.active_surf.active_curve.active_point = new_point.point_id
 
                         self.surf_tool_mode = 'MOVE_POINT'
-                    return {'RUNNING_MODAL'}
+                        return {'RUNNING_MODAL'}
 
         else:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
@@ -440,6 +440,9 @@ def create_surface_loop(curve_to_spread, prev_loop_verts_ids, bm, obj):
         # we reverse array if first point is near the last point of loops
         prev_loop_verts.reverse()
     create_polyloops(next_loop_verts, prev_loop_verts, bm)
+
+    bm.edges.index_update()
+    bm.normal_update()
 
     return next_loop_verts_ids
 
