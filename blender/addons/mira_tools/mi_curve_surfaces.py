@@ -156,7 +156,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
         #print(context.active_operator)
         context.area.tag_redraw()
 
-        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L")
+        context.area.header_text_set("NewCurve: A, NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L")
 
         curve_settings = context.scene.mi_curve_settings
         m_coords = event.mouse_region_x, event.mouse_region_y
