@@ -442,7 +442,7 @@ def create_surface_loop(curve_to_spread, prev_loop_verts_ids, bm, obj):
     create_polyloops(next_loop_verts, prev_loop_verts, bm)
 
     bm.edges.index_update()
-    bm.normal_update()
+    #bm.normal_update()
 
     return next_loop_verts_ids
 
@@ -451,7 +451,7 @@ def create_polyloops(next_loop_verts, prev_loop_verts, bm):
     for i, vert in enumerate(next_loop_verts):
         if i > 0:
             face = bm.faces.new( (next_loop_verts[i-1], vert, prev_loop_verts[i], prev_loop_verts[i-1]) )
-            #face.normal_update()
+            face.normal_update()
 
     bm.faces.index_update()
 
