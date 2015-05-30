@@ -108,7 +108,7 @@ class MI_CurveStretch(bpy.types.Operator):
 
                     cur_main.generate_bezier_points(self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
 
-                    self.original_verts_data.append( cur_main.pass_line([bm.verts[i].co for i in loop[0]] , loop[1]) )
+                    self.original_verts_data.append( cur_main.pass_line([bm.verts[i].co.copy() for i in loop[0]] , loop[1]) )
 
                     # move point to the curve
                     for curve in self.all_curves:

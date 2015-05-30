@@ -69,7 +69,7 @@ class MI_SurfaceObject():
         if main_loop:
             loop_verts = [bm.verts[vert_id] for vert_id in main_loop[0]]
             self.main_loop_center = ut_base.get_vertices_center(loop_verts, obj, False)
-            self.original_loop_data = cur_main.pass_line([vert.co for vert in loop_verts] , False)
+            self.original_loop_data = cur_main.pass_line([vert.co.copy() for vert in loop_verts] , False)
 
         self.all_curves = []
         self.active_curve = None
