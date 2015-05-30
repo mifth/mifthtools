@@ -41,13 +41,6 @@ from . import mi_looptools as loop_t
 
 class MI_CurveStretchSettings(bpy.types.PropertyGroup):
     points_number = IntProperty(default=5, min=2, max=128)
-    spread_mode = EnumProperty(
-        name = "Spread Mode",
-        items = (('Original', 'Original', ''),
-                ('Uniform', 'Uniform', '')
-                ),
-        default = 'Original'
-    )
 
 
 class MI_CurveStretch(bpy.types.Operator):
@@ -119,7 +112,7 @@ class MI_CurveStretch(bpy.types.Operator):
 
                     # move point to the curve
                     for curve in self.all_curves:
-                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
+                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, curve_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
 
                     # get meshes for snapping
                     if curve_settings.surface_snap is True:
@@ -221,12 +214,10 @@ class MI_CurveStretch(bpy.types.Operator):
                         curve.active_point = None
 
                         # move point to the curve
-                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
+                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, curve_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
 
                     bm.normal_update()
                     bmesh.update_edit_mesh(active_obj.data)
-
-                #return {'RUNNING_MODAL'}
 
             elif event.type in {'TAB'} and event.shift:
                 if curve_settings.surface_snap is True:
@@ -258,13 +249,13 @@ class MI_CurveStretch(bpy.types.Operator):
 
             # Change Spread Type
             elif event.type == 'M':
-                if cur_stretch_settings.spread_mode == 'Original':
-                    cur_stretch_settings.spread_mode = 'Uniform'
+                if curve_settings.spread_mode == 'Original':
+                    curve_settings.spread_mode = 'Uniform'
                 else:
-                    cur_stretch_settings.spread_mode = 'Original'
+                    curve_settings.spread_mode = 'Original'
 
                 for curve in self.all_curves:
-                    update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
+                    update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, curve_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
 
         # TOOLS WORK
         if self.curve_tool_mode == 'SELECT_POINT':
@@ -279,11 +270,24 @@ class MI_CurveStretch(bpy.types.Operator):
 
         elif self.curve_tool_mode == 'MOVE_POINT':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
+
+                # Snap to Surface
+                if curve_settings.surface_snap is True and self.picked_meshes:
+                    for curve in self.all_curves:
+                        selected_points = cur_main.get_selected_points(curve.curve_points)
+                        if selected_points:
+                            cur_main.snap_to_surface(context, selected_points, self.picked_meshes, region, rv3d, None)
+
+                            if len(selected_points) == 1:
+                                cur_main.curve_point_changed(curve, curve.curve_points.index(selected_points[0]), curve_settings.curve_resolution, curve.display_bezier)
+                            else:
+                                cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
+
                 # move point to the curve
                 for curve in self.all_curves:
                     selected_points = cur_main.get_selected_points(curve.curve_points)
                     if selected_points:
-                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, cur_stretch_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
+                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, curve_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
 
                 bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
@@ -302,23 +306,9 @@ class MI_CurveStretch(bpy.types.Operator):
                     for curve in self.all_curves:
                         selected_points = cur_main.get_selected_points(curve.curve_points)
                         if selected_points:
-
-                            # Snap to Surface
-                            if curve_settings.surface_snap is True:
-                                if self.picked_meshes:
-                                    for point in selected_points:
-                                        # get the ray from the viewport and mouse
-                                        point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, point.position + move_offset)
-                                        if point_pos_2d:
-                                            best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, point_pos_2d, 10000.0)
-                                            #best_obj, hit_normal, hit_position = ut_base.get_3dpoint_raycast(context, self.picked_meshes, point.position + move_offset, camera_dir, 10000.0)
-                                        if hit_position:
-                                            point.position = hit_position
-
                             # Move Points without Snapping
-                            else:
-                                for point in selected_points:
-                                    point.position += move_offset
+                            for point in selected_points:
+                                point.position += move_offset
 
                             if len(selected_points) == 1:
                                 cur_main.curve_point_changed(curve, curve.curve_points.index(selected_points[0]), curve_settings.curve_resolution, curve.display_bezier)

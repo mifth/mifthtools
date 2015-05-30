@@ -74,9 +74,8 @@ class MI_DeformPanel(bpy.types.Panel):
         layout.separator()
         #layout.label(text="CurveStretch:")
         layout.operator("mira.curve_stretch", text="CurveStretch")
-        row = layout.row()
-        row.prop(cur_stretch_settings, "points_number", text='Points')
-        row.prop(cur_stretch_settings, "spread_mode", text='')
+        #row = layout.row()
+        layout.prop(cur_stretch_settings, "points_number", text='Points')
 
         layout.separator()
         #layout.label(text="CurveGuide:")
@@ -99,6 +98,7 @@ class MI_CurveSettingsPanel(bpy.types.Panel):
         curve_settings = context.scene.mi_curve_settings
 
         layout.prop(curve_settings, "surface_snap", text='SurfaceSnapping')
+        layout.prop(curve_settings, "spread_mode", text='Spread')
         layout.prop(curve_settings, "curve_resolution", text='Resolution')
         layout.prop(curve_settings, "draw_handlers", text='Handlers')
         layout.operator("mira.curve_test", text="Curve Test")

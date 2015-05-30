@@ -411,6 +411,17 @@ class MI_Curve_Guide(bpy.types.Operator):
 
         elif self.tool_mode == 'MOVE_CUR_POINT':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
+                # Snap to Surface
+                if curve_settings.surface_snap is True and self.picked_meshes:
+                    selected_points = cur_main.get_selected_points(self.curve_tool.curve_points)
+                    if selected_points:
+                        cur_main.snap_to_surface(context, selected_points, self.picked_meshes, region, rv3d, None)
+
+                        if len(selected_points) == 1:
+                            cur_main.curve_point_changed(self.curve_tool, self.curve_tool.curve_points.index(selected_points[0]), curve_settings.curve_resolution, self.curve_tool.display_bezier)
+                        else:
+                            cur_main.generate_bezier_points(self.curve_tool, self.curve_tool.display_bezier, curve_settings.curve_resolution)
+
                 # update mesh positions
                 update_mesh_to_curve(self, bm, curguide_settings.deform_type, active_obj)
                 bm.normal_update()
@@ -434,26 +445,13 @@ class MI_Curve_Guide(bpy.types.Operator):
                 if new_point_pos and selected_points:
                     move_offset = new_point_pos - act_point.position
 
-                    # Snap to Surface
-                    if curguide_settings.deform_type == 'Deform' and curve_settings.surface_snap is True:
-                        camera_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
-                        if self.picked_meshes:
-                            for point in selected_points:
-                                # get the ray from the viewport and mouse
-                                point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, point.position + move_offset)
-                                if point_pos_2d:
-                                    best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, point_pos_2d, 10000.0)
-                                    #best_obj, hit_normal, hit_position = ut_base.get_3dpoint_raycast(context, self.picked_meshes, point.position + move_offset, camera_dir, 10000.0)
-                                if hit_position:
-                                    point.position = hit_position
-                    else:
-                        # move point
-                        for point in selected_points:
-                            point.position += move_offset
+                    # move point
+                    for point in selected_points:
+                        point.position += move_offset
 
-                        # fix points pos
-                        if curguide_settings.deform_type != 'Deform':
-                            fix_curve_point_pos(self.lw_tool, self.curve_tool, selected_points)
+                    # fix points pos
+                    if curguide_settings.deform_type != 'Deform':
+                        fix_curve_point_pos(self.lw_tool, self.curve_tool, selected_points)
 
                     # update bezier
                     if len(selected_points) == 1:
