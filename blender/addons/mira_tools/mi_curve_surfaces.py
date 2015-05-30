@@ -481,21 +481,24 @@ def create_surface_loop(surf, curve_to_spread, bm, obj, curve_settings):
 
     update_curve_line(obj, curve_to_spread, next_loop_verts, curve_settings.spread_mode, orig_loop_data)
 
-    create_polyloops(next_loop_verts, prev_loop_verts, bm)
-
-    bm.edges.index_update()
-    #bm.normal_update()
+    new_faces = create_polyloops(next_loop_verts, prev_loop_verts, bm)
 
     return next_loop_verts_ids
 
 
 def create_polyloops(next_loop_verts, prev_loop_verts, bm):
+    new_faces = []
     for i, vert in enumerate(next_loop_verts):
         if i > 0:
-            face = bm.faces.new( (next_loop_verts[i-1], vert, prev_loop_verts[i], prev_loop_verts[i-1]) )
-            face.normal_update()
+            new_face = bm.faces.new( (next_loop_verts[i-1], vert, prev_loop_verts[i], prev_loop_verts[i-1]) )
+            #new_face.normal_update
+            new_faces.append(new_face)
 
     bm.faces.index_update()
+    bm.edges.index_update()
+    bmesh.ops.recalc_face_normals(bm, faces=new_faces)
+    #bmesh.ops.reverse_faces(bm, faces=new_faces)
+    return new_faces
 
 
 def update_curve_line(obj, curve_to_spread, loop_verts, spread_mode, original_loop_data):
