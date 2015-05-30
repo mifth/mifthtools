@@ -273,6 +273,19 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     self.active_surf.active_curve = picked_curve
                     self.active_surf.active_curve.active_point = picked_point.point_id
 
+            # Change Spread Type
+            elif event.type == 'M':
+                if curve_settings.spread_mode == 'Original':
+                    curve_settings.spread_mode = 'Uniform'
+                else:
+                    curve_settings.spread_mode = 'Original'
+
+                for surf in self.all_surfs:
+                    for curve in surf.all_curves:
+                        # move points to the curve
+                        verts_update = [bm.verts[verts_id] for verts_id in curve.surf_curve_verts]
+                        update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
+
             # Create Curve
             elif event.type == 'A' and self.active_surf:
                self.surf_tool_mode = 'CREATE_CURVE'
@@ -443,13 +456,13 @@ def create_surface_loop(surf, curve_to_spread, bm, obj, curve_settings):
     len_last = None
     if act_cur_idx > 0:
         prev_curve = surf.all_curves[act_cur_idx - 1]
-        len_first = (curve_to_spread.curve_points[0].position - prev_curve.curve_points[0].position).length
-        len_last = (curve_to_spread.curve_points[0].position - prev_curve.curve_points[-1].position).length
+        len_first = (curve_to_spread.curve_points[-1].position - prev_curve.curve_points[0].position).length
+        len_last = (curve_to_spread.curve_points[-1].position - prev_curve.curve_points[-1].position).length
     else:
         first_v_pos = obj.matrix_world * bm.verts[surf.main_loop[0][0]].co
         last_v_pos = obj.matrix_world * bm.verts[surf.main_loop[0][-1]].co
-        len_first = (curve_to_spread.curve_points[0].position - first_v_pos).length
-        len_last = (curve_to_spread.curve_points[0].position - last_v_pos).length
+        len_first = (curve_to_spread.curve_points[-1].position - first_v_pos).length
+        len_last = (curve_to_spread.curve_points[-1].position - last_v_pos).length
     if len_last > len_first:
         # we reverse array if curve points
         curve_to_spread.curve_points.reverse()
@@ -478,6 +491,20 @@ def create_surface_loop(surf, curve_to_spread, bm, obj, curve_settings):
 
     for vert in next_loop_verts:
         next_loop_verts_ids.append(vert.index)
+
+    ## another approach by extruding edges
+    #get_edges = []
+    #for edge in bm.edges:
+        #if edge.verts[0] in prev_loop_verts and edge.verts[1] in prev_loop_verts:
+            #get_edges.append(edge)
+    #new_geo_data = bmesh.ops.extrude_edge_only(bm, edges=get_edges)
+
+    #bm.verts.ensure_lookup_table()
+
+    #for geo_obj in new_geo_data.get('geom'):
+        #if type(geo_obj) is bmesh.types.BMVert:
+            #next_loop_verts.append(geo_obj)
+            #next_loop_verts_ids.append(geo_obj.index)
 
     update_curve_line(obj, curve_to_spread, next_loop_verts, curve_settings.spread_mode, orig_loop_data)
 
