@@ -39,8 +39,8 @@ from . import mi_color_manager as col_man
 from . import mi_looptools as loop_t
 
 
-#class MI_CurveSurfacesSettings(bpy.types.PropertyGroup):
-    #points_number = IntProperty(default=5, min=2, max=128)
+class MI_CurveSurfacesSettings(bpy.types.PropertyGroup):
+    loop_points = IntProperty(default=5, min=2, max=128)
     #spread_mode = EnumProperty(
         #name = "Spread Mode",
         #items = (('Original', 'Original', ''),
@@ -98,7 +98,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                  'MOUSEMOVE']
 
     # curve tool mode
-    surf_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT', 'CREATE_CURVE')
+    surf_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT', 'CREATE_CURVE', 'CREATE_SURFACE')
     surf_tool_mode = 'IDLE'
 
     all_surfs = None
@@ -121,6 +121,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
             args = (self, context)
 
             curve_settings = context.scene.mi_curve_settings
+            cur_surfs_settings = context.scene.mi_cur_surfs_settings
 
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
@@ -166,6 +167,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
         context.area.header_text_set("NewCurve: A, NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L")
 
         curve_settings = context.scene.mi_curve_settings
+        cur_surfs_settings = context.scene.mi_cur_surfs_settings
         m_coords = event.mouse_region_x, event.mouse_region_y
 
         active_obj = context.scene.objects.active
@@ -207,12 +209,16 @@ class MI_CurveSurfaces(bpy.types.Operator):
                         new_point_pos = ut_base.get_mouse_on_plane(context, act_point.position, None, m_coords)
                         new_point = add_curve_point(self, m_coords, curve_settings, new_point_pos)
 
-                        if len(self.active_surf.active_curve.curve_points) == 2 and not self.active_surf.active_curve.surf_curve_verts:
+                        if len(self.active_surf.active_curve.curve_points) > 1 and not self.active_surf.active_curve.surf_curve_verts:
                             # here we create a loop
-                            new_loop_verts = create_surface_loop(self.active_surf, self.active_surf.active_curve, bm, active_obj, curve_settings)
-                            self.active_surf.active_curve.surf_curve_verts = new_loop_verts
+                            do_create_loops = True
+                            if not self.active_surf.main_loop and len(self.active_surf.all_curves) == 1:
+                                do_create_loops = False
+                            if do_create_loops:
+                                new_loop_verts = create_surface_loop(self.active_surf, self.active_surf.active_curve, bm, active_obj, curve_settings, cur_surfs_settings)
+                                self.active_surf.active_curve.surf_curve_verts = new_loop_verts
 
-                            bmesh.update_edit_mesh(active_obj.data)
+                                bmesh.update_edit_mesh(active_obj.data)
 
                         self.surf_tool_mode = 'MOVE_POINT'
 
@@ -287,8 +293,11 @@ class MI_CurveSurfaces(bpy.types.Operator):
                         update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
 
             # Create Curve
-            elif event.type == 'A' and self.active_surf:
-               self.surf_tool_mode = 'CREATE_CURVE'
+            elif event.type == 'A':
+                if event.shift:
+                    self.surf_tool_mode = 'CREATE_SURFACE'
+                elif self.active_surf:
+                    self.surf_tool_mode = 'CREATE_CURVE'
 
         # TOOL WORK
         if self.surf_tool_mode == 'SELECT_POINT':
@@ -348,16 +357,20 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
                 return {'RUNNING_MODAL'}
 
-        elif self.surf_tool_mode == 'CREATE_CURVE':
+        elif self.surf_tool_mode in {'CREATE_CURVE', 'CREATE_SURFACE'}:
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
                 self.surf_tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
             else:
                 #if event.ctrl:
                 if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
-                    # get either center of the first loop or active point
-                    center_plane = self.active_surf.main_loop_center
-                    if self.active_surf.active_curve and self.active_surf.active_curve.active_point:
+                    if self.surf_tool_mode == 'CREATE_SURFACE':
+                        center_plane = bpy.context.space_data.cursor_location
+                    else:
+                        # get either center of the first loop or active point
+                        center_plane = self.active_surf.main_loop_center
+
+                    if self.active_surf and self.active_surf.active_curve and self.active_surf.active_curve.active_point:
                         act_point = cur_main.get_point_by_id(self.active_surf.active_curve.curve_points, self.active_surf.active_curve.active_point)
                         center_plane = act_point.position
 
@@ -367,6 +380,13 @@ class MI_CurveSurfaces(bpy.types.Operator):
                         # deselect all points
                         for surf in self.all_surfs:
                             cur_main.deselect_all_curves(surf.all_curves, True)
+                            surf.active_curve = None
+
+                        # create new surface object
+                        if self.surf_tool_mode == 'CREATE_SURFACE':
+                            surf = MI_SurfaceObject(self.all_surfs, None, None, bm, active_obj)
+                            self.all_surfs.append(surf)
+                            self.active_surf = surf
 
                         # new curve
                         cur = MI_SurfaceCurveObject(self.active_surf.all_curves)
@@ -443,7 +463,7 @@ def add_curve_point(self, m_coords, curve_settings, point_pos):
     return new_point
 
 
-def create_surface_loop(surf, curve_to_spread, bm, obj, curve_settings):
+def create_surface_loop(surf, curve_to_spread, bm, obj, curve_settings, cur_surfs_settings):
     next_loop_verts = []
     next_loop_verts_ids = []
 
@@ -472,7 +492,28 @@ def create_surface_loop(surf, curve_to_spread, bm, obj, curve_settings):
     # get previous verts ids
     prev_loop_verts_ids = None
     if act_cur_idx > 0:
-        prev_loop_verts_ids = surf.all_curves[act_cur_idx - 1].surf_curve_verts
+        # fix for non loop based surfaces
+        if not surf.main_loop and act_cur_idx == 1:
+            fix_main_loop_verts = []
+            for i in range(cur_surfs_settings.loop_points):
+                vert = bm.verts.new((0.0, 0.0, 0.0))
+                fix_main_loop_verts.append(vert)
+
+            bm.verts.index_update()
+            bm.verts.ensure_lookup_table()
+
+            update_curve_line(obj, surf.all_curves[0], fix_main_loop_verts, curve_settings.spread_mode, None)
+
+            fix_main_loop_verts_ids = []
+            for vert in fix_main_loop_verts:
+                fix_main_loop_verts_ids.append(vert.index)
+
+            surf.main_loop = (fix_main_loop_verts_ids, False)
+            surf.main_loop_center = ut_base.get_vertices_center(fix_main_loop_verts, obj, False)
+            surf.original_loop_data = cur_main.pass_line([vert.co.copy() for vert in fix_main_loop_verts] , False)
+            prev_loop_verts_ids = surf.main_loop[0]
+        else:
+            prev_loop_verts_ids = surf.all_curves[act_cur_idx - 1].surf_curve_verts
     else:
         prev_loop_verts_ids = surf.main_loop[0]
 

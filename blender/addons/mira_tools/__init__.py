@@ -86,6 +86,12 @@ def register():
         description="Curve Stretch Settings."
     )
 
+    bpy.types.Scene.mi_cur_surfs_settings = PointerProperty(
+        name="Curve Surfaces Settings",
+        type=mi_curve_surfaces.MI_CurveSurfacesSettings,
+        description="Curve Surfaces Settings."
+    )
+
     bpy.types.Scene.mi_extrude_settings = PointerProperty(
         name="Extrude Variables",
         type=mi_extrude.MI_ExtrudeSettings,
@@ -111,6 +117,7 @@ def unregister():
     #del bpy.types.Object.mi_curves  # need to investigate if i need to delete it
     del bpy.types.Scene.mi_curve_settings
     del bpy.types.Scene.mi_cur_stretch_settings
+    del bpy.types.Scene.mi_cur_surfs_settings
     del bpy.types.Scene.mi_extrude_settings
     del bpy.types.Scene.mi_ldeformer_settings
     del bpy.types.Scene.mi_curguide_settings
