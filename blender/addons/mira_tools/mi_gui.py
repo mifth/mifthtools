@@ -48,7 +48,7 @@ class MI_ExtrudePanel(bpy.types.Panel):
 
         layout.separator()
         #layout.label(text="CurveSurface:")
-        layout.operator("mira.curve_surfaces", text="CurveSurfacesTest")
+        layout.operator("mira.curve_surfaces", text="CurveSurfaces")
         #layout.prop(cur_surfs_settings, "loop_points", text='Points')
 
 

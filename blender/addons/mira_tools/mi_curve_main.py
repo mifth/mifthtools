@@ -50,7 +50,7 @@ from . import mi_utils_base as ut_base
     #active_point = StringProperty(default="")
 
 
-class MI_CurveObject():
+class MI_CurveObject(object):
 
     # class constructor
     def __init__(self, other_curves):
