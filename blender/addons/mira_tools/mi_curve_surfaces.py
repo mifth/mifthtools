@@ -264,23 +264,25 @@ class MI_CurveSurfaces(bpy.types.Operator):
                 for surf in self.all_surfs:
                     for curve in surf.all_curves:
                         sel_points = cur_main.get_selected_points(curve.curve_points)
-                        if sel_points:
+                        if sel_points and len(curve.curve_points) > 2:
                             for point in sel_points:
-                                if len(curve.curve_points) > 2:
-                                    cur_main.delete_point(point, curve, curve.display_bezier, curve_settings.curve_resolution)
-                                else:
-                                    point.select = False
+                                cur_main.delete_point(point, curve, curve.display_bezier, curve_settings.curve_resolution)
 
                             curve.display_bezier.clear()
                             cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
-                            curve.active_point = None
 
                             # move points to the curve
                             verts_update = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
                             update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
 
-                        bm.normal_update()
-                        bmesh.update_edit_mesh(active_obj.data)
+                            bm.normal_update()
+                            bmesh.update_edit_mesh(active_obj.data)
+
+                        else:
+                            for point in sel_points:
+                                point.select = False
+
+                        curve.active_point = None
 
             elif event.type in {'TAB'} and event.shift:
                 if curve_settings.surface_snap is True:
