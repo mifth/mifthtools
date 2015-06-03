@@ -265,6 +265,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     for curve in surf.all_curves:
                         sel_points = cur_main.get_selected_points(curve.curve_points)
                         if sel_points and len(curve.curve_points) > 2:
+                            # we revers to leave first points
                             for point in reversed(sel_points):
                                 if len(curve.curve_points) > 2:
                                     cur_main.delete_point(point, curve, curve.display_bezier, curve_settings.curve_resolution)
