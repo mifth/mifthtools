@@ -265,24 +265,29 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     for curve in surf.all_curves:
                         sel_points = cur_main.get_selected_points(curve.curve_points)
                         if sel_points and len(curve.curve_points) > 2:
-                            for point in sel_points:
-                                cur_main.delete_point(point, curve, curve.display_bezier, curve_settings.curve_resolution)
+                            for point in reversed(sel_points):
+                                if len(curve.curve_points) > 2:
+                                    cur_main.delete_point(point, curve, curve.display_bezier, curve_settings.curve_resolution)
+                                else:
+                                    point.select = False
 
                             curve.display_bezier.clear()
                             cur_main.generate_bezier_points(curve, curve.display_bezier, curve_settings.curve_resolution)
 
                             # move points to the curve
-                            verts_update = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
-                            update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
+                            if curve.curve_verts_ids:
+                                verts_update = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
+                                update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
 
-                            bm.normal_update()
-                            bmesh.update_edit_mesh(active_obj.data)
+                                bm.normal_update()
+                                bmesh.update_edit_mesh(active_obj.data)
 
                         else:
                             for point in sel_points:
                                 point.select = False
 
                         curve.active_point = None
+                    surf.active_curve = None
 
             elif event.type in {'TAB'} and event.shift:
                 if curve_settings.surface_snap is True:
@@ -447,15 +452,18 @@ class MI_CurveSurfaces(bpy.types.Operator):
             else:
                 #if event.ctrl:
                 if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
+                    # get center
+                    center_plane = None
                     if self.surf_tool_mode == 'CREATE_SURFACE':
                         center_plane = bpy.context.space_data.cursor_location
                     else:
-                        # get either center of the first loop or active point
-                        center_plane = self.active_surf.main_loop_center
-
-                    if self.active_surf and self.active_surf.active_curve and self.active_surf.active_curve.active_point:
-                        act_point = cur_main.get_point_by_id(self.active_surf.active_curve.curve_points, self.active_surf.active_curve.active_point)
-                        center_plane = act_point.position
+                        if self.active_surf and self.active_surf.active_curve and self.active_surf.active_curve.active_point:
+                            act_point = cur_main.get_point_by_id(self.active_surf.active_curve.curve_points, self.active_surf.active_curve.active_point)
+                            center_plane = act_point.position
+                        elif self.active_surf.main_loop_center:
+                            center_plane = self.active_surf.main_loop_center
+                        else:
+                            center_plane = bpy.context.space_data.cursor_location
 
                     new_point_pos = ut_base.get_mouse_on_plane(context, center_plane, None, m_coords)
 
