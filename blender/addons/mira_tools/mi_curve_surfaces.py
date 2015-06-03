@@ -525,7 +525,7 @@ def reset_params(self, bm):
     self.id_layer = None
     if 'mi_cur_surf_ids' in bm.verts.layers.int.keys():
         self.id_layer = bm.verts.layers.int['mi_cur_surf_ids']
-        bm.verts.layers.int.remove('mi_cur_surf_ids')
+        bm.verts.layers.int.remove(self.id_layer)
     self.id_layer = bm.verts.layers.int.new('mi_cur_surf_ids')
 
     # reset ids
