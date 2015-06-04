@@ -547,6 +547,7 @@ def reset_params(self, bm):
 def finish_work(self, context, bm):
     context.space_data.show_manipulator = self.manipulator
     bm.verts.layers.int.remove(self.id_layer)
+    context.area.header_text_set()
 
 
 def get_verts_from_ids(ids, id_layer, bm):

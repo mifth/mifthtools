@@ -314,6 +314,7 @@ class MI_CurveTest(bpy.types.Operator):
         if event.type in {'RIGHTMOUSE', 'ESC'}:
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_test_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_test_2d, 'WINDOW')
+            context.area.header_text_set()
 
             # clear
             #display_bezier = None

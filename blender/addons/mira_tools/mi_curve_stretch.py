@@ -360,6 +360,7 @@ def reset_params(self):
 
 def finish_work(self, context):
     context.space_data.show_manipulator = self.manipulator
+    context.area.header_text_set()
 
 
 def update_curve_line(active_obj, curve_to_update, loops, all_curves, bm, spread_mode, original_verts_data):
