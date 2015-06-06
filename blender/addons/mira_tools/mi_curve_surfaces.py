@@ -234,9 +234,9 @@ class MI_CurveSurfaces(bpy.types.Operator):
                             do_create_loops = False
                             curve_index = self.active_surf.all_curves.index(self.active_surf.active_curve)
 
-                            # fix direction of loop
-                            if len(self.active_surf.active_curve.curve_points) == 2:
-                                fix_curve_direction(self.active_surf, self.active_surf.active_curve, self.id_layer, bm, active_obj, curve_settings)
+                            ## fix direction of loop
+                            #if len(self.active_surf.active_curve.curve_points) == 2:
+                                #fix_curve_direction(self.active_surf, self.active_surf.active_curve, self.id_layer, bm, active_obj, curve_settings)
 
                             if self.active_surf.spread_type == 'OnCurve' and not self.active_surf.active_curve.curve_verts_ids:
                                 # logic for loop based curve
