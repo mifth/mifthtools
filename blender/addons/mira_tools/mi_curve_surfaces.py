@@ -340,19 +340,20 @@ class MI_CurveSurfaces(bpy.types.Operator):
                                     verts_update = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
                                     update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
                             else:
-                                all_loops_verts = []
+                                if self.active_surf.uniform_loops:
+                                    all_loops_verts = []
 
-                                # get all verts
-                                if surf.main_loop_ids:
-                                    main_loop_verts = get_verts_from_ids(surf.main_loop_ids, self.id_layer, bm)
-                                    all_loops_verts.append(main_loop_verts)
+                                    # get all verts
+                                    if surf.main_loop_ids:
+                                        main_loop_verts = get_verts_from_ids(surf.main_loop_ids, self.id_layer, bm)
+                                        all_loops_verts.append(main_loop_verts)
 
-                                for verts_loop_ids in surf.uniform_loops:
-                                    curve_verts = get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
-                                    all_loops_verts.append(curve_verts)
+                                    for verts_loop_ids in surf.uniform_loops:
+                                        curve_verts = get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
+                                        all_loops_verts.append(curve_verts)
 
-                                # spread verts
-                                spread_verts_uniform(active_obj, surf, all_loops_verts, curve_settings)
+                                    # spread verts
+                                    spread_verts_uniform(active_obj, surf, all_loops_verts, curve_settings)
 
                         else:
                             for point in sel_points:
