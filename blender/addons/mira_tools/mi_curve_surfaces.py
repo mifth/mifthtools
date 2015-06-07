@@ -432,6 +432,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
                                         curve_verts = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
                                         prev_verts.append(curve_verts[-1])  # get previous point
+                                        curve_verts.append(vert)
                                         curve.curve_verts_ids.append(self.id_value)
                                         update_curve_line(active_obj, curve, curve_verts, curve_settings.spread_mode, self.active_surf.original_loop_data)
 
