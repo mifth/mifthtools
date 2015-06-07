@@ -234,11 +234,11 @@ class MI_CurveSurfaces(bpy.types.Operator):
                             do_create_loops = False
                             curve_index = self.active_surf.all_curves.index(self.active_surf.active_curve)
 
-                            ## fix direction of loop
-                            #if len(self.active_surf.active_curve.curve_points) == 2:
-                                #fix_curve_direction(self.active_surf, self.active_surf.active_curve, self.id_layer, bm, active_obj, curve_settings)
-
                             if self.active_surf.spread_type == 'OnCurve' and not self.active_surf.active_curve.curve_verts_ids:
+                                # fix direction of loop
+                                if len(self.active_surf.active_curve.curve_points) == 2:
+                                    fix_curve_direction(self.active_surf, self.active_surf.active_curve, self.id_layer, bm, active_obj, curve_settings)
+
                                 # logic for loop based curve
                                 if self.active_surf.main_loop_ids:
                                     if curve_index > 0 and not self.active_surf.all_curves[curve_index - 1].curve_verts_ids:
@@ -261,50 +261,55 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
                                     bmesh.update_edit_mesh(active_obj.data)
 
-                            elif self.active_surf.spread_type == 'Interpolate' and not self.active_surf.uniform_loops:
-                                # logic for loop based curve
-                                if self.active_surf.main_loop_ids:
-                                    do_create_loops = True
-                                # logic for non loop based curve
-                                elif not self.active_surf.main_loop_ids and len(self.active_surf.all_curves) > 1:
-                                    do_create_loops = True
+                            elif self.active_surf.spread_type == 'Interpolate':
+                                # fix direction of loop
+                                if len(self.active_surf.active_curve.curve_points) == 2:
+                                    fix_curve_direction(self.active_surf, self.active_surf.active_curve, self.id_layer, bm, active_obj, curve_settings)
 
-                                if do_create_loops:
-                                    all_loops_verts = []
-
-                                    loop_count = self.active_surf.cross_loop_points
+                                if not self.active_surf.uniform_loops:
+                                    # logic for loop based curve
                                     if self.active_surf.main_loop_ids:
-                                        main_loop_verts = get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
-                                        all_loops_verts.append(main_loop_verts)
-                                        loop_count -= 1
+                                        do_create_loops = True
+                                    # logic for non loop based curve
+                                    elif not self.active_surf.main_loop_ids and len(self.active_surf.all_curves) > 1:
+                                        do_create_loops = True
 
-                                    for i in range(loop_count):
-                                        loop_verts = []
-                                        loop_verts_ids = []
+                                    if do_create_loops:
+                                        all_loops_verts = []
 
-                                        verts_range = self.active_surf.loop_points
+                                        loop_count = self.active_surf.cross_loop_points
                                         if self.active_surf.main_loop_ids:
-                                            verts_range = len(self.active_surf.main_loop_ids)
+                                            main_loop_verts = get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
+                                            all_loops_verts.append(main_loop_verts)
+                                            loop_count -= 1
 
-                                        for i in range(verts_range):
-                                            vert = bm.verts.new((0.0, 0.0, 0.0))
-                                            vert[self.id_layer] = self.id_value
-                                            loop_verts.append(vert)
-                                            loop_verts_ids.append(self.id_value)
-                                            self.id_value += 1
+                                        for i in range(loop_count):
+                                            loop_verts = []
+                                            loop_verts_ids = []
 
-                                        self.active_surf.uniform_loops.append(loop_verts_ids)
-                                        all_loops_verts.append(loop_verts)
+                                            verts_range = self.active_surf.loop_points
+                                            if self.active_surf.main_loop_ids:
+                                                verts_range = len(self.active_surf.main_loop_ids)
 
-                                    # spread verts
-                                    spread_verts_uniform(active_obj, self.active_surf, all_loops_verts, curve_settings)
+                                            for i in range(verts_range):
+                                                vert = bm.verts.new((0.0, 0.0, 0.0))
+                                                vert[self.id_layer] = self.id_value
+                                                loop_verts.append(vert)
+                                                loop_verts_ids.append(self.id_value)
+                                                self.id_value += 1
 
-                                    # create polygons
-                                    for i, verts in enumerate(all_loops_verts):
-                                        if i > 0:
-                                            new_faces = create_polyloops(verts, all_loops_verts[i-1], bm)
+                                            self.active_surf.uniform_loops.append(loop_verts_ids)
+                                            all_loops_verts.append(loop_verts)
 
-                                    bmesh.update_edit_mesh(active_obj.data)
+                                        # spread verts
+                                        spread_verts_uniform(active_obj, self.active_surf, all_loops_verts, curve_settings)
+
+                                        # create polygons
+                                        for i, verts in enumerate(all_loops_verts):
+                                            if i > 0:
+                                                new_faces = create_polyloops(verts, all_loops_verts[i-1], bm)
+
+                                        bmesh.update_edit_mesh(active_obj.data)
 
                         self.surf_tool_mode = 'MOVE_POINT'
 
@@ -767,12 +772,6 @@ def get_verts_from_ids(ids, id_layer, bm):
 
 def spread_verts_uniform(obj, surf, loop_verts, curve_settings):
     curves_verts_pos = []
-    #spread_all_verts = []
-
-    #if surf.main_loop_ids:
-        #main_loop_verts = get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
-        #curves_verts_pos.append([ vert.co.copy() for vert in main_loop_verts ])
-        #spread_all_verts.append(main_loop_verts)
 
     if surf.main_loop_ids:
         curves_verts_pos.append([ vert.co.copy() for vert in loop_verts[0] ])
@@ -781,9 +780,6 @@ def spread_verts_uniform(obj, surf, loop_verts, curve_settings):
         if len(curve.curve_points) > 1:
             update_curve_line(obj, curve, loop_verts[-1], curve_settings.spread_mode, surf.original_loop_data)
             curves_verts_pos.append([ vert.co.copy() for vert in loop_verts[-1] ])
-
-    #for verts in loop_verts:
-        #loop_verts.append(verts)
 
     # new curve
     spread_cur = cur_main.MI_CurveObject(None)
@@ -832,21 +828,23 @@ def fix_curve_direction(surf, curve_to_spread, id_layer, bm, obj, curve_settings
     len_first = None
     len_last = None
 
-    act_cur_idx = surf.all_curves.index(surf.active_curve)
+    curve_index = surf.all_curves.index(surf.active_curve)
 
-    if act_cur_idx > 0:
-        prev_curve = surf.all_curves[act_cur_idx - 1]
+    if curve_index > 0:
+        prev_curve = surf.all_curves[curve_index - 1]
         len_first = (curve_to_spread.curve_points[-1].position - prev_curve.curve_points[0].position).length
         len_last = (curve_to_spread.curve_points[-1].position - prev_curve.curve_points[-1].position).length
     else:
-        main_loop_verts = get_verts_from_ids(surf.main_loop_ids, id_layer, bm)
+        if surf.main_loop_ids:
+            main_loop_verts = get_verts_from_ids(surf.main_loop_ids, id_layer, bm)
 
-        first_v_pos = obj.matrix_world * main_loop_verts[0].co
-        last_v_pos = obj.matrix_world * main_loop_verts[-1].co
+            first_v_pos = obj.matrix_world * main_loop_verts[0].co
+            last_v_pos = obj.matrix_world * main_loop_verts[-1].co
 
-        len_first = (curve_to_spread.curve_points[-1].position - first_v_pos).length
-        len_last = (curve_to_spread.curve_points[-1].position - last_v_pos).length
-    if len_last > len_first:
+            len_first = (curve_to_spread.curve_points[-1].position - first_v_pos).length
+            len_last = (curve_to_spread.curve_points[-1].position - last_v_pos).length
+
+    if len_first and len_last and len_last > len_first:
         # we reverse array if curve points
         curve_to_spread.curve_points.reverse()
         curve_to_spread.display_bezier.clear()
@@ -860,12 +858,13 @@ def create_surface_loop(surf, curve_to_spread, bm, obj, curve_settings, self):
 
     orig_loop_data = surf.original_loop_data
 
-    act_cur_idx = surf.all_curves.index(surf.active_curve)
+    curve_index = surf.all_curves.index(surf.active_curve)
+    prev_curve = surf.all_curves[curve_index - 1]
 
     # get previous verts ids
-    if act_cur_idx > 0:
+    if curve_index > 0:
         # fix for non loop based surfaces
-        if not surf.main_loop_ids and act_cur_idx == 1 and not prev_curve.curve_verts_ids:
+        if not surf.main_loop_ids and curve_index == 1 and not prev_curve.curve_verts_ids:
             fix_main_loop_verts = []
             fix_main_loop_verts_ids = []
             for i in range(surf.loop_points):
@@ -887,7 +886,7 @@ def create_surface_loop(surf, curve_to_spread, bm, obj, curve_settings, self):
             prev_loop_verts_ids = fix_main_loop_verts_ids
 
         else:
-            prev_loop_verts_ids = surf.all_curves[act_cur_idx - 1].curve_verts_ids
+            prev_loop_verts_ids = surf.all_curves[curve_index - 1].curve_verts_ids
     else:
         prev_loop_verts_ids = surf.main_loop_ids
 
