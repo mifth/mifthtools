@@ -800,7 +800,8 @@ def spread_verts_uniform(obj, surf, loop_verts, curve_settings):
         verts_to_spread = []
 
         for k, vec in enumerate(curves_verts_pos):
-            spread_cur.curve_points[k].position = vec[i]
+            # here we multiply to matrix_world to get world coords for the new curve
+            spread_cur.curve_points[k].position = obj.matrix_world * vec[i]
 
         for j in range(surf.cross_loop_points):
             verts_to_spread.append(loop_verts[j][i])
