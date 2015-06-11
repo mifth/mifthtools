@@ -402,11 +402,26 @@ class MI_CurveSurfaces(bpy.types.Operator):
                 else:
                     curve_settings.spread_mode = 'Original'
 
-                for surf in self.all_surfs:
-                    for curve in surf.all_curves:
-                        # move points to the curve
-                        verts_update = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
-                        update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
+                if self.active_surf.spread_type == 'OnCurve':
+                    for surf in self.all_surfs:
+                        for curve in surf.all_curves:
+                            # move points to the curve
+                            verts_update = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
+                            update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
+
+                elif self.active_surf.spread_type == 'Interpolate' and self.active_surf.uniform_loops:
+                    all_loops_verts = []
+
+                    if self.active_surf.main_loop_ids:
+                        main_loop_verts = get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
+                        all_loops_verts.append(main_loop_verts)
+
+                    # get all verts
+                    for verts_loop_ids in self.active_surf.uniform_loops:
+                        curve_verts = get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
+                        all_loops_verts.append(curve_verts)
+
+                    spread_verts_uniform(active_obj, self.active_surf, all_loops_verts, curve_settings)
 
             # Create Curve
             elif event.type == 'A':
