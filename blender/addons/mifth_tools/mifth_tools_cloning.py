@@ -446,11 +446,6 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
         ray_origin_mouse = view3d_utils.region_2d_to_origin_3d(
             region, rv3d, coord)
 
-        # if rv3d.view_perspective != 'PERSP':
-        # move origin back for better work
-        ray_origin_mouse = ray_origin_mouse - \
-            (view_vector_mouse * (ray_max / 2.0))
-
         # Do RayCast! t1,t2,t3,t4 - temp values
         t1, t2, t3 = mft_obj_ray_cast(
             obj, matrix, view_vector_mouse, ray_origin_mouse)
@@ -496,11 +491,6 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
 
             view_vector_rand = view3d_utils.region_2d_to_vector_3d(
                 region, rv3d, (ray_origin_rand_2d.x, ray_origin_rand_2d.y))
-
-            # if rv3d.view_perspective != 'PERSP':
-            # move origin back for better work
-            ray_origin_rand = ray_origin_rand - \
-                (view_vector_rand * (ray_max / 2.0))
 
             t1, t2, t3 = mft_obj_ray_cast(
                 obj, matrix, view_vector_rand, ray_origin_rand)
