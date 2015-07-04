@@ -20,7 +20,6 @@
 import bpy
 import bmesh
 import bgl
-import blf
 import string
 
 from bpy.props import *

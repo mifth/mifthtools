@@ -44,3 +44,6 @@ cur_handle_2_base = (1.0, 0.5, 0.0, 1.0)
 
 # Draw Extrude Colors
 dre_point_base = (0.5, 0.8, 1.0, 1.0)
+
+# PolyLoop colors
+pl_point_col = (0.95, 0.7, 1.0, 1.0)

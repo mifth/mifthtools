@@ -319,3 +319,23 @@ def multiply_vecs(vec1, vec2):
     vec3[1] = vec1[1] * vec2[1]
     vec3[2] = vec1[2] * vec2[2]
     return vec3
+
+
+# get verts by custom bmesh layer(integer)
+def get_verts_from_ids(ids, id_layer, bm):
+    verts_dict = {}
+    verts_sorted = []
+
+    for vert in bm.verts:
+        if vert[id_layer] in ids:
+            #print(vert[id_layer])
+            verts_dict[vert[id_layer]] = vert
+
+    for id_this in ids:
+        if id_this in verts_dict.keys():
+            verts_sorted.append(verts_dict.get(id_this))
+
+    if len(verts_sorted) == len(ids):
+        return verts_sorted
+
+    return None

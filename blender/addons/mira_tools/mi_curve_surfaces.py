@@ -19,7 +19,6 @@
 
 import bpy
 import bgl
-import blf
 import string
 import bmesh
 
@@ -279,7 +278,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
                                         loop_count = self.active_surf.cross_loop_points
                                         if self.active_surf.main_loop_ids:
-                                            main_loop_verts = get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
+                                            main_loop_verts = ut_base.get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
                                             all_loops_verts.append(main_loop_verts)
                                             loop_count -= 1
 
@@ -319,7 +318,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                         if picked_surf:
                             self.active_surf = picked_surf
 
-            elif event.type in {'DEL'} and event.value == 'PRESS':
+            elif event.type in {'DEL'}:
                 for surf in self.all_surfs:
                     for curve in surf.all_curves:
                         sel_points = cur_main.get_selected_points(curve.curve_points)
@@ -337,7 +336,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                             if self.active_surf.spread_type == 'OnCurve':
                                 # move points to the curve
                                 if curve.curve_verts_ids:
-                                    verts_update = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
+                                    verts_update = ut_base.get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
                                     update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
                             else:
                                 if self.active_surf.uniform_loops:
@@ -345,11 +344,11 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
                                     # get all verts
                                     if surf.main_loop_ids:
-                                        main_loop_verts = get_verts_from_ids(surf.main_loop_ids, self.id_layer, bm)
+                                        main_loop_verts = ut_base.get_verts_from_ids(surf.main_loop_ids, self.id_layer, bm)
                                         all_loops_verts.append(main_loop_verts)
 
                                     for verts_loop_ids in surf.uniform_loops:
-                                        curve_verts = get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
+                                        curve_verts = ut_base.get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
                                         all_loops_verts.append(curve_verts)
 
                                     # spread verts
@@ -406,19 +405,19 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     for surf in self.all_surfs:
                         for curve in surf.all_curves:
                             # move points to the curve
-                            verts_update = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
+                            verts_update = ut_base.get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
                             update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
 
                 elif self.active_surf.spread_type == 'Interpolate' and self.active_surf.uniform_loops:
                     all_loops_verts = []
 
                     if self.active_surf.main_loop_ids:
-                        main_loop_verts = get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
+                        main_loop_verts = ut_base.get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
                         all_loops_verts.append(main_loop_verts)
 
                     # get all verts
                     for verts_loop_ids in self.active_surf.uniform_loops:
-                        curve_verts = get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
+                        curve_verts = ut_base.get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
                         all_loops_verts.append(curve_verts)
 
                     spread_verts_uniform(active_obj, self.active_surf, all_loops_verts, curve_settings)
@@ -445,7 +444,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                                         vert[self.id_layer] = self.id_value
                                         new_verts.append(vert)
 
-                                        curve_verts = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
+                                        curve_verts = ut_base.get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
                                         prev_verts.append(curve_verts[-1])  # get previous point
                                         curve_verts.append(vert)
                                         curve.curve_verts_ids.append(self.id_value)
@@ -468,7 +467,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                                         vert[self.id_layer] = self.id_value
                                         new_verts.append(vert)
 
-                                        curve_verts = get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
+                                        curve_verts = ut_base.get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
                                         prev_verts.append(curve_verts[-1])  # get previous point
                                         verts_loop_ids.append(self.id_value)
 
@@ -491,14 +490,14 @@ class MI_CurveSurfaces(bpy.types.Operator):
                             all_loops_verts = []
                             new_verts = []
                             new_verts_ids = []
-                            prev_verts = get_verts_from_ids(self.active_surf.uniform_loops[-1], self.id_layer, bm)
+                            prev_verts = ut_base.get_verts_from_ids(self.active_surf.uniform_loops[-1], self.id_layer, bm)
 
                             if self.active_surf.main_loop_ids:
-                                main_loop_verts = get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
+                                main_loop_verts = ut_base.get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
                                 all_loops_verts.append(main_loop_verts)
 
                             for verts_loop_ids in self.active_surf.uniform_loops:
-                                curve_verts = get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
+                                curve_verts = ut_base.get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
                                 all_loops_verts.append(curve_verts)
 
                             verts_range = self.active_surf.loop_points
@@ -524,7 +523,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                             if new_verts and prev_verts:
                                 create_polyloops(new_verts, prev_verts, bm)
 
-                elif event.type in {'NUMPAD_MINUS', 'MINUS',}:
+                elif event.type in {'NUMPAD_MINUS', 'MINUS'}:
                     verts_to_remove = []
 
                     if not event.ctrl:
@@ -533,7 +532,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                             if self.active_surf.spread_type == 'OnCurve':
                                 for curve in self.active_surf.all_curves:
                                     if curve.curve_verts_ids and len(curve.curve_verts_ids) > 2:
-                                        curve_verts = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
+                                        curve_verts = ut_base.get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
                                         last_vert = curve_verts[-1]
 
                                         curve.curve_verts_ids.remove(curve.curve_verts_ids[-1])
@@ -552,7 +551,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
                                     # get all verts
                                     for verts_loop_ids in self.active_surf.uniform_loops:
-                                        curve_verts = get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
+                                        curve_verts = ut_base.get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
                                         last_vert = curve_verts[-1]
 
                                         verts_loop_ids.remove(verts_loop_ids[-1])
@@ -571,7 +570,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     else:
                         if self.active_surf.spread_type == 'Interpolate' and self.active_surf.uniform_loops and len(self.active_surf.uniform_loops) > 2:
                             all_loops_verts = []
-                            verts_to_remove = get_verts_from_ids(self.active_surf.uniform_loops[-1], self.id_layer, bm)
+                            verts_to_remove = ut_base.get_verts_from_ids(self.active_surf.uniform_loops[-1], self.id_layer, bm)
 
                             # remove verts
                             bmesh.ops.delete(bm, geom=verts_to_remove, context=1)
@@ -581,11 +580,11 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
                             # get all verts
                             if self.active_surf.main_loop_ids:
-                                main_loop_verts = get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
+                                main_loop_verts = ut_base.get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
                                 all_loops_verts.append(main_loop_verts)
 
                             for verts_loop_ids in self.active_surf.uniform_loops:
-                                curve_verts = get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
+                                curve_verts = ut_base.get_verts_from_ids(verts_loop_ids, self.id_layer, bm)
                                 all_loops_verts.append(curve_verts)
 
                             # spread verts
@@ -624,17 +623,17 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     for surf in self.all_surfs:
                         for curve in surf.all_curves:
                             if curve.curve_verts_ids:
-                                verts_update = get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
+                                verts_update = ut_base.get_verts_from_ids(curve.curve_verts_ids, self.id_layer, bm)
                                 update_curve_line(active_obj, curve, verts_update, curve_settings.spread_mode, surf.original_loop_data)
                 else:
                     if self.active_surf.uniform_loops:
                         # spread verts
                         all_loops_verts = []
                         if self.active_surf.main_loop_ids:
-                            main_loop_verts = get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
+                            main_loop_verts = ut_base.get_verts_from_ids(self.active_surf.main_loop_ids, self.id_layer, bm)
                             all_loops_verts.append(main_loop_verts)
                         for verts in self.active_surf.uniform_loops:
-                            uni_verts = get_verts_from_ids(verts, self.id_layer, bm)
+                            uni_verts = ut_base.get_verts_from_ids(verts, self.id_layer, bm)
                             all_loops_verts.append(uni_verts)
                         spread_verts_uniform(active_obj, self.active_surf, all_loops_verts, curve_settings)
 
@@ -674,7 +673,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     # get center
                     center_plane = None
                     if self.surf_tool_mode == 'CREATE_SURFACE':
-                        center_plane = bpy.context.space_data.cursor_location
+                        center_plane = context.space_data.cursor_location
                     else:
                         if self.active_surf and self.active_surf.active_curve and self.active_surf.active_curve.active_point:
                             act_point = cur_main.get_point_by_id(self.active_surf.active_curve.curve_points, self.active_surf.active_curve.active_point)
@@ -682,7 +681,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
                         elif self.active_surf.main_loop_center:
                             center_plane = self.active_surf.main_loop_center
                         else:
-                            center_plane = bpy.context.space_data.cursor_location
+                            center_plane = context.space_data.cursor_location
 
                     new_point_pos = ut_base.get_mouse_on_plane(context, center_plane, None, m_coords)
 
@@ -768,25 +767,6 @@ def finish_work(self, context, bm):
     context.area.header_text_set()
 
 
-def get_verts_from_ids(ids, id_layer, bm):
-    verts_dict = {}
-    verts_sorted = []
-
-    for vert in bm.verts:
-        if vert[id_layer] in ids:
-            #print(vert[id_layer])
-            verts_dict[vert[id_layer]] = vert
-
-    for id_this in ids:
-        if id_this in verts_dict.keys():
-            verts_sorted.append(verts_dict.get(id_this))
-
-    if len(verts_sorted) == len(ids):
-        return verts_sorted
-
-    return None
-
-
 def spread_verts_uniform(obj, surf, loop_verts, curve_settings):
     curves_verts_pos = []
 
@@ -854,7 +834,7 @@ def fix_curve_direction(surf, curve_to_spread, id_layer, bm, obj, curve_settings
         len_last = (curve_to_spread.curve_points[-1].position - prev_curve.curve_points[-1].position).length
     else:
         if surf.main_loop_ids:
-            main_loop_verts = get_verts_from_ids(surf.main_loop_ids, id_layer, bm)
+            main_loop_verts = ut_base.get_verts_from_ids(surf.main_loop_ids, id_layer, bm)
 
             first_v_pos = obj.matrix_world * main_loop_verts[0].co
             last_v_pos = obj.matrix_world * main_loop_verts[-1].co
@@ -909,7 +889,7 @@ def create_surface_loop(surf, curve_to_spread, bm, obj, curve_settings, self):
         prev_loop_verts_ids = surf.main_loop_ids
 
     # previous loop
-    prev_loop_verts = get_verts_from_ids(prev_loop_verts_ids, self.id_layer, bm)
+    prev_loop_verts = ut_base.get_verts_from_ids(prev_loop_verts_ids, self.id_layer, bm)
 
     # next loop
     for i in range(len(prev_loop_verts_ids)):

@@ -19,7 +19,7 @@
 import bpy
 
 
-class MI_ExtrudePanel(bpy.types.Panel):
+class MI_ModifyPanel(bpy.types.Panel):
     bl_label = "Modify"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
@@ -47,8 +47,10 @@ class MI_ExtrudePanel(bpy.types.Panel):
                 layout.prop(extrude_settings, "symmetry_axys", text='Axys')
 
         layout.separator()
-        #layout.label(text="CurveSurface:")
-        layout.operator("mira.curve_surfaces", text="CurveSurfaces")
+        layout.operator("mira.poly_loop", text="Poly Loop Test")
+
+        layout.separator()
+        layout.operator("mira.curve_surfaces", text="Curve Surfaces")
         layout.prop(cur_surfs_settings, "spread_loops_type", text='Points')
 
 
@@ -70,18 +72,18 @@ class MI_DeformPanel(bpy.types.Panel):
         layout.operator("mira.deformer", text="Deformer")
 
         layout.separator()
-        layout.operator("mira.linear_deformer", text="LinearDeformer")
+        layout.operator("mira.linear_deformer", text="Linear Deformer")
         layout.prop(lin_def_settings, "manual_update", text='ManualUpdate')
 
         layout.separator()
         #layout.label(text="CurveStretch:")
-        layout.operator("mira.curve_stretch", text="CurveStretch")
+        layout.operator("mira.curve_stretch", text="Curve Stretch")
         #row = layout.row()
         layout.prop(cur_stretch_settings, "points_number", text='Points')
 
         layout.separator()
         #layout.label(text="CurveGuide:")
-        layout.operator("mira.curve_guide", text="CurveGuide")
+        layout.operator("mira.curve_guide", text="Curve Guide")
         row = layout.row()
         row.prop(curguide_settings, "points_number", text='LoopSpread')
         row.prop(curguide_settings, "deform_type", text='')

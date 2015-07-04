@@ -19,7 +19,6 @@
 
 import bpy
 import bgl
-import blf
 import string
 import bmesh
 
