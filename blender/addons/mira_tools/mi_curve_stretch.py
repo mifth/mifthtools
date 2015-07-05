@@ -79,7 +79,7 @@ class MI_CurveStretch(bpy.types.Operator):
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
 
             cur_stretch_settings = context.scene.mi_cur_stretch_settings
-            curve_settings = context.scene.mi_curve_settings
+            curve_settings = context.scene.mi_settings
 
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
@@ -144,7 +144,7 @@ class MI_CurveStretch(bpy.types.Operator):
 
         context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L, SpreadMode: M")
 
-        curve_settings = context.scene.mi_curve_settings
+        curve_settings = context.scene.mi_settings
         cur_stretch_settings = context.scene.mi_cur_stretch_settings
         active_obj = context.scene.objects.active
         bm = bmesh.from_edit_mesh(active_obj.data)
@@ -393,7 +393,7 @@ def mi_curve_draw_3d(self, context):
 def draw_curve_2d(curves, active_cur, context):
     region = context.region
     rv3d = context.region_data
-    curve_settings = context.scene.mi_curve_settings
+    curve_settings = context.scene.mi_settings
     # coord = event.mouse_region_x, event.mouse_region_y
     for curve in curves:
         for cu_point in curve.curve_points:

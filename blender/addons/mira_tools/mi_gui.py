@@ -99,10 +99,13 @@ class MI_CurveSettingsPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        curve_settings = context.scene.mi_curve_settings
+        mi_settings = context.scene.mi_settings
 
-        layout.prop(curve_settings, "surface_snap", text='SurfaceSnapping')
-        layout.prop(curve_settings, "spread_mode", text='Spread')
-        layout.prop(curve_settings, "curve_resolution", text='Resolution')
-        layout.prop(curve_settings, "draw_handlers", text='Handlers')
+        layout.prop(mi_settings, "surface_snap", text='SurfaceSnapping')
+        #layout.separator()
+
+        layout.label(text="CurveSettings:")
+        layout.prop(mi_settings, "spread_mode", text='Spread')
+        layout.prop(mi_settings, "curve_resolution", text='Resolution')
+        layout.prop(mi_settings, "draw_handlers", text='Handlers')
         layout.operator("mira.curve_test", text="Curve Test")

@@ -102,7 +102,7 @@ class MI_Curve_Guide(bpy.types.Operator):
             m_coords = event.mouse_region_x, event.mouse_region_y
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
-            curve_settings = context.scene.mi_curve_settings
+            curve_settings = context.scene.mi_settings
 
             if bm.verts:
                 pre_verts = ut_base.get_selected_bmverts(bm)
@@ -163,7 +163,7 @@ class MI_Curve_Guide(bpy.types.Operator):
         region = context.region
         rv3d = context.region_data
 
-        curve_settings = context.scene.mi_curve_settings
+        curve_settings = context.scene.mi_settings
         curguide_settings = context.scene.mi_curguide_settings
 
         # tooltip
@@ -723,7 +723,7 @@ def cur_guide_draw_2d(self, context):
     # active_obj = context.scene.objects.active
     region = context.region
     rv3d = context.region_data
-    curve_settings = context.scene.mi_curve_settings
+    curve_settings = context.scene.mi_settings
     curguide_settings = context.scene.mi_curguide_settings
 
     #lw_tool_dir = (self.lw_tool.end_point.position - self.lw_tool.start_point.position).normalized()
@@ -742,7 +742,7 @@ def cur_guide_draw_3d(self, context):
     # active_obj = context.scene.objects.active
     region = context.region
     rv3d = context.region_data
-    curve_settings = context.scene.mi_curve_settings
+    curve_settings = context.scene.mi_settings
     curguide_settings = context.scene.mi_curguide_settings
 
     if self.curve_tool:
@@ -774,7 +774,7 @@ def cur_guide_draw_3d(self, context):
 def draw_curve_points_2d(curve, context, curve_settings):
     region = context.region
     rv3d = context.region_data
-    curve_settings = context.scene.mi_curve_settings
+    curve_settings = context.scene.mi_settings
 
     for cu_point in curve.curve_points:
         point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)

@@ -127,7 +127,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
             # the arguments we pass the the callbackection
             args = (self, context)
 
-            curve_settings = context.scene.mi_curve_settings
+            curve_settings = context.scene.mi_settings
             cur_surfs_settings = context.scene.mi_cur_surfs_settings
 
             active_obj = context.scene.objects.active
@@ -185,7 +185,7 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
         context.area.header_text_set("NewSurface: Shift+A, NewCurve: A, Add/Remove Loops: +/-, Add/Remove CrossLoops: Ctrl++/Ctrl+-, NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L, SpreadMode: M")
 
-        curve_settings = context.scene.mi_curve_settings
+        curve_settings = context.scene.mi_settings
         cur_surfs_settings = context.scene.mi_cur_surfs_settings
         m_coords = event.mouse_region_x, event.mouse_region_y
 
@@ -1025,7 +1025,7 @@ def mi_surf_draw_3d(self, context):
 def draw_surf_2d(surfs, active_surf, context):
     region = context.region
     rv3d = context.region_data
-    curve_settings = context.scene.mi_curve_settings
+    curve_settings = context.scene.mi_settings
     # coord = event.mouse_region_x, event.mouse_region_y
     for surf in surfs:
         # draw loops center

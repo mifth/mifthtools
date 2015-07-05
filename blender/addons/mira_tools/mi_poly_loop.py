@@ -81,7 +81,7 @@ class MI_PolyLoop(bpy.types.Operator):
             # the arguments we pass the the callbackection
             args = (self, context)
 
-            curve_settings = context.scene.mi_curve_settings
+            mi_settings = context.scene.mi_settings
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
 
@@ -110,7 +110,7 @@ class MI_PolyLoop(bpy.types.Operator):
                 self.all_loops_ids.append(MI_PL_LoopObject(False))  # add another empty loop
 
                 # get meshes for snapping
-                if curve_settings.surface_snap is True:
+                if mi_settings.surface_snap is True:
                     sel_objects = [
                         obj for obj in context.selected_objects if obj != active_obj]
                     if sel_objects:
@@ -139,18 +139,18 @@ class MI_PolyLoop(bpy.types.Operator):
         #print(context.active_operator)
         context.area.tag_redraw()
 
-        context.area.header_text_set("Shift+A: NewLoops, A: NewLoop, LeftClick: CreatePoint, X: DeletePoint, C: CreateTriangle, Ctrl+LeftClick: CreateTriangle2")
+        context.area.header_text_set("Shift+A: NewLoops, A: NewLoop, LeftClick: CreatePoint, X: DeletePoint, C: CreateTriangle, Ctrl+LeftClick: CreateTriangle2, Shift+Tab: SurfaceSnap")
 
-        #curve_settings = context.scene.mi_curve_settings
+        mi_settings = context.scene.mi_settings
         m_coords = event.mouse_region_x, event.mouse_region_y
         active_obj = context.scene.objects.active
         bm = bmesh.from_edit_mesh(active_obj.data)
 
         region = context.region
         rv3d = context.region_data
-        cursor_loc = context.space_data.cursor_location
 
         # check nearest id to index
+        # this is to get loop direction
         if not self.all_loops_ids[-1].loop_ids and len(self.all_loops_ids) > 1:
             m_coords_vec = Vector(m_coords)
             first_id = self.all_loops_ids[-2].loop_ids[0]
@@ -185,8 +185,18 @@ class MI_PolyLoop(bpy.types.Operator):
         # Make Picking
         if self.tool_mode == 'IDLE' and event.value == 'PRESS':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
-                new_point_pos = ut_base.get_mouse_on_plane(context, cursor_loc, None, m_coords)
+                # get position
+                new_point_pos = None
+                if mi_settings.surface_snap is True and self.picked_meshes:
+                    best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords, 10000.0)
+                    if hit_position:
+                        new_point_pos = active_obj.matrix_world.inverted() * hit_position
+                else:
+                    cursor_loc = context.space_data.cursor_location
+                    new_point_pos = ut_base.get_mouse_on_plane(context, cursor_loc, None, m_coords)
+                    new_point_pos = active_obj.matrix_world.inverted() * new_point_pos
 
+                # create vert/edge/face
                 if new_point_pos:
                     loop_obj = self.all_loops_ids[-1]
                     new_face_verts = []
@@ -345,10 +355,29 @@ class MI_PolyLoop(bpy.types.Operator):
                     else:
                         self.previous_loop_id = 0
 
+            elif event.type in {'TAB'} and event.shift:
+                if mi_settings.surface_snap is True:
+                    mi_settings.surface_snap = False
+                else:
+                    mi_settings.surface_snap = True
+                    if not self.picked_meshes:
+                        # get meshes for snapping
+                        sel_objects = [
+                            obj for obj in context.selected_objects if obj != active_obj]
+                        if sel_objects:
+                            self.picked_meshes = ut_base.get_obj_dup_meshes(
+                                sel_objects, context)
+
         # TOOL WORK
         if self.tool_mode == 'MOVE_POINT':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
                 self.tool_mode = 'IDLE'
+
+                last_vert = ut_base.get_verts_from_ids([self.all_loops_ids[-1].loop_ids[-1]], self.id_layer, bm)[0]
+                if mi_settings.surface_snap is True and self.picked_meshes:
+                    best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords, 10000.0)
+                    if hit_position:
+                        last_vert.co = active_obj.matrix_world.inverted() * hit_position
 
                 bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
@@ -386,7 +415,7 @@ class MI_PolyLoop(bpy.types.Operator):
 
 
 def reset_params(self, bm):
-    # reset base curve_settings
+    # reset base mi_settings
     self.tool_mode = 'IDLE'
     #self.all_curves = []
     #self.active_curve = None
@@ -486,7 +515,7 @@ def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
 #def draw_curve_2d(curves, context):
     #region = context.region
     #rv3d = context.region_data
-    #curve_settings = context.scene.mi_curve_settings
+    #mi_settings = context.scene.mi_settings
     ## coord = event.mouse_region_x, event.mouse_region_y
     #for curve in curves:
         #for cu_point in curve.curve_points:
@@ -507,7 +536,7 @@ def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
                 #mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
                 ## Handlers
-                #if curve_settings.draw_handlers:
+                #if mi_settings.draw_handlers:
                 ##if curve.curve_points.index(cu_point) < len(curve.curve_points)-1:
                     #if cu_point.handle1:
                         #handle_1_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)

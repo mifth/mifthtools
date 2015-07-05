@@ -33,11 +33,13 @@ import random
 from mathutils import Vector
 
 
-class MI_CurveSettings(bpy.types.PropertyGroup):
+class MI_Settings(bpy.types.PropertyGroup):
+    # For all tools
+    surface_snap = BoolProperty(default=False)
+
     # Curve Settings
     curve_resolution = IntProperty(default=13, min=1, max=128)
     draw_handlers = BoolProperty(default=False)
-    surface_snap = BoolProperty(default=False)
 
     spread_mode = EnumProperty(
         name = "Spread Mode",
