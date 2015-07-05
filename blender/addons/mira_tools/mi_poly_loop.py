@@ -318,7 +318,7 @@ class MI_PolyLoop(bpy.types.Operator):
                 # new loop
                 else:
                     last_ids = self.all_loops_ids[-1].loop_ids
-                    if len(last_ids) > 2:
+                    if len(last_ids) > 1:
                         self.all_loops_ids.append(MI_PL_LoopObject(False))  # add another empty loop
                         self.previous_loop_id = 0
                         id_to_index = None
