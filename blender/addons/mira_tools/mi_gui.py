@@ -101,10 +101,13 @@ class MI_CurveSettingsPanel(bpy.types.Panel):
         layout = self.layout
         mi_settings = context.scene.mi_settings
 
-        layout.prop(mi_settings, "surface_snap", text='SurfaceSnapping')
+        row = layout.row()
+        layout.label(text="Surface Snapping:")
+        row.prop(mi_settings, "surface_snap", text='')
+        row.prop(mi_settings, "snap_objects", text='')
         #layout.separator()
 
-        layout.label(text="CurveSettings:")
+        layout.label(text="Curve Settings:")
         layout.prop(mi_settings, "spread_mode", text='Spread')
         layout.prop(mi_settings, "curve_resolution", text='Resolution')
         layout.prop(mi_settings, "draw_handlers", text='Handlers')

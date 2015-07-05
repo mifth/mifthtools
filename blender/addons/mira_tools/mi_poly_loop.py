@@ -111,11 +111,9 @@ class MI_PolyLoop(bpy.types.Operator):
 
                 # get meshes for snapping
                 if mi_settings.surface_snap is True:
-                    sel_objects = [
-                        obj for obj in context.selected_objects if obj != active_obj]
-                    if sel_objects:
-                        self.picked_meshes = ut_base.get_obj_dup_meshes(
-                            sel_objects, context)
+                    meshes_array = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, context)
+                    if meshes_array:
+                        self.picked_meshes = meshes_array
 
                 # Add the region OpenGL drawing callback
                 # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
@@ -362,11 +360,9 @@ class MI_PolyLoop(bpy.types.Operator):
                     mi_settings.surface_snap = True
                     if not self.picked_meshes:
                         # get meshes for snapping
-                        sel_objects = [
-                            obj for obj in context.selected_objects if obj != active_obj]
-                        if sel_objects:
-                            self.picked_meshes = ut_base.get_obj_dup_meshes(
-                                sel_objects, context)
+                        meshes_array = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, context)
+                        if meshes_array:
+                            self.picked_meshes = meshes_array
 
         # TOOL WORK
         if self.tool_mode == 'MOVE_POINT':

@@ -158,11 +158,9 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
             # get meshes for snapping
             if curve_settings.surface_snap is True:
-                sel_objects = [
-                    obj for obj in context.selected_objects if obj != active_obj]
-                if sel_objects:
-                    self.picked_meshes = ut_base.get_obj_dup_meshes(
-                        sel_objects, context)
+                meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, context)
+                if meshes_array:
+                    self.picked_meshes = meshes_array
 
             self.manipulator = context.space_data.show_manipulator
             context.space_data.show_manipulator = False
@@ -372,11 +370,9 @@ class MI_CurveSurfaces(bpy.types.Operator):
                     curve_settings.surface_snap = True
                     if not self.picked_meshes:
                         # get meshes for snapping
-                        sel_objects = [
-                            obj for obj in context.selected_objects if obj != active_obj]
-                        if sel_objects:
-                            self.picked_meshes = ut_base.get_obj_dup_meshes(
-                                sel_objects, context)
+                        meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, context)
+                        if meshes_array:
+                            self.picked_meshes = meshes_array
 
             # Select Linked
             elif event.type == 'L':

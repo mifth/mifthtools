@@ -15,8 +15,15 @@ import random
 from mathutils import Vector
 
 
-def get_obj_dup_meshes(objects_array, context):
+def get_obj_dup_meshes(obj_snap_mode, context):
     """Get all meshes"""
+
+    objects_array = None
+    active_obj = context.scene.objects.active
+    if obj_snap_mode == 'Selected':
+        objects_array = [obj for obj in context.selected_objects if obj != active_obj]
+    else:
+        objects_array = [obj for obj in context.visible_objects if obj != active_obj]
 
     listObjMatrix = []
     for obj in objects_array:

@@ -115,11 +115,9 @@ class MI_CurveStretch(bpy.types.Operator):
 
                     # get meshes for snapping
                     if curve_settings.surface_snap is True:
-                        sel_objects = [
-                            obj for obj in context.selected_objects if obj != active_obj]
-                        if sel_objects:
-                            self.picked_meshes = ut_base.get_obj_dup_meshes(
-                                sel_objects, context)
+                        meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, context)
+                        if meshes_array:
+                            self.picked_meshes = meshes_array
 
                 self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
                 self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
@@ -225,11 +223,9 @@ class MI_CurveStretch(bpy.types.Operator):
                     curve_settings.surface_snap = True
                     if not self.picked_meshes:
                         # get meshes for snapping
-                        sel_objects = [
-                            obj for obj in context.selected_objects if obj != active_obj]
-                        if sel_objects:
-                            self.picked_meshes = ut_base.get_obj_dup_meshes(
-                                sel_objects, context)
+                        meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, context)
+                        if meshes_array:
+                            self.picked_meshes = meshes_array
 
             # Select Linked
             elif event.type == 'L':

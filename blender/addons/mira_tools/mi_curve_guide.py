@@ -104,46 +104,40 @@ class MI_Curve_Guide(bpy.types.Operator):
             bm = bmesh.from_edit_mesh(active_obj.data)
             curve_settings = context.scene.mi_settings
 
-            if bm.verts:
-                pre_verts = ut_base.get_selected_bmverts(bm)
-                if not pre_verts:
-                    pre_verts = [v for v in bm.verts if v.hide is False]
+            pre_verts = ut_base.get_selected_bmverts(bm)
+            if not pre_verts:
+                pre_verts = [v for v in bm.verts if v.hide is False]
 
-                if pre_verts:
-                    # change manipulator
-                    self.manipulator = context.space_data.show_manipulator
-                    context.space_data.show_manipulator = False
+            if pre_verts:
+                # change manipulator
+                self.manipulator = context.space_data.show_manipulator
+                context.space_data.show_manipulator = False
 
-                    self.work_verts = [vert.index for vert in pre_verts]  # here we add temporaryly verts which can be applied for the tool
+                self.work_verts = [vert.index for vert in pre_verts]  # here we add temporaryly verts which can be applied for the tool
 
-                    # create linear deformer
-                    self.lw_tool = l_widget.MI_Linear_Widget()
+                # create linear deformer
+                self.lw_tool = l_widget.MI_Linear_Widget()
 
-                    l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Auto', 1.0001)
+                l_widget.setup_lw_tool(rv3d, self.lw_tool, active_obj, pre_verts, 'Auto', 1.0001)
 
-                    # get meshes for snapping
-                    if curve_settings.surface_snap is True:
-                        sel_objects = [
-                            obj for obj in context.selected_objects if obj != active_obj]
-                        if sel_objects:
-                            self.picked_meshes = ut_base.get_obj_dup_meshes(
-                                sel_objects, context)
+                # get meshes for snapping
+                if curve_settings.surface_snap is True:
+                    meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, context)
+                    if meshes_array:
+                        self.picked_meshes = meshes_array
 
-                    # Add the region OpenGL drawing callback
-                    # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
-                    self.cur_guide_handle_3d = bpy.types.SpaceView3D.draw_handler_add(cur_guide_draw_3d, args, 'WINDOW', 'POST_VIEW')
-                    self.cur_guide_handle_2d = bpy.types.SpaceView3D.draw_handler_add(cur_guide_draw_2d, args, 'WINDOW', 'POST_PIXEL')
-                    context.window_manager.modal_handler_add(self)
+                # Add the region OpenGL drawing callback
+                # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
+                self.cur_guide_handle_3d = bpy.types.SpaceView3D.draw_handler_add(cur_guide_draw_3d, args, 'WINDOW', 'POST_VIEW')
+                self.cur_guide_handle_2d = bpy.types.SpaceView3D.draw_handler_add(cur_guide_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+                context.window_manager.modal_handler_add(self)
 
-                    return {'RUNNING_MODAL'}
-
-                else:
-                    self.report({'WARNING'}, "No verts!!")
-                    return {'CANCELLED'}
+                return {'RUNNING_MODAL'}
 
             else:
                 self.report({'WARNING'}, "No verts!!")
                 return {'CANCELLED'}
+
         else:
             self.report({'WARNING'}, "View3D not found, cannot run operator")
             return {'CANCELLED'}
@@ -365,11 +359,9 @@ class MI_Curve_Guide(bpy.types.Operator):
                     curve_settings.surface_snap = True
                     if not self.picked_meshes:
                         # get meshes for snapping
-                        sel_objects = [
-                            obj for obj in context.selected_objects if obj != active_obj]
-                        if sel_objects:
-                            self.picked_meshes = ut_base.get_obj_dup_meshes(
-                                sel_objects, context)
+                        meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, context)
+                        if meshes_array:
+                            self.picked_meshes = meshes_array
 
             # Select Linked
             elif event.type == 'L' and self.curve_tool and curguide_settings.deform_type == 'Deform':

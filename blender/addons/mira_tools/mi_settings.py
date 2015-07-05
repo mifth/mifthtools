@@ -36,6 +36,13 @@ from mathutils import Vector
 class MI_Settings(bpy.types.PropertyGroup):
     # For all tools
     surface_snap = BoolProperty(default=False)
+    snap_objects = EnumProperty(
+        name = "Objects To Snap",
+        items = (('Selected', 'Selected', ''),
+                ('Visible', 'Visible', '')
+                ),
+        default = 'Visible'
+    )
 
     # Curve Settings
     curve_resolution = IntProperty(default=13, min=1, max=128)
