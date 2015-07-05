@@ -50,12 +50,12 @@ class MI_ExtrudeSettings(bpy.types.PropertyGroup):
                ),
         default = 'Relative'
     )
-    extrude_mode = EnumProperty(
-        items=(('Screen', 'Screen', ''),
-               ('Raycast', 'Raycast', '')
-               ),
-        default = 'Screen'
-    )
+    #extrude_mode = EnumProperty(
+        #items=(('Screen', 'Screen', ''),
+               #('Raycast', 'Raycast', '')
+               #),
+        #default = 'Screen'
+    #)
 
     do_symmetry = BoolProperty(default=False)
     symmetry_axys = EnumProperty(
@@ -142,6 +142,7 @@ class MI_StartDraw(bpy.types.Operator):
 
             reset_params(self)
 
+            mi_settings = context.scene.mi_settings
             extrude_settings = context.scene.mi_extrude_settings
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
@@ -159,15 +160,13 @@ class MI_StartDraw(bpy.types.Operator):
                 bpy.context.scene.tool_settings.use_mesh_automerge = False
 
                 # prepare for snapping
-                if extrude_settings.extrude_mode == 'Raycast':
-                    sel_objects = [
-                        obj for obj in context.selected_objects if obj != active_obj]
-                    if sel_objects:
-                        self.picked_meshes = ut_base.get_obj_dup_meshes(
-                            sel_objects, context)
+                if mi_settings.surface_snap is True:
+                    meshes_array = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, mi_settings.convert_instances, context)
+                    if meshes_array:
+                        self.picked_meshes = meshes_array
                     else:
                         self.report(
-                            {'WARNING'}, "Please, select objects to raycast!!!")
+                            {'WARNING'}, "Please, get objects to snap!!!")
                         finish_extrude(self, context)
                         return {'CANCELLED'}
 
@@ -176,7 +175,7 @@ class MI_StartDraw(bpy.types.Operator):
                 # if we have symmetry
                 extrude_center = None
                 camera_dir = None
-                if extrude_settings.do_symmetry and extrude_settings.extrude_mode == 'Screen':
+                if extrude_settings.do_symmetry and mi_settings.surface_snap is False:
                     extrude_center = ut_base.get_vertices_center(sel_verts, active_obj, True)
                     if extrude_settings.symmetry_axys == 'X':
                         extrude_center.x = 0.0
@@ -230,6 +229,7 @@ class MI_StartDraw(bpy.types.Operator):
 
         context.area.header_text_set("S: Scale, Shift-S: ScaleAll, R: Rotate, Shift-R: RotateAll")
 
+        mi_settings = context.scene.mi_settings
         active_obj = context.scene.objects.active
         bm = bmesh.from_edit_mesh(active_obj.data)
 
@@ -286,7 +286,7 @@ class MI_StartDraw(bpy.types.Operator):
             obj_dir_axys = None  # only for symmetry
             best_obj, hit_normal, hit_position = None, None, None
 
-            if extrude_settings.extrude_mode == 'Raycast':
+            if mi_settings.surface_snap is True:
                 best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(
                     context, self.picked_meshes, m_coords, 10000.0)
                 new_pos = hit_position
@@ -301,7 +301,7 @@ class MI_StartDraw(bpy.types.Operator):
                         new_pos += hit_normal * self.raycast_offset
 
             else:
-                if extrude_settings.do_symmetry and extrude_settings.extrude_mode == 'Screen':
+                if extrude_settings.do_symmetry and mi_settings.surface_snap is False:
                     if extrude_settings.symmetry_axys == 'X':
                         obj_dir_axys = ut_base.get_obj_axis(active_obj, 'X')
                     if extrude_settings.symmetry_axys == 'Y':
@@ -335,7 +335,7 @@ class MI_StartDraw(bpy.types.Operator):
 
                 # main extrude things
                 bpy.ops.mesh.extrude_region_move()
-                selected_bmesh = ut_base.get_selected_bmesh(bm)
+                selected_verts = [v for v in bm.verts if v.select]
 
                 # New Extrude center
                 offset_dir = None
@@ -348,7 +348,7 @@ class MI_StartDraw(bpy.types.Operator):
                 cam_dir = None
 
                 # if we have symmetry
-                if extrude_settings.do_symmetry and extrude_settings.extrude_mode == 'Screen':
+                if extrude_settings.do_symmetry and mi_settings.surface_snap is False:
                     cam_dir = obj_dir_axys
                 else:
                     cam_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
@@ -360,7 +360,7 @@ class MI_StartDraw(bpy.types.Operator):
                     rot_angle = self.extrude_points[
                         -1].direction.angle(offset_dir)
 
-                    if extrude_settings.extrude_mode == 'Raycast':
+                    if mi_settings.surface_snap is True:
                         rotate_dir_vec = self.extrude_points[
                             -1].direction.cross(offset_dir)
                     else:
@@ -372,19 +372,15 @@ class MI_StartDraw(bpy.types.Operator):
                     if up_vec.angle(offset_dir) > math.radians(90):
                         rot_angle = -rot_angle
 
-                    ## Direction rotate
-                    #bpy.ops.transform.rotate(
-                        #value=rot_angle, axis=rotate_dir_vec, proportional='DISABLED')
-
                     # rotate verts!
                     rot_mat = Matrix.Rotation(rot_angle, 3,  rotate_dir_vec)
-                    for vert in selected_bmesh[0]:
+                    for vert in selected_verts:
                         vert.co = active_obj.matrix_world.inverted() * (rot_mat * ((active_obj.matrix_world * vert.co) - new_pos) + new_pos)
 
                     self.extrude_points[-1].direction = offset_dir
                 else:
                     # fix first extrude
-                    if extrude_settings.extrude_mode == 'Raycast':
+                    if mi_settings.surface_snap is True:
                         fix_first_extrude_dir = ut_base.get_mouse_on_plane(
                             context, self.extrude_points[-1].position, None, m_coords)
                         self.extrude_points[-1].direction = (
@@ -395,8 +391,7 @@ class MI_StartDraw(bpy.types.Operator):
                 # finalize things
                 # empty array will be for extruded vertices
                 # hit_normal is only for raycast mode
-                new_point = MI_Extrude_Point(new_pos, self.extrude_points[
-                                             -1].direction, ut_base.get_selected_bmverts(bm), hit_normal)
+                new_point = MI_Extrude_Point(new_pos, self.extrude_points[-1].direction, ut_base.get_selected_bmverts(bm), hit_normal)
                 self.extrude_points.append(new_point)
                 # self.extrude_points[-1].position = new_pos
 
@@ -408,17 +403,10 @@ class MI_StartDraw(bpy.types.Operator):
                     fix_up_vec = rotate_dir_vec.cross(fix_dir).normalized()
                     fix_rot_angle = fix_dir.angle(fix_step.direction)
 
-                    previous_extrude_verts = get_previous_extrude_verts(
-                        bm, context)
+                    previous_extrude_verts = get_previous_extrude_verts(bm, context, selected_verts)
 
                     # rotate previous extrude
                     if fix_rot_angle > 0.0:
-                        for vert in selected_bmesh[0]:
-                            vert.select = False
-                        for edge in selected_bmesh[1]:
-                            edge.select = False
-                        for face in selected_bmesh[2]:
-                            face.select = False
 
                         # rotate previous extrude to fix rotation
                         if fix_up_vec.angle((fix_step.direction - fix_dir).normalized()) > math.radians(90):
@@ -429,13 +417,6 @@ class MI_StartDraw(bpy.types.Operator):
                         for vert in previous_extrude_verts:
                             vert.co = active_obj.matrix_world.inverted() * (rot_mat * ((active_obj.matrix_world * vert.co) - fix_step.position) + fix_step.position)
                             vert.select = False
-
-                        for vert in selected_bmesh[0]:
-                            vert.select = True
-                        for edge in selected_bmesh[1]:
-                            edge.select = True
-                        for face in selected_bmesh[2]:
-                            face.select = True
 
                     # chenge direction of previous extrude
                     fix_step.direction = fix_dir
@@ -565,19 +546,13 @@ def mi_extrude_draw_2d(self, context):
     mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
 
-def get_previous_extrude_verts(bm, context):
-    verts_array = None
-    verts1 = ut_base.get_selected_bmverts_ids(bm)
-    bpy.ops.mesh.select_more()
-
-    verts2 = ut_base.get_selected_bmverts_ids(bm)
-    bpy.ops.mesh.select_less()
-
+def get_previous_extrude_verts(bm, context, selected_verts):
     new_verts = []
-    bm.verts.ensure_lookup_table()
-    for vert in verts2:
-        if vert not in verts1:
-            new_verts.append(bm.verts[vert])
+    for vert_1 in selected_verts:
+        for edge in vert_1.link_edges:
+            for vert_2 in edge.verts:
+                if vert_2 not in selected_verts and vert_2 not in new_verts:
+                    new_verts.append(vert_2)
 
     return new_verts
 

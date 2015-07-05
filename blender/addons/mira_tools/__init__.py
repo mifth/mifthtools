@@ -40,7 +40,7 @@ if "bpy" in locals():
     imp.reload(mi_deform)
     imp.reload(mi_linear_deformer)
     imp.reload(mi_curve_guide)
-    imp.reload(mi_extrude)
+    imp.reload(mi_draw_extrude)
     imp.reload(mi_poly_loop)
 else:
     from . import mi_curve_test
@@ -52,7 +52,7 @@ else:
     from . import mi_deform
     from . import mi_gui
     from . import mi_noise
-    from . import mi_extrude
+    from . import mi_draw_extrude
     from . import mi_poly_loop
 
 
@@ -96,7 +96,7 @@ def register():
 
     bpy.types.Scene.mi_extrude_settings = PointerProperty(
         name="Extrude Variables",
-        type=mi_extrude.MI_ExtrudeSettings,
+        type=mi_draw_extrude.MI_ExtrudeSettings,
         description="Extrude Settings"
     )
 

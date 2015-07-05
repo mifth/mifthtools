@@ -165,13 +165,13 @@ def generate_id(other_ids):
     return uniq_numb
 
 
-# CODE FOR SELECTED BMESH ---
-def get_selected_bmesh(bm):
-    sel_verts = get_selected_bmverts(bm)
-    sel_edges = [e for e in bm.edges if e.select]
-    sel_faces = [f for f in bm.faces if f.select]
+## CODE FOR SELECTED BMESH ---
+#def get_selected_bmesh(bm):
+    #sel_verts = get_selected_bmverts(bm)
+    #sel_edges = [e for e in bm.edges if e.select]
+    #sel_faces = [f for f in bm.faces if f.select]
 
-    return [sel_verts, sel_edges, sel_faces]
+    #return [sel_verts, sel_edges, sel_faces]
 
 
 def get_selected_bmverts(bm):

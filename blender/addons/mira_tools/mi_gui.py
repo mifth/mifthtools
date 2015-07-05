@@ -28,20 +28,21 @@ class MI_ModifyPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
+        mi_settings = context.scene.mi_settings
         extrude_settings = context.scene.mi_extrude_settings
         cur_surfs_settings = context.scene.mi_cur_surfs_settings
 
         layout.operator("mira.draw_extrude", text="Draw Extrude")
-
-        layout.prop(extrude_settings, "extrude_mode", text='Mode')
-
+        #layout.prop(extrude_settings, "extrude_mode", text='Mode')
         layout.prop(extrude_settings, "extrude_step_type", text='Step')
+
         if extrude_settings.extrude_step_type == 'Asolute':
             layout.prop(extrude_settings, "absolute_extrude_step", text='')
         else:
             layout.prop(extrude_settings, "relative_extrude_step", text='')
 
-        if extrude_settings.extrude_mode == 'Screen':
+        if mi_settings.surface_snap is False:
             layout.prop(extrude_settings, "do_symmetry", text='Symmetry')
             if extrude_settings.do_symmetry:
                 layout.prop(extrude_settings, "symmetry_axys", text='Axys')
@@ -103,7 +104,7 @@ class MI_SettingsPanel(bpy.types.Panel):
 
         layout.prop(mi_settings, "surface_snap", text='SurfaceSnapping')
         layout.prop(mi_settings, "convert_instances", text='ConvertInstances')
-        layout.prop(mi_settings, "snap_objects", text='SnapObj')
+        layout.prop(mi_settings, "snap_objects", text='SnapObjects')
         layout.separator()
 
         layout.label(text="Curve Settings:")
