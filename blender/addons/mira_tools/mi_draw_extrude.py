@@ -338,11 +338,7 @@ class MI_StartDraw(bpy.types.Operator):
                 selected_verts = [v for v in bm.verts if v.select]
 
                 # New Extrude center
-                offset_dir = None
                 offset_move = new_pos - self.extrude_points[-1].position
-                bpy.ops.transform.translate(
-                    value=(offset_move.x, offset_move.y, offset_move.z), proportional='DISABLED')
-
                 offset_dir = offset_move.copy().normalized()
                 up_vec = None
                 cam_dir = None
@@ -353,6 +349,22 @@ class MI_StartDraw(bpy.types.Operator):
                 else:
                     cam_dir = (rv3d.view_rotation * Vector((0.0, 0.0, -1.0))).normalized()
 
+                snap_util_array = []  # Only for snaping to transfer verts positions
+                if mi_settings.surface_snap is True and len(self.extrude_points) > 1:
+                    snap_util_front = self.extrude_points[-1].direction
+                    snap_util_side = snap_util_front.cross(self.extrude_points[-1].hit_normal).normalized()
+                    snap_util_up = snap_util_front.cross(snap_util_side).normalized()
+
+                    for vert in selected_verts:
+                        vert_world = active_obj.matrix_world * vert.co
+                        front_vert_check = mathu.geometry.distance_point_to_plane(vert_world, self.extrude_points[-1].position, snap_util_front)
+                        side_vert_check = mathu.geometry.distance_point_to_plane(vert_world, self.extrude_points[-1].position, snap_util_side)
+                        up_vert_check = mathu.geometry.distance_point_to_plane(vert_world, self.extrude_points[-1].position, snap_util_up)
+                        snap_util_array.append((front_vert_check, side_vert_check, up_vert_check))
+                else:
+                    # move verts (only for non snapping mode)
+                    bpy.ops.transform.translate(value=(offset_move.x, offset_move.y, offset_move.z), proportional='DISABLED')
+
                 # rotate if we have 2 extrude points at least
                 rotate_dir_vec = None
                 if len(self.extrude_points) > 1:
@@ -360,22 +372,32 @@ class MI_StartDraw(bpy.types.Operator):
                     rot_angle = self.extrude_points[
                         -1].direction.angle(offset_dir)
 
-                    if mi_settings.surface_snap is True:
-                        rotate_dir_vec = self.extrude_points[
-                            -1].direction.cross(offset_dir)
+                    #if mi_settings.surface_snap is True:
+                        #rotate_dir_vec = self.extrude_points[
+                            #-1].direction.cross(offset_dir)
+                    #else:
+                    rotate_dir_vec = cam_dir
+
+                    # rotation is only for non snapping mode
+                    if mi_settings.surface_snap is False:
+                        up_vec = rotate_dir_vec.cross(
+                            self.extrude_points[-1].direction).normalized()
+                        if up_vec.angle(offset_dir) > math.radians(90):
+                            rot_angle = -rot_angle
+
+                        # rotate verts!
+                        rot_mat = Matrix.Rotation(rot_angle, 3,  rotate_dir_vec)
+                        for vert in selected_verts:
+                            vert.co = active_obj.matrix_world.inverted() * (rot_mat * ((active_obj.matrix_world * vert.co) - new_pos) + new_pos)
+
+                    # transfer verts positions to another place and direction
                     else:
-                        rotate_dir_vec = cam_dir
+                        snap_util_front = offset_dir
+                        snap_util_side = snap_util_front.cross(hit_normal).normalized()
+                        snap_util_up = snap_util_front.cross(snap_util_side).normalized()
 
-                    # Possibly this does not need for Raycast
-                    up_vec = rotate_dir_vec.cross(
-                        self.extrude_points[-1].direction).normalized()
-                    if up_vec.angle(offset_dir) > math.radians(90):
-                        rot_angle = -rot_angle
-
-                    # rotate verts!
-                    rot_mat = Matrix.Rotation(rot_angle, 3,  rotate_dir_vec)
-                    for vert in selected_verts:
-                        vert.co = active_obj.matrix_world.inverted() * (rot_mat * ((active_obj.matrix_world * vert.co) - new_pos) + new_pos)
+                        for i, vert in enumerate(selected_verts):
+                            vert.co = active_obj.matrix_world.inverted() * (new_pos + (snap_util_front * snap_util_array[i][0]) + (snap_util_side * snap_util_array[i][1]) + (snap_util_up * snap_util_array[i][2]))
 
                     self.extrude_points[-1].direction = offset_dir
                 else:
@@ -383,8 +405,7 @@ class MI_StartDraw(bpy.types.Operator):
                     if mi_settings.surface_snap is True:
                         fix_first_extrude_dir = ut_base.get_mouse_on_plane(
                             context, self.extrude_points[-1].position, None, m_coords)
-                        self.extrude_points[-1].direction = (
-                            fix_first_extrude_dir - self.extrude_points[-1].position).normalized()
+                        self.extrude_points[-1].direction = (fix_first_extrude_dir - self.extrude_points[-1].position).normalized()
                     else:
                         self.extrude_points[-1].direction = offset_dir
 
