@@ -15,7 +15,7 @@ import random
 from mathutils import Vector
 
 
-def get_obj_dup_meshes(obj_snap_mode, context):
+def get_obj_dup_meshes(obj_snap_mode, convert_instances, context):
     """Get all meshes"""
 
     objects_array = None
@@ -30,7 +30,7 @@ def get_obj_dup_meshes(obj_snap_mode, context):
         if obj.type == 'MESH':
             listObjMatrix.append((obj, obj.matrix_world.copy()))
 
-        if obj.dupli_type != 'NONE':
+        if obj.dupli_type != 'NONE' and convert_instances is True:
             obj.dupli_list_create(context.scene)
             for dob in obj.dupli_list:
                 obj_dupli = dob.object

@@ -43,6 +43,7 @@ class MI_Settings(bpy.types.PropertyGroup):
                 ),
         default = 'Visible'
     )
+    convert_instances = BoolProperty(default=False)  # This feat converts off duplis and group instances into meshes
 
     # Curve Settings
     curve_resolution = IntProperty(default=13, min=1, max=128)

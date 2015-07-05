@@ -111,7 +111,7 @@ class MI_PolyLoop(bpy.types.Operator):
 
                 # get meshes for snapping
                 if mi_settings.surface_snap is True:
-                    meshes_array = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, context)
+                    meshes_array = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, mi_settings.convert_instances, context)
                     if meshes_array:
                         self.picked_meshes = meshes_array
 
@@ -360,7 +360,7 @@ class MI_PolyLoop(bpy.types.Operator):
                     mi_settings.surface_snap = True
                     if not self.picked_meshes:
                         # get meshes for snapping
-                        meshes_array = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, context)
+                        meshes_array = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, mi_settings.convert_instances, context)
                         if meshes_array:
                             self.picked_meshes = meshes_array
 

@@ -89,7 +89,7 @@ class MI_DeformPanel(bpy.types.Panel):
         row.prop(curguide_settings, "deform_type", text='')
 
 
-class MI_CurveSettingsPanel(bpy.types.Panel):
+class MI_SettingsPanel(bpy.types.Panel):
     bl_label = "CurveSettings"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
@@ -102,8 +102,9 @@ class MI_CurveSettingsPanel(bpy.types.Panel):
         mi_settings = context.scene.mi_settings
 
         layout.prop(mi_settings, "surface_snap", text='SurfaceSnapping')
+        layout.prop(mi_settings, "convert_instances", text='ConvertInstances')
         layout.prop(mi_settings, "snap_objects", text='SnapObj')
-        #layout.separator()
+        layout.separator()
 
         layout.label(text="Curve Settings:")
         layout.prop(mi_settings, "spread_mode", text='Spread')
