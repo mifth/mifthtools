@@ -47,7 +47,7 @@ class MI_ModifyPanel(bpy.types.Panel):
                 layout.prop(extrude_settings, "symmetry_axys", text='Axys')
 
         layout.separator()
-        layout.operator("mira.poly_loop", text="Poly Loop Test")
+        layout.operator("mira.poly_loop", text="Poly Loop")
 
         layout.separator()
         layout.operator("mira.curve_surfaces", text="Curve Surfaces")
