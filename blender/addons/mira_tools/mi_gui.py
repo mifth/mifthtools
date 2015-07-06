@@ -91,7 +91,7 @@ class MI_DeformPanel(bpy.types.Panel):
 
 
 class MI_SettingsPanel(bpy.types.Panel):
-    bl_label = "CurveSettings"
+    bl_label = "Settings"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_context = "mesh_edit"

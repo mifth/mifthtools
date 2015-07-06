@@ -31,11 +31,8 @@ import math
 import mathutils as mathu
 import random
 from mathutils import Vector, Matrix
+from . import mi_inputs
 
-# if "bpy" in locals():
-    # import imp
-    # imp.reload(mi_utils_base)
-# else:
 from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
 
@@ -104,15 +101,6 @@ class MI_StartDraw(bpy.types.Operator):
     bl_label = "DrawExtrude"
     bl_description = "Draw Extrude Test"
     bl_options = {'REGISTER', 'UNDO'}
-
-    pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
-                 'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-                 'MOUSEMOVE']
-    # 'SELECTMOUSE' 'LEFTMOUSE'
-
-    # extrude_center = None
-    # extrude_dir = None
 
     # curve tool mode
     tool_modes = ('IDLE', 'DRAW', 'ROTATE', 'ROTATE_ALL', 'SCALE', 'SCALE_ALL')
@@ -229,14 +217,19 @@ class MI_StartDraw(bpy.types.Operator):
 
         context.area.header_text_set("S: Scale, Shift-S: ScaleAll, R: Rotate, Shift-R: RotateAll")
 
+        user_preferences = context.user_preferences
+        addon_prefs = user_preferences.addons[__package__].preferences
         mi_settings = context.scene.mi_settings
+
         active_obj = context.scene.objects.active
         bm = bmesh.from_edit_mesh(active_obj.data)
+
+        keys_pass = mi_inputs.get_input_pass(mi_inputs.pass_keys, addon_prefs.key_inputs, event)
 
         # check for main keys
         if event.type in {'LEFTMOUSE', 'SELECTMOUSE', 'R', 'S'}:
             if event.value == 'PRESS':
-                if self.tool_mode == 'IDLE':
+                if self.tool_mode == 'IDLE' and keys_pass is False:
                     m_coords = event.mouse_region_x, event.mouse_region_y
                     if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                         do_pick = mi_pick_extrude_point(
@@ -516,8 +509,12 @@ class MI_StartDraw(bpy.types.Operator):
 
                 return {'RUNNING_MODAL'}
 
-        # main stuff
-        if event.type in {'RIGHTMOUSE', 'ESC'}:
+        # get keys
+        if keys_pass is True:
+            # allow navigation
+            return {'PASS_THROUGH'}
+
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:
             finish_extrude(self, context)
             # bpy.types.SpaceView3D.draw_handler_remove(self.mi_handle_3d,
             # 'WINDOW')
@@ -526,10 +523,6 @@ class MI_StartDraw(bpy.types.Operator):
             context.area.header_text_set()
 
             return {'FINISHED'}
-
-        elif event.type in self.pass_keys:
-            # allow navigation
-            return {'PASS_THROUGH'}
 
         return {'RUNNING_MODAL'}
         # return {'PASS_THROUGH'}

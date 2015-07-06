@@ -36,6 +36,7 @@ from . import mi_curve_main as cur_main
 from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
 from . import mi_looptools as loop_t
+from . import mi_inputs
 
 
 class MI_CurveSurfacesSettings(bpy.types.PropertyGroup):
@@ -69,7 +70,7 @@ class MI_SurfaceObject():
 
         # There are types to spread 'OnCurve', 'Interpolate'
         self.spread_type = spread_loops_type
-        self.cross_loop_points = 10  # only for 'Uniform' type
+        self.cross_loop_points = 6  # only for 'Uniform' type
         self.uniform_loops = []  # only for 'Uniform' type
 
         # main_loop_center WILL BE STORED IN WORLD COORDINATES
@@ -97,11 +98,6 @@ class MI_CurveSurfaces(bpy.types.Operator):
     bl_label = "Curve Surfaces"
     bl_description = "Curve Surface"
     bl_options = {'REGISTER', 'UNDO'}
-
-    pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
-                 'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-                 'MOUSEMOVE']
 
     # curve tool mode
     surf_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT', 'CREATE_CURVE', 'CREATE_SURFACE')
@@ -183,6 +179,8 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
         context.area.header_text_set("NewSurface: Shift+A, NewCurve: A, Add/Remove Loops: +/-, Add/Remove CrossLoops: Ctrl++/Ctrl+-, NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L, SpreadMode: M")
 
+        user_preferences = context.user_preferences
+        addon_prefs = user_preferences.addons[__package__].preferences
         curve_settings = context.scene.mi_settings
         cur_surfs_settings = context.scene.mi_cur_surfs_settings
         m_coords = event.mouse_region_x, event.mouse_region_y
@@ -192,8 +190,10 @@ class MI_CurveSurfaces(bpy.types.Operator):
         region = context.region
         rv3d = context.region_data
 
+        keys_pass = mi_inputs.get_input_pass(mi_inputs.pass_keys, addon_prefs.key_inputs, event)
+
         # make picking
-        if self.surf_tool_mode == 'IDLE' and event.value == 'PRESS':
+        if self.surf_tool_mode == 'IDLE' and event.value == 'PRESS' and keys_pass is False:
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 # pick point test
                 picked_point, picked_curve, picked_surf = pick_all_surfs_point(self.all_surfs, context, m_coords)
@@ -719,8 +719,12 @@ class MI_CurveSurfaces(bpy.types.Operator):
                 return {'RUNNING_MODAL'}
 
 
-        # main stuff
-        if event.type in {'RIGHTMOUSE', 'ESC'}:
+        # get keys
+        if keys_pass is True:
+            # allow navigation
+            return {'PASS_THROUGH'}
+
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_surf_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_surf_2d, 'WINDOW')
 
@@ -728,10 +732,6 @@ class MI_CurveSurfaces(bpy.types.Operator):
             finish_work(self, context, bm)
 
             return {'FINISHED'}
-
-        elif event.type in self.pass_keys:
-            # allow navigation
-            return {'PASS_THROUGH'}
 
         return {'RUNNING_MODAL'}
 

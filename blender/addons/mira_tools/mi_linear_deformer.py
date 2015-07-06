@@ -35,6 +35,7 @@ from mathutils import Vector, Matrix
 from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
 from . import mi_linear_widget as l_widget
+from . import mi_inputs
 
 
 # Linear Deformer Settings
@@ -48,11 +49,6 @@ class MI_Linear_Deformer(bpy.types.Operator):
     bl_label = "LinearDeformer"
     bl_description = "Linear Deformer"
     bl_options = {'REGISTER', 'UNDO'}
-
-    pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
-                 'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-                 'MOUSEMOVE']
 
     # curve tool mode
     tool_modes = ('IDLE', 'MOVE_POINT', 'DRAW_TOOL', 'SCALE_ALL', 'SCALE_FRONT', 'MOVE_ALL', 'TWIST', 'TAPE', 'ROTATE_ALL', 'BEND_ALL', 'BEND_SPIRAL')
@@ -124,6 +120,8 @@ class MI_Linear_Deformer(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
+        user_preferences = context.user_preferences
+        addon_prefs = user_preferences.addons[__package__].preferences
         lin_def_settings = context.scene.mi_ldeformer_settings
 
         region = context.region
@@ -150,8 +148,10 @@ class MI_Linear_Deformer(bpy.types.Operator):
             tooltip_text = "I:Invert, Z:Z-Constraint, X:X-Constraint, S:Scale, Shift-S:ScaleForward, G:Move, R:Rotate, B:Bend, Shift-B:BendSpiral, T:Tape, Shift-T:Twist, Ctrl+Z:Undo, Ctrl+Shift+Z:Redo"
         context.area.header_text_set(tooltip_text)
 
+        keys_pass = mi_inputs.get_input_pass(mi_inputs.pass_keys, addon_prefs.key_inputs, event)
+
         # key pressed
-        if self.tool_mode == 'IDLE' and event.value == 'PRESS':
+        if self.tool_mode == 'IDLE' and event.value == 'PRESS' and keys_pass is False:
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 if self.lw_tool:
                     # pick linear widget point
@@ -481,8 +481,12 @@ class MI_Linear_Deformer(bpy.types.Operator):
                 self.tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
 
-        # main stuff
-        if event.type in {'RIGHTMOUSE', 'ESC'}:
+        # get keys
+        if keys_pass is True:
+            # allow navigation
+            return {'PASS_THROUGH'}
+
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:
             context.space_data.show_manipulator = self.manipulator
 
             # bpy.types.SpaceView3D.draw_handler_remove(self.lin_deform_handle_3d, 'WINDOW')
@@ -491,10 +495,6 @@ class MI_Linear_Deformer(bpy.types.Operator):
             context.area.header_text_set()
 
             return {'FINISHED'}
-
-        elif event.type in self.pass_keys:
-            # allow navigation
-            return {'PASS_THROUGH'}
 
         return {'RUNNING_MODAL'}
 

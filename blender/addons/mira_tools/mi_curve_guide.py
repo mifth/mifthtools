@@ -38,7 +38,7 @@ from . import mi_linear_widget as l_widget
 from . import mi_curve_main as cur_main
 from . import mi_color_manager as col_man
 from . import mi_looptools as loop_t
-
+from . import mi_inputs
 
 # Settings
 class MI_CurGuide_Settings(bpy.types.PropertyGroup):
@@ -60,11 +60,6 @@ class MI_Curve_Guide(bpy.types.Operator):
     bl_label = "CurveGuide"
     bl_description = "Curve Guide"
     bl_options = {'REGISTER', 'UNDO'}
-
-    pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
-                 'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-                 'MOUSEMOVE']
 
     # curve tool mode
     tool_modes = ('IDLE', 'MOVE_LW_POINT', 'MOVE_CUR_POINT', 'SELECT_CUR_POINT')
@@ -157,6 +152,8 @@ class MI_Curve_Guide(bpy.types.Operator):
         region = context.region
         rv3d = context.region_data
 
+        user_preferences = context.user_preferences
+        addon_prefs = user_preferences.addons[__package__].preferences
         curve_settings = context.scene.mi_settings
         curguide_settings = context.scene.mi_curguide_settings
 
@@ -171,8 +168,10 @@ class MI_Curve_Guide(bpy.types.Operator):
             tooltip_text = "X: X-Axis, Z: Z-Axis, Move Points, press Enter to continue"
         context.area.header_text_set(tooltip_text)
 
+        keys_pass = mi_inputs.get_input_pass(mi_inputs.pass_keys, addon_prefs.key_inputs, event)
+
         # key pressed
-        if self.tool_mode == 'IDLE' and event.value == 'PRESS':
+        if self.tool_mode == 'IDLE' and event.value == 'PRESS' and keys_pass is False:
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
 
                 # curve tool pick
@@ -457,8 +456,12 @@ class MI_Curve_Guide(bpy.types.Operator):
                 self.tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
 
-        # main stuff
-        if event.type in {'RIGHTMOUSE', 'ESC'}:
+        # get keys
+        if keys_pass is True:
+            # allow navigation
+            return {'PASS_THROUGH'}
+
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:
             context.space_data.show_manipulator = self.manipulator
 
             bpy.types.SpaceView3D.draw_handler_remove(self.cur_guide_handle_3d, 'WINDOW')
@@ -467,10 +470,6 @@ class MI_Curve_Guide(bpy.types.Operator):
             context.area.header_text_set()
 
             return {'FINISHED'}
-
-        elif event.type in self.pass_keys:
-            # allow navigation
-            return {'PASS_THROUGH'}
 
         return {'RUNNING_MODAL'}
 

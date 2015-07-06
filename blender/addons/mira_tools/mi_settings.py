@@ -18,22 +18,30 @@
 # ***** END GPL LICENCE BLOCK *****
 
 import bpy
-import bgl
-import blf
-import string
 
 from bpy.props import *
-from bpy.types import Operator, AddonPreferences
-
-from bpy_extras import view3d_utils
-
-import math
-import mathutils as mathu
-import random
-from mathutils import Vector
+from bpy.types import Operator, AddonPreferences, PropertyGroup
 
 
-class MI_Settings(bpy.types.PropertyGroup):
+class MI_Addon_Settings(AddonPreferences):
+    bl_idname = __package__
+
+    key_inputs = EnumProperty(
+        name = "Key Inputs Style",
+        items = (('Blender', 'Blender', ''),
+                ('Maya', 'Maya', '')
+                ),
+        default = 'Blender'
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        #row = layout.row()
+        #row.prop(self, "sg_icons_style")
+        layout.prop(self, "key_inputs")
+
+
+class MI_Settings(PropertyGroup):
     # For all tools
     surface_snap = BoolProperty(default=False)
     snap_objects = EnumProperty(

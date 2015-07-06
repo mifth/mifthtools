@@ -36,6 +36,8 @@ from mathutils import Vector
 from . import mi_curve_main as cur_main
 from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
+from . import mi_inputs
+
 
 class MI_CurveTest(bpy.types.Operator):
     """Draw a line with the mouse"""
@@ -43,11 +45,6 @@ class MI_CurveTest(bpy.types.Operator):
     bl_label = "StartDraw"
     bl_description = "Draw Test"
     bl_options = {'REGISTER', 'UNDO'}
-
-    pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
-                 'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-                 'MOUSEMOVE']
 
     # curve tool mode
     curve_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT')
@@ -66,37 +63,24 @@ class MI_CurveTest(bpy.types.Operator):
             # the arguments we pass the the callbackection
             args = (self, context)
 
-            curve_settings = context.scene.mi_curve_settings
+            curve_settings = context.scene.mi_settings
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
 
             # get meshes for snapping
             if curve_settings.surface_snap is True:
-                sel_objects = [
-                    obj for obj in context.selected_objects if obj != active_obj]
-                if sel_objects:
-                    self.picked_meshes = ut_base.get_obj_dup_meshes(
-                        sel_objects, context)
+                meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, curve_settings.convert_instances, context)
+                if meshes_array:
+                    self.picked_meshes = meshes_array
 
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
             self.mi_curve_test_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
             self.mi_curve_test_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
 
-            ## test looptools
-            #active_obj = context.scene.objects.active
-            #bm = bmesh.from_edit_mesh(active_obj.data)
-            #loops = loop_t.get_connected_input(bm)
-            #loops = loop_t.check_loops(loops, bm)
-            #print(loops)
-
             # test test test
             if context.scene.objects.active:
-                curve_settings = context.scene.mi_curve_settings
-                #cur = None
-                #if self.all_curves:
-                    #cur = self.curves[0]
-                #else:
+
                 cur = cur_main.MI_CurveObject(self.all_curves)
                 cur.closed = True
                 self.all_curves.append(cur)
@@ -129,20 +113,6 @@ class MI_CurveTest(bpy.types.Operator):
                 cur.curve_points.append(point)
                 point.position = Vector((0.0, 1.0, 0.0))
 
-                #point = cur_main.MI_CurvePoint(cur.curve_points)
-                #cur.curve_points.append(point)
-                #point.position = Vector((1.0, 0.0, 0.0))
-
-                #point = cur_main.MI_CurvePoint(cur.curve_points)
-                #cur.curve_points.append(point)
-                #point.position = Vector((0.0, -1.0, 0.0))
-
-                #point = cur_main.MI_CurvePoint(cur.curve_points)
-                #cur.curve_points.append(point)
-                #point.position = Vector((-1.0, 0.0, 0.0))
-
-                #cur.active_point = point.point_id
-
                 # add to display
                 cur_main.generate_bezier_points(cur, cur.display_bezier, curve_settings.curve_resolution)
 
@@ -159,7 +129,9 @@ class MI_CurveTest(bpy.types.Operator):
 
         context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L")
 
-        curve_settings = context.scene.mi_curve_settings
+        user_preferences = context.user_preferences
+        addon_prefs = user_preferences.addons[__package__].preferences
+        curve_settings = context.scene.mi_settings
         m_coords = event.mouse_region_x, event.mouse_region_y
 
         active_obj = context.scene.objects.active
@@ -168,8 +140,10 @@ class MI_CurveTest(bpy.types.Operator):
         region = context.region
         rv3d = context.region_data
 
+        keys_pass = mi_inputs.get_input_pass(mi_inputs.pass_keys, addon_prefs.key_inputs, event)
+
         # make picking
-        if self.curve_tool_mode == 'IDLE' and event.value == 'PRESS':
+        if self.curve_tool_mode == 'IDLE' and event.value == 'PRESS' and keys_pass is False:
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 # pick point test
                 picked_point, picked_length, picked_curve = cur_main.pick_all_curves_point(self.all_curves, context, m_coords)
@@ -231,11 +205,9 @@ class MI_CurveTest(bpy.types.Operator):
                     curve_settings.surface_snap = True
                     if not self.picked_meshes:
                         # get meshes for snapping
-                        sel_objects = [
-                            obj for obj in context.selected_objects if obj != active_obj]
-                        if sel_objects:
-                            self.picked_meshes = ut_base.get_obj_dup_meshes(
-                                sel_objects, context)
+                        meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, curve_settings.convert_instances, context)
+                        if meshes_array:
+                            self.picked_meshes = meshes_array
 
             # Select Linked
             elif event.type == 'L':
@@ -310,20 +282,17 @@ class MI_CurveTest(bpy.types.Operator):
                 return {'RUNNING_MODAL'}
 
 
-        # main stuff
+        # get keys
+        if keys_pass is True:
+            # allow navigation
+            return {'PASS_THROUGH'}
+
         if event.type in {'RIGHTMOUSE', 'ESC'}:
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_test_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_test_2d, 'WINDOW')
             context.area.header_text_set()
 
-            # clear
-            #display_bezier = None
-
             return {'FINISHED'}
-
-        elif event.type in self.pass_keys:
-            # allow navigation
-            return {'PASS_THROUGH'}
 
         return {'RUNNING_MODAL'}
 
@@ -406,7 +375,7 @@ def mi_curve_draw_3d_polyline(points, p_size, p_col, x_ray):
 def draw_curve_2d(curves, context):
     region = context.region
     rv3d = context.region_data
-    curve_settings = context.scene.mi_curve_settings
+    curve_settings = context.scene.mi_settings
     # coord = event.mouse_region_x, event.mouse_region_y
     for curve in curves:
         for cu_point in curve.curve_points:

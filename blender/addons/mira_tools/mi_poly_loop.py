@@ -35,6 +35,7 @@ from mathutils import Vector
 from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
 from . import mi_looptools as loop_t
+from . import mi_inputs
 
 
 class MI_PL_LoopObject():
@@ -52,11 +53,6 @@ class MI_PolyLoop(bpy.types.Operator):
     bl_label = "PolyLoop"
     bl_description = "Poly Loop Tool"
     bl_options = {'REGISTER', 'UNDO'}
-
-    pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
-                 'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
-                 'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-                 'MOUSEMOVE']
 
     # curve tool mode
     tool_modes = ('IDLE', 'MOVE_POINT')
@@ -139,7 +135,10 @@ class MI_PolyLoop(bpy.types.Operator):
 
         context.area.header_text_set("Shift+A: NewLoops, A: NewLoop, LeftClick: CreatePoint, X: DeletePoint, C: CreateTriangle, Ctrl+LeftClick: CreateTriangle2, Shift+Tab: SurfaceSnap")
 
+        user_preferences = context.user_preferences
+        addon_prefs = user_preferences.addons[__package__].preferences
         mi_settings = context.scene.mi_settings
+
         m_coords = event.mouse_region_x, event.mouse_region_y
         active_obj = context.scene.objects.active
         bm = bmesh.from_edit_mesh(active_obj.data)
@@ -180,8 +179,10 @@ class MI_PolyLoop(bpy.types.Operator):
         else:
             self.id_to_index = None
 
+        keys_pass = mi_inputs.get_input_pass(mi_inputs.pass_keys, addon_prefs.key_inputs, event)
+
         # Make Picking
-        if self.tool_mode == 'IDLE' and event.value == 'PRESS':
+        if self.tool_mode == 'IDLE' and event.value == 'PRESS' and keys_pass is False:
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
                 # get position
                 new_point_pos = None
@@ -394,18 +395,17 @@ class MI_PolyLoop(bpy.types.Operator):
                 self.tool_mode = 'IDLE'
                 return {'RUNNING_MODAL'}
 
-        # main stuff
-        if event.type in {'RIGHTMOUSE', 'ESC'}:
+        # get keys
+        if keys_pass is True:
+            # allow navigation
+            return {'PASS_THROUGH'}
+        elif event.type in {'RIGHTMOUSE', 'ESC'}:
             #bpy.types.SpaceView3D.draw_handler_remove(self.mi_pl_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_pl_2d, 'WINDOW')
             finish_work(self, context, bm)
             context.area.header_text_set()
 
             return {'FINISHED'}
-
-        elif event.type in self.pass_keys:
-            # allow navigation
-            return {'PASS_THROUGH'}
 
         return {'RUNNING_MODAL'}
 
