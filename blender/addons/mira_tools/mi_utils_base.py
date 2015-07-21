@@ -103,7 +103,12 @@ def obj_raycast(obj, matrix, view_vector, ray_origin, ray_max):
         length_squared = (hit_world - ray_origin).length_squared
 
         if face_index != -1:
-            normal_world = (matrix.to_quaternion() * normal).normalized()
+            #normal_world = (matrix.to_quaternion() * normal).normalized()
+
+            normal_world = (matrix.to_quaternion() * normal).to_4d()
+            normal_world.w = 0
+            normal_world = (matrix.to_quaternion() * (matrix_inv * normal_world).to_3d()).normalized()
+
             return normal_world, hit_world, length_squared
 
     return None, None, None

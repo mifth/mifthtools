@@ -424,8 +424,13 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
             length_squared = (hit_world - ray_origin).length_squared
 
             if face_index != -1:
-                normal_world = matrix.to_quaternion() * normal
-                return normal_world.normalized(), hit_world, length_squared
+                #normal_world = (matrix.to_quaternion() * normal).normalized()
+
+                normal_world = (matrix.to_quaternion() * normal).to_4d()
+                normal_world.w = 0
+                normal_world = (matrix.to_quaternion() * (matrix_inv * normal_world).to_3d()).normalized()
+
+                return normal_world, hit_world, length_squared
 
         return None, None, None
 
