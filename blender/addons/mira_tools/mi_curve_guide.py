@@ -520,7 +520,7 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
 
             ## upVec approach by me
             # calculate using cross vec
-            b_point_up = b_point_dir.cross(self.tool_up_vec).normalized()                
+            b_point_up = b_point_dir.cross(self.tool_up_vec).normalized()
 
             ## upVec approach by mano-wii version 1
             #pzv = self.tool_up_vec.project(b_point_dir)  # here we project the direction to get upVec
@@ -580,7 +580,20 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                                         best_pos = b_point_data[0]
                                     else:
                                         previous_pos_len = deform_lines[j-1][1] / line_len
-                                        best_pos = deform_lines[j-1][0] + (( (vert_len - previous_pos_len) * line_len) * b_point_dirs[0])
+
+                                        interp_pos = (vert_len - previous_pos_len) * line_len
+
+                                        # fix for interpolation between lines
+                                        if j > 1:
+                                            prev_b_point_dirs = b_dirs[deform_lines.index(b_point_data) - 1]
+                                            b_point_dirs = b_point_dirs.copy()
+
+                                            new_side_vec = prev_b_point_dirs[1].lerp(b_point_dirs[1], interp_pos).normalized()
+                                            b_point_dirs[1] = new_side_vec
+                                            new_side_vec = prev_b_point_dirs[2].lerp(b_point_dirs[2], interp_pos).normalized()
+                                            b_point_dirs[2] = new_side_vec
+
+                                        best_pos = deform_lines[j-1][0] + (( interp_pos) * b_point_dirs[0])
 
                                     break
 
