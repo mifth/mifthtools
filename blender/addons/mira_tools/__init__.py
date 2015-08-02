@@ -19,7 +19,7 @@
 bl_info = {
     "name": "Mira Tools",
     "author": "Paul Geraskin",
-    "version": (0, 2, 0),
+    "version": (0, 3, 0),
     "blender": (2, 74, 0),
     "location": "3D Viewport",
     "description": "Mira Tool",
@@ -112,6 +112,9 @@ def register():
         description="Curve Guide Settings"
     )
 
+    # alternative gui
+    bpy.types.WindowManager.mirawindow = bpy.props.PointerProperty(type = mi_gui.DropdownMiraToolProps)
+
 def unregister():
     import bpy
 
@@ -123,6 +126,9 @@ def unregister():
     del bpy.types.Scene.mi_extrude_settings
     del bpy.types.Scene.mi_ldeformer_settings
     del bpy.types.Scene.mi_curguide_settings
+
+    del bpy.types.WindowManager.mirawindow
+
     bpy.utils.unregister_module(__name__)
 
 

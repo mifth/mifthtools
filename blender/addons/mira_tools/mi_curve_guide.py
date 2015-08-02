@@ -518,13 +518,13 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
 
             #check_angle = b_point_dir.angle(self.tool_up_vec)
 
-            ## upVec approach by me
-            # calculate using cross vec
-            b_point_up = b_point_dir.cross(self.tool_up_vec).normalized()
+            ### upVec approach by me
+            ## calculate using cross vec
+            #b_point_up = b_point_dir.cross(self.tool_up_vec).normalized()
 
-            ## upVec approach by mano-wii version 1
-            #pzv = self.tool_up_vec.project(b_point_dir)  # here we project the direction to get upVec
-            #b_point_up = (self.tool_up_vec - pzv).normalized()
+            # upVec approach by mano-wii version 1
+            pzv = self.tool_up_vec.project(b_point_dir)  # here we project the direction to get upVec
+            b_point_up = (self.tool_up_vec - pzv).normalized()
 
             ## upVec approach by mano-wii version 2
             #dot = self.tool_up_vec.dot(b_point_dir)
@@ -598,7 +598,7 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
 
                                     break
 
-                        vert.co = obj.matrix_world.inverted() * ( best_pos - (b_point_dirs[2] * vert_data[3]) - (b_point_dirs[1] * vert_data[2]) )
+                        vert.co = obj.matrix_world.inverted() * ( best_pos + (b_point_dirs[1] * vert_data[3]) - (b_point_dirs[2] * vert_data[2]) )
                         break
 
     else:  # ALL OTHER TYPES
