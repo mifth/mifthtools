@@ -43,10 +43,6 @@ from bpy.props import *
 
 
 def register():
-    bpy.simple3Dcoat = dict()
-    bpy.simple3Dcoat['active_coat'] = ''
-    bpy.simple3Dcoat['status'] = 0
-    bpy.simple3Dcoat['kuva'] = 1
 
     class SimpleSceneCoat3D(bpy.types.PropertyGroup):
 
@@ -108,7 +104,6 @@ def unregister():
     import bpy
 
     del bpy.types.Scene.simple3Dcoat
-    del bpy.simple3Dcoat
     bpy.utils.unregister_module(__name__)
 
 
