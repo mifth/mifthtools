@@ -1,6 +1,10 @@
 # mifthtools
 This is my repository of tools which i use.
 
+Exchangers:
+http://blenderartists.org/forum/showthread.php?378946-Modo-Blender-Exchanger
+http://community.thefoundry.co.uk/discussion/topic.aspx?f=119&t=114220
+
 Blender:
 
 MiraTools - Modeling/Retopo tools dedicated to my daughter.
