@@ -72,7 +72,7 @@ if current_scene.selected:
     if exp_path.endswith(os.sep) is False:
         exp_path += os.sep
     exp_path += 'exchange.fbx'
-    lx.eval('scene.saveAs %s fbx true' % exp_path)
+    lx.eval('scene.saveAs {%s} fbx true' % exp_path)
 
     # close temp scene
     lx.eval('scene.set %s '  % new_scene_2)
