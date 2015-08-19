@@ -6,7 +6,7 @@ import lx
 
 
 #  load scene
-ex_path = lx.eval('user.value exPath ?').replace("\\","/")
+ex_path = lx.eval('user.value exPath ?').replace("\\", os.sep)
 if ex_path.endswith(os.sep) is False:
     ex_path += os.sep
 ex_path += 'exchange.fbx'

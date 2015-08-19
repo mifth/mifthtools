@@ -68,7 +68,7 @@ if current_scene.selected:
     lx.eval('scene.set %s ' % new_scene_2)
 
     #  save scene
-    exp_path = lx.eval('user.value exPath ?').replace("\\","/")
+    exp_path = lx.eval('user.value exPath ?').replace("\\", os.sep)
     if exp_path.endswith(os.sep) is False:
         exp_path += os.sep
     exp_path += 'exchange.fbx'

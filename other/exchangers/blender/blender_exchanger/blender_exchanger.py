@@ -88,7 +88,7 @@ class EX_ExportScene(bpy.types.Operator):
         b_exchanger = bpy.context.scene.b_exchanger
         #scene = context.scene
 
-        exchange_dir = addon_prefs.exchangedir.replace("\\","/")
+        exchange_dir = addon_prefs.exchangedir.replace("\\", os.sep)
         if exchange_dir.endswith(os.sep) is False:
             exchange_dir += os.sep
 
@@ -124,7 +124,7 @@ class EX_ImportScene(bpy.types.Operator):
         #scene = context.scene
         b_exchanger = bpy.context.scene.b_exchanger
 
-        exchange_dir = addon_prefs.exchangedir.replace("\\","/")
+        exchange_dir = addon_prefs.exchangedir.replace("\\", os.sep)
         if exchange_dir.endswith(os.sep) is False:
             exchange_dir += os.sep
 
