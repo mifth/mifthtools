@@ -50,7 +50,7 @@ class EX_MainPanel(bpy.types.Panel):
         row = layout.row()
         row.prop(b_exchanger, "exportMaterials", text="Export Materials")
         row = layout.row()
-        row = layout.row()
+        row.prop(b_exchanger, "importNormals", text="Import Normals")
 
 
 class EX_AddonPreferences(AddonPreferences):
@@ -84,24 +84,34 @@ class EX_ExportScene(bpy.types.Operator):
         user_preferences = context.user_preferences
         addon_prefs = user_preferences.addons[__package__].preferences
 
-        #checkname = ''
         b_exchanger = bpy.context.scene.b_exchanger
-        #scene = context.scene
+        scene = context.scene
 
         exchange_dir = addon_prefs.exchangedir.replace("\\", os.sep)
         if exchange_dir.endswith(os.sep) is False:
             exchange_dir += os.sep
 
         if len(bpy.context.selected_objects) > 0 and os.path.isdir(addon_prefs.exchangedir):
-            # create Simple3DCoat directory
-            if not(os.path.isdir(exchange_dir)):
-                os.makedirs(exchange_dir)
 
-            # Model Path
+            # change render levl of susurf and multires for good export
+            fix_modidiers = []
+            for obj in bpy.context.selected_objects:
+                for mod in obj.modifiers:
+                    if mod.type in {'SUBSURF', 'MULTIRES'}:
+                        fix_modidiers.append((mod, mod.render_levels))
+                        mod.render_levels = mod.levels
+    
+            # Export setings
             model_path = exchange_dir + "exchange.fbx"
+            apply_modifiers = b_exchanger.doApplyModifiers
 
             # Export Model
-            bpy.ops.export_scene.fbx(filepath=model_path, check_existing=True, axis_forward='-Z', axis_up='Y', use_selection=True, global_scale=1.0, apply_unit_scale=True, bake_space_transform=True, use_mesh_modifiers=b_exchanger.doApplyModifiers, use_custom_props=True, primary_bone_axis='Y', secondary_bone_axis='X', bake_anim=False, use_anim=False)
+            bpy.ops.export_scene.fbx(filepath=model_path, check_existing=True, axis_forward='-Z', axis_up='Y', use_selection=True, global_scale=1.0, apply_unit_scale=True, bake_space_transform=True, use_mesh_modifiers=apply_modifiers, use_custom_props=True, primary_bone_axis='Y', secondary_bone_axis='X', bake_anim=False, use_anim=False)
+
+            # revert render level of modifiers back
+            for mod_stuff in fix_modidiers:
+                mod_stuff[0].levels = mod_stuff[1]
+            fix_modidiers = None  # clear array
 
         else:
             self.report(
@@ -128,10 +138,14 @@ class EX_ImportScene(bpy.types.Operator):
         if exchange_dir.endswith(os.sep) is False:
             exchange_dir += os.sep
 
-        model_path = exchange_dir + "exchange.fbx"
-
         if os.path.isdir(exchange_dir):
-            bpy.ops.import_scene.fbx(filepath=model_path, axis_forward='-Z', axis_up='Y', global_scale=1.0, bake_space_transform=True, use_custom_normals=True, force_connect_children=False, primary_bone_axis='Y', secondary_bone_axis='X', use_prepost_rot=True)
+
+            # Import setings
+            model_path = exchange_dir + "exchange.fbx"
+            importNormals = b_exchanger.importNormals
+
+            bpy.ops.import_scene.fbx(filepath=model_path, axis_forward='-Z', axis_up='Y', global_scale=1.0, bake_space_transform=True, use_custom_normals=importNormals, force_connect_children=False, primary_bone_axis='Y', secondary_bone_axis='X', use_prepost_rot=True)
+
         else:
             self.report({'INFO'}, "Bad Exchange Folder!!!")
 

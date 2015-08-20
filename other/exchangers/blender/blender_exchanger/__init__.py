@@ -56,6 +56,12 @@ def register():
             default=True
         )
 
+        importNormals = BoolProperty(
+            name="Import Normals",
+            description="Import Normals...",
+            default=False
+        )
+
     bpy.utils.register_module(__name__)
 
     bpy.types.Scene.b_exchanger = PointerProperty(
