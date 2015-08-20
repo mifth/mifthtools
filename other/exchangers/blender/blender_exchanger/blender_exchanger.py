@@ -99,7 +99,11 @@ class EX_ExportScene(bpy.types.Operator):
                 for mod in obj.modifiers:
                     if mod.type in {'SUBSURF', 'MULTIRES'}:
                         fix_modidiers.append((mod, mod.render_levels))
-                        mod.render_levels = mod.levels
+
+                        if mod.show_viewport is False:
+                            mod.render_levels = 0
+                        else:
+                            mod.render_levels = mod.levels
     
             # Export setings
             model_path = exchange_dir + "exchange.fbx"
@@ -110,7 +114,7 @@ class EX_ExportScene(bpy.types.Operator):
 
             # revert render level of modifiers back
             for mod_stuff in fix_modidiers:
-                mod_stuff[0].levels = mod_stuff[1]
+                mod_stuff[0].render_levels = mod_stuff[1]
             fix_modidiers = None  # clear array
 
         else:
