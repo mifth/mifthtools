@@ -6,6 +6,20 @@
  a single file. -->
 
   <tool name="ex_importer" label="Import" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[node = hou.hscript("fbximport $HOME/Documents/Exchange/exchange.fbx")]]></script>
+    <script scriptType="python"><![CDATA[main_obj = hou.node('/obj')
+temp_names = []
+
+for obj in main_obj.children():
+    temp_names.append(obj.name())
+
+node = hou.hscript("fbximport $HOME/Documents/Exchange/exchange.fbx")
+
+for obj in main_obj.children():
+    if obj.name() not in temp_names:
+        obj.moveToGoodPosition()
+        obj.parm('scale').set(0.01)
+        break
+
+temp_names = None]]></script>
   </tool>
 </shelfDocument>
