@@ -6,6 +6,6 @@
  a single file. -->
 
   <tool name="ex_importer" label="Import" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[hou.hscript("fbximport $HOME/Documents/Exchange/exchange.fbx")]]></script>
+    <script scriptType="python"><![CDATA[node = hou.hscript("fbximport $HOME/Documents/Exchange/exchange.fbx")]]></script>
   </tool>
 </shelfDocument>

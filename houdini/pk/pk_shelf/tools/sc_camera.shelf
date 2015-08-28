@@ -23,6 +23,8 @@ cam.parm('near').set(0.01)
 cam.parm('far').set(2000)
 
 cam.parmTuple('t').set((38.7442, 31.9752, 37.9657))
-cam.parmTuple('r').set((-30, 45, 0))]]></script>
+cam.parmTuple('r').set((-30, 45, 0))
+
+cam.moveToGoodPosition()]]></script>
   </tool>
 </shelfDocument>
