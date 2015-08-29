@@ -8,4 +8,31 @@
   <toolshelf name="exchanger" label="Ex">
     <memberTool name="ex_importer"/>
   </toolshelf>
+
+  <tool name="ex_importer" label="Import" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import exchanger
+import os
+
+exchange_dir = exchanger.get_exchange_path().replace("\\", os.sep)
+if exchange_dir.endswith(os.sep) is False:
+    exchange_dir += os.sep
+
+ex_path = exchange_dir + "exchange.fbx"
+main_obj = hou.node('/obj')
+temp_names = []
+
+for obj in main_obj.children():
+    temp_names.append(obj.name())
+
+node = hou.hscript("fbximport %s" % ex_path)
+
+for obj in main_obj.children():
+    if obj.name() not in temp_names:
+        obj.moveToGoodPosition()
+        obj.parm('scale').set(0.01)
+        break
+
+temp_names = None
+ex_path = None]]></script>
+  </tool>
 </shelfDocument>

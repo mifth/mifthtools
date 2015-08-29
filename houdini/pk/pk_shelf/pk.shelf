@@ -8,4 +8,27 @@
   <toolshelf name="pk_tools" label="PK">
     <memberTool name="sc_camera"/>
   </toolshelf>
+
+  <tool name="sc_camera" label="SC Camera" icon="OBJ_camera">
+    <script scriptType="python"><![CDATA[obj = hou.node('/obj')
+cam = obj.createNode('cam')
+
+cam.parm('iconscale').set(20)
+cam.parm('resx').set(1000)
+cam.parm('resy').set(800)
+
+cam.parm('aspect').set(1)
+cam.parm('projection').set(1)
+
+cam.parm('focal').set(50)
+cam.parm('aperture').set(41.4214)
+cam.parm('orthowidth').set(29.328)
+cam.parm('near').set(0.01)
+cam.parm('far').set(2000)
+
+cam.parmTuple('t').set((38.7442, 31.9752, 37.9657))
+cam.parmTuple('r').set((-30, 45, 0))
+
+cam.moveToGoodPosition()]]></script>
+  </tool>
 </shelfDocument>
