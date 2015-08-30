@@ -46,7 +46,12 @@ import os
 
 def make_merge(final_merge, new_node, node_to_merge):
     merge_node = new_node.createNode("object_merge")
-    merge_node.parm('objpath1').set(node_to_merge.path() + "/*")
+
+    merge_path = node_to_merge.path()
+    if node_to_merge.type().name() == "subnet":
+        merge_path += "/*"
+
+    merge_node.parm('objpath1').set(merge_path)
     merge_node.parm('xformtype').set(1)
     merge_node.setName(node_to_merge.name())
     merge_node.moveToGoodPosition()
@@ -74,6 +79,15 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     final_merge = new_node.createNode("merge")
 
     for node in sel_nodes:
-        make_merge(final_merge, new_node, node)]]></script>
+        make_merge(final_merge, new_node, node)
+
+    final_merge.moveToGoodPosition()
+    attrib_del = final_merge.createOutputNode('attribdelete')
+    attrib_del.parm('vtxdel').set('Cd N')
+
+    attrib_del.moveToGoodPosition()
+
+    attrib_del.setDisplayFlag(True)
+    attrib_del.setRenderFlag(True)]]></script>
   </tool>
 </shelfDocument>
