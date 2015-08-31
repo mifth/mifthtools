@@ -6,6 +6,7 @@
  a single file. -->
 
   <toolshelf name="exchanger" label="Ex">
+    <memberTool name="ex_exporter"/>
     <memberTool name="ex_importer"/>
     <memberTool name="geom_converter"/>
   </toolshelf>
@@ -41,7 +42,6 @@ ex_path = None]]></script>
 
   <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
     <script scriptType="python"><![CDATA[import exchanger
-import os
 
 
 def make_merge(final_merge, new_node, node_to_merge):
@@ -89,5 +89,29 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
     attrib_del.setDisplayFlag(True)
     attrib_del.setRenderFlag(True)]]></script>
+  </tool>
+
+  <tool name="ex_exporter" label="Export" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import exchanger
+import os
+
+
+sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    exchange_dir = exchanger.get_exchange_path().replace("\\", os.sep)
+    if exchange_dir.endswith(os.sep) is False:
+        exchange_dir += os.sep
+
+    ex_path = exchange_dir + "exchange.fbx"
+
+    fbx_node = out_obj.createNode("filmboxfbx")
+    fbx_node.moveToGoodPosition()
+    fbx_node.parm('sopoutput').set(ex_path)
+    fbx_node.parm('startnode').set(sel_nodes[0].path())
+    fbx_node.parm('exportkind').set(False)
+    fbx_node.render()]]></script>
   </tool>
 </shelfDocument>
