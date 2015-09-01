@@ -33,7 +33,7 @@ for obj in main_obj.children():
     if obj.name() not in temp_names:
 #        hou.moveNodesTo([obj], cur_obj)
         obj.moveToGoodPosition()
-        obj.parm('scale').set(0.01)
+#        obj.parm('scale').set(0.01)
         break
 
 temp_names = None
@@ -42,7 +42,7 @@ ex_path = None]]></script>
 
   <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
     <script scriptType="python"><![CDATA[import exchanger
-
+import os
 
 def make_merge(final_merge, new_node, node_to_merge):
     merge_node = new_node.createNode("object_merge")
