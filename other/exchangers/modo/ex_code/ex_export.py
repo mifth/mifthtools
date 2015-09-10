@@ -27,6 +27,12 @@ if current_scene.selected:
     orig_item_names = []
     item_parents = []
 
+    # change scene type
+    export_type_old = lx.eval('user.value sceneio.fbx.save.exportType ?')
+    lx.eval('user.value sceneio.fbx.save.exportType FBXExportAll')
+    save_type_old = lx.eval('user.value sceneio.fbx.save.sampleAnimation ?')
+    lx.eval('user.value sceneio.fbx.save.sampleAnimation false')
+
     #  get parents of selected items
     for item in current_scene.items(itype='locator', superType=True):
         if item.selected is True:
@@ -84,6 +90,10 @@ if current_scene.selected:
     #for item in current_scene.items(itype='locator', superType=True):
         #if item.name not in orig_item_names:
             #item.deselect()
+
+    # revert scene type
+    lx.eval('user.value sceneio.fbx.save.exportType %s' % export_type_old)
+    lx.eval('user.value sceneio.fbx.save.sampleAnimation %s' % save_type_old)
 
     #  clear lists
     new_item_names = None

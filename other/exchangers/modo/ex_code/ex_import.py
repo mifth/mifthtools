@@ -1,7 +1,7 @@
 # python
 
 import os
-import modo
+#import modo
 import lx
 
 
