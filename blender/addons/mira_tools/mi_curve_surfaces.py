@@ -418,6 +418,10 @@ class MI_CurveSurfaces(bpy.types.Operator):
 
                     spread_verts_uniform(active_obj, self.active_surf, all_loops_verts, curve_settings)
 
+                # update mesh
+                bm.normal_update()
+                bmesh.update_edit_mesh(active_obj.data)
+
             # Create Curve
             elif event.type == 'A':
                 if event.shift:

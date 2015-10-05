@@ -253,6 +253,10 @@ class MI_CurveStretch(bpy.types.Operator):
                 for curve in self.all_curves:
                     update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, curve_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
 
+                # update mesh
+                bm.normal_update()
+                bmesh.update_edit_mesh(active_obj.data)
+
         # TOOLS WORK
         if self.curve_tool_mode == 'SELECT_POINT':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
