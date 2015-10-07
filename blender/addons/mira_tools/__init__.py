@@ -17,7 +17,7 @@
 # END GPL LICENSE BLOCK #####
 
 bl_info = {
-    "name": "Mira Tools",
+    "name": "Mira Tools, Marvin K. Breuer",
     "author": "Paul Geraskin",
     "version": (0, 3, 0),
     "blender": (2, 74, 0),
