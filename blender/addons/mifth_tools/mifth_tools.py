@@ -303,7 +303,7 @@ class MFTMorfCreator(bpy.types.Operator):
         scene = bpy.context.scene
         mifthTools = scene.mifthTools
 
-        if len(bpy.context.selected_objects) > 1:
+        if len(bpy.context.selected_objects):
             objAct = scene.objects.active
             morfIndex = 1
 
@@ -313,7 +313,9 @@ class MFTMorfCreator(bpy.types.Operator):
                 basisKey.name = 'Basis'
 
             for obj in bpy.context.selected_objects:
-                if obj != objAct:
+                if len(bpy.context.selected_objects) > 1 and obj == objAct:
+                    pass
+                else:
                     if len(obj.data.vertices) == len(objAct.data.vertices):
                         shapeKey = objAct.shape_key_add(from_mix=False)
 
