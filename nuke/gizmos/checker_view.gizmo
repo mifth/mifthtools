@@ -1,0 +1,53 @@
+#! /home/mifth/Documents/soft/Nuke/libnuke-9.0.6.so -nx
+version 9.0 v6
+Gizmo {
+ name VIEWER_INPUT
+}
+ CheckerBoard2 {
+  inputs 0
+  format "4096 3112 0 0 4096 3112 1 4K_Super_35(full-ap)"
+  boxsize 24
+  centerlinewidth 0
+  name CheckerBoard1
+  xpos 189
+  ypos -230
+ }
+ Crop {
+  box {0 0 2048 1556}
+  reformat true
+  crop false
+  name Crop1
+  xpos 189
+  ypos -120
+ }
+ Input {
+  inputs 0
+  name Input1
+  xpos -52
+  ypos -201
+ }
+ Merge2 {
+  inputs 2
+  operation under
+  name Merge1
+  xpos 123
+  ypos 19
+ }
+ Output {
+  name Output1
+  xpos 218
+  ypos 78
+ }
+ Reformat {
+  inputs 0
+  type "to box"
+  box_width {{Input1.width x20 20148}}
+  box_height {{Input1.height}}
+  box_fixed true
+  filter Impulse
+  name Reformat1
+  xpos 62
+  ypos -203
+  disable true
+ }
+end_group
