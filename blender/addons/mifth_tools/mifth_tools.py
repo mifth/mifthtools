@@ -109,7 +109,7 @@ class MFTSceneRender2X(bpy.types.Operator):
 def crop_nodes_2x(nodes, scale_value):
     for node in nodes:
         if node.type == 'GROUP':
-            crop_nodes_2x(node.node_tree.nodes)
+            crop_nodes_2x(node.node_tree.nodes, scale_value)
         elif node.type == 'CROP':
             node.min_x *= scale_value
             node.max_x *= scale_value
