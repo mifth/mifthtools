@@ -74,7 +74,7 @@ cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 sel_nodes = hou.selectedNodes()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
-    new_node = cur_obj.createNode("geo", run_init_scripts=False)
+    new_node = cur_obj.createNode('geo', 'mereged_objects', run_init_scripts=False)
     new_node.moveToGoodPosition()
     final_merge = new_node.createNode("merge")
 
