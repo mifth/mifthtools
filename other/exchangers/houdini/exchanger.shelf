@@ -112,6 +112,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     fbx_node.parm('sopoutput').set(ex_path)
     fbx_node.parm('startnode').set(sel_nodes[0].path())
     fbx_node.parm('exportkind').set(False)
+    fbx_node.parm('sdkversion').set('FBX | FBX201400')
     fbx_node.render()
 
     fbx_node.destroy()
