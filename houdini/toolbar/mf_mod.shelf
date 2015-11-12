@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <toolshelf name="mfmod" label="MfMod">
+    <memberTool name="divide_edges"/>
+    <memberTool name="scale_edges"/>
+    <memberTool name="transform_primitives"/>
+  </toolshelf>
+
+  <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+node = soptoolutils.genericTool(kwargs, 'mifth_divide_edges')
+node.parm('group').set(sel_str)]]></script>
+  </tool>
+
+  <tool name="scale_edges" label="Scale Edges" icon="SOP_edgeflip">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+node = soptoolutils.genericTool(kwargs, 'mifth_scale_edges')
+node.parm('group').set(sel_str)]]></script>
+  </tool>
+
+  <tool name="transform_primitives" label="TransformPrims" icon="SOP_edgeflip">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+node = soptoolutils.genericTool(kwargs, 'mifth_transform_primitives')
+node.parm('group').set(sel_str)]]></script>
+  </tool>
+</shelfDocument>
