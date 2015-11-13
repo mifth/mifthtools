@@ -7,8 +7,10 @@
 
   <toolshelf name="mfmod" label="MfMod">
     <memberTool name="divide_edges"/>
+    <memberTool name="merge_verts"/>
     <memberTool name="scale_edges"/>
     <memberTool name="transform_primitives"/>
+    <memberTool name="bend"/>
   </toolshelf>
 
   <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
@@ -44,6 +46,30 @@ geo = viewer.selectGeometry()
 sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_transform_primitives')
+node.parm('group').set(sel_str)]]></script>
+  </tool>
+
+  <tool name="bend" label="Bend" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+node = soptoolutils.genericTool(kwargs, 'animatrix::bend::2.00')
+node.parm('group').set(sel_str)]]></script>
+  </tool>
+
+  <tool name="merge_verts" label="Merge Verts" icon="SOP_edgecollapse">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
 node.parm('group').set(sel_str)]]></script>
   </tool>
 </shelfDocument>
