@@ -6,8 +6,8 @@
  a single file. -->
 
   <toolshelf name="mfmod" label="MfMod">
-    <memberTool name="divide_edges"/>
     <memberTool name="merge_verts"/>
+    <memberTool name="divide_edges"/>
     <memberTool name="scale_edges"/>
     <memberTool name="transform_primitives"/>
     <memberTool name="bend"/>
