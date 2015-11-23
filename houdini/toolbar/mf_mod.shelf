@@ -6,11 +6,14 @@
  a single file. -->
 
   <toolshelf name="mfmod" label="MfMod">
+    <memberTool name="symmetry_extrude"/>
+    <memberTool name="edges_to_face"/>
     <memberTool name="merge_verts"/>
     <memberTool name="divide_edges"/>
     <memberTool name="scale_edges"/>
     <memberTool name="transform_primitives"/>
     <memberTool name="bend"/>
+    <memberTool name="symmetrize"/>
   </toolshelf>
 
   <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
@@ -70,6 +73,18 @@ geo = viewer.selectGeometry()
 sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
+node.parm('group').set(sel_str)]]></script>
+  </tool>
+
+  <tool name="symmetry_extrude" label="SymExtrude" icon="SOP_polyextrude">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+node = soptoolutils.genericTool(kwargs, 'mifth_symmetry_extrude_v1')
 node.parm('group').set(sel_str)]]></script>
   </tool>
 </shelfDocument>
