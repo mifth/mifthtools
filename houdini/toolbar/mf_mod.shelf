@@ -87,4 +87,29 @@ sel_str = geo.mergedSelectionString()
 node = soptoolutils.genericTool(kwargs, 'mifth_symmetry_extrude_v1')
 node.parm('group').set(sel_str)]]></script>
   </tool>
+
+  <tool name="edges_to_face" label="EdgesToFace" icon="SOP_polycap">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+node = soptoolutils.genericTool(kwargs, 'mifth_edgestoface')
+node.parm('group').set(sel_str)
+]]></script>
+  </tool>
+
+  <tool name="symmetrize" label="Symmetrize" icon="SOP_mirror">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+node = soptoolutils.genericTool(kwargs, 'mifth_symmetrize')
+node.parm('group').set(sel_str)]]></script>
+  </tool>
 </shelfDocument>
