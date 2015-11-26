@@ -14,6 +14,7 @@
     <memberTool name="transform_primitives"/>
     <memberTool name="bend"/>
     <memberTool name="symmetrize"/>
+    <memberTool name="part_mesh"/>
   </toolshelf>
 
   <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
@@ -40,7 +41,7 @@ node = soptoolutils.genericTool(kwargs, 'mifth_scale_edges')
 node.parm('group').set(sel_str)]]></script>
   </tool>
 
-  <tool name="transform_primitives" label="TransformPrims" icon="SOP_edgeflip">
+  <tool name="transform_primitives" label="TransformPrims" icon="SOP_primitive">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -64,7 +65,7 @@ node = soptoolutils.genericTool(kwargs, 'animatrix::bend::2.00')
 node.parm('group').set(sel_str)]]></script>
   </tool>
 
-  <tool name="merge_verts" label="Merge Verts" icon="SOP_edgecollapse">
+  <tool name="merge_verts" label="Merge Verts" icon="SOP_fuse">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -111,5 +112,39 @@ sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_symmetrize')
 node.parm('group').set(sel_str)]]></script>
+  </tool>
+
+  <tool name="part_mesh" label="PartMesh" icon="SOP_blast">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+sel_nodes = hou.selectedNodes()
+
+if sel_str and sel_nodes:
+
+    main_node = sel_nodes[-1]
+
+#    new_node = soptoolutils.genericTool(kwargs, 'blast')
+    new_node = main_node.parent().createNode('blast')
+    new_node.parm('negate').set(True)
+    new_node.parm('group').set(sel_str)
+    new_node.setNextInput(main_node)
+    new_node.setDisplayFlag(True)
+    new_node.setRenderFlag(True)
+    new_node.setCurrent(True, clear_all_selected=True)
+    new_node.moveToGoodPosition()
+
+    final_merge = main_node.parent().createNode("merge")
+
+    final_merge.setNextInput(main_node)
+    final_merge.setNextInput(new_node)
+    final_merge.setTemplateFlag(True)
+
+    final_merge.moveToGoodPosition()
+]]></script>
   </tool>
 </shelfDocument>
