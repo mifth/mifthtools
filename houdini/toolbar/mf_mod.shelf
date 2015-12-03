@@ -8,16 +8,21 @@
   <toolshelf name="mfmod" label="MfMod">
     <memberTool name="symmetry_extrude"/>
     <memberTool name="edges_to_face"/>
-    <memberTool name="merge_verts"/>
     <memberTool name="divide_edges"/>
+    <memberTool name="merge_verts"/>
     <memberTool name="scale_edges"/>
     <memberTool name="transform_primitives"/>
     <memberTool name="bend"/>
     <memberTool name="symmetrize"/>
     <memberTool name="part_mesh"/>
+    <memberTool name="pivot_center"/>
+    <memberTool name="pivot_selected"/>
   </toolshelf>
 
   <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -30,6 +35,9 @@ node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="scale_edges" label="Scale Edges" icon="SOP_edgeflip">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -42,6 +50,9 @@ node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="transform_primitives" label="TransformPrims" icon="SOP_primitive">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -54,6 +65,9 @@ node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="bend" label="Bend" icon="PLASMA_App">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -66,6 +80,9 @@ node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="merge_verts" label="Merge Verts" icon="SOP_fuse">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -78,6 +95,9 @@ node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="symmetry_extrude" label="SymExtrude" icon="SOP_polyextrude">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -90,6 +110,9 @@ node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="edges_to_face" label="EdgesToFace" icon="SOP_polycap">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -103,6 +126,9 @@ node.parm('group').set(sel_str)
   </tool>
 
   <tool name="symmetrize" label="Symmetrize" icon="SOP_mirror">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -115,6 +141,9 @@ node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="part_mesh" label="PartMesh" icon="SOP_blast">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -145,6 +174,48 @@ if sel_str and sel_nodes:
     final_merge.setTemplateFlag(True)
 
     final_merge.moveToGoodPosition()
+]]></script>
+  </tool>
+
+  <tool name="pivot_center" label="PivotToCenter" icon="OBJ_null">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+
+for node in sel_nodes:
+    if node.parmTuple('p'):
+        node.parm('px').setExpression('$CEX')
+        node.parm('py').setExpression('$CEY')
+        node.parm('pz').setExpression('$CEZ')]]></script>
+  </tool>
+
+  <tool name="pivot_selected" label="PivotSelected" icon="OBJ_null">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+
+sel_nodes = hou.selectedNodes()
+
+if sel_str and sel_nodes:
+    blast_node = sel_nodes[-1].createOutputNode('blast')
+    blast_node.parm('group').set(sel_str)
+    blast_node.parm('negate').set(True)
+    blast_node.moveToGoodPosition()
+    
+    trans_node = blast_node.createOutputNode('xform')
+    trans_node.parm('px').setExpression('$CEX')
+    trans_node.parm('py').setExpression('$CEY')
+    trans_node.parm('pz').setExpression('$CEZ')
+    trans_node.parmTuple('s').set((0, 0, 0))
+    trans_node.moveToGoodPosition()
+
+    if sel_nodes[-1].parmTuple('p'):
+        p_pos = trans_node.geometry().points()[0].position()
+        sel_nodes[-1].parmTuple('p').set(p_pos)
+
+    trans_node.destroy()
+    blast_node.destroy()
 ]]></script>
   </tool>
 </shelfDocument>
