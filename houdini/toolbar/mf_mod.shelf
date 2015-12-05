@@ -92,6 +92,15 @@ geo = viewer.selectGeometry()
 sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
+
+# fix for changing group
+if geo.geometryType() == hou.geometryType.Points:
+    node.parm('grouptype').set(3)
+elif geo.geometryType() == hou.geometryType.Edges:
+    node.parm('grouptype').set(2)
+elif geo.geometryType() == hou.geometryType.Primitives:
+    node.parm('grouptype').set(4)
+    
 node.parm('group').set(sel_str)]]></script>
   </tool>
 
@@ -201,9 +210,16 @@ sel_nodes = hou.selectedNodes()
 if sel_str and sel_nodes:
     blast_node = sel_nodes[-1].parent().createNode('blast')
     blast_node.setNextInput(sel_nodes[-1])
+
+    # fix for changing group for Points only
+    if geo.geometryType() == hou.geometryType.Points:
+        blast_node.parm('grouptype').set(3)
+
     blast_node.parm('group').set(sel_str)
     blast_node.parm('negate').set(True)
-    
+
+    blast_node.moveToGoodPosition()
+
     trans_node = blast_node.createOutputNode('xform')
     trans_node.parm('px').setExpression('$CEX')
     trans_node.parm('py').setExpression('$CEY')
@@ -211,7 +227,6 @@ if sel_str and sel_nodes:
     trans_node.parmTuple('s').set((0, 0, 0))
 
     trans_node.moveToGoodPosition()
-    blast_node.moveToGoodPosition()
 
     if sel_nodes[-1].parmTuple('p'):
         p_pos = trans_node.geometry().points()[0].position()
