@@ -18,6 +18,7 @@
     <memberTool name="pivot_center"/>
     <memberTool name="pivot_selected"/>
     <memberTool name="merge"/>
+    <memberTool name="set_plane"/>
   </toolshelf>
 
   <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
@@ -256,5 +257,39 @@ if sel_nodes and len(sel_nodes) > 1:
         merge_node.setNextInput(node)
 
     merge_node.moveToGoodPosition()]]></script>
+  </tool>
+
+  <tool name="set_plane" label="Set C-Plane" icon="OBJ_null">
+    <script scriptType="python"><![CDATA[import toolutils
+import soptoolutils
+
+sv = toolutils.sceneViewer()
+cp = sv.constructionPlane()
+#sel_nodes = hou.selectedNodes()
+
+
+def set_origin(construction_plane, new_origin):
+    translation = hou.hmath.buildTranslate(hou.Vector3(new_origin) - origin(construction_plane))
+    construction_plane.setTransform(construction_plane.transform() * translation)
+
+def origin(construction_plane):
+    return hou.Vector3(0, 0, 0) * construction_plane.transform()
+
+def set_normal(construction_plane, normal_vector):
+    existing_rotation = hou.Matrix4(construction_plane.transform().extractRotationMatrix3())
+    rotation = existing_rotation * normal(construction_plane).matrixToRotateTo(normal_vector)
+    translation = hou.hmath.buildTranslate(origin(construction_plane))
+    construction_plane.setTransform(rotation * translation)
+
+def normal(construction_plane):
+    return hou.Vector3(0, 0, 1) * construction_plane.transform().inverted().transposed()
+
+def origin(construction_plane):
+    return hou.Vector3(0, 0, 0) * construction_plane.transform()
+
+
+cp.setTransform(sv.curViewport().viewTransform())
+#set_origin(cp, sel_nodes[-1].parmTuple('t').eval() )
+set_origin(cp, sv.curViewport().viewPivot() )]]></script>
   </tool>
 </shelfDocument>
