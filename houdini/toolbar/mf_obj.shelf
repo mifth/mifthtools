@@ -7,5 +7,6 @@
 
   <toolshelf name="mf_obj" label="MObj">
     <memberTool name="instance"/>
+    <memberTool name="tool_1"/>
   </toolshelf>
 </shelfDocument>

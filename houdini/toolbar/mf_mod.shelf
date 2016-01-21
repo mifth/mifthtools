@@ -15,9 +15,9 @@
     <memberTool name="bend"/>
     <memberTool name="symmetrize"/>
     <memberTool name="part_mesh"/>
+    <memberTool name="merge"/>
     <memberTool name="pivot_center"/>
     <memberTool name="pivot_selected"/>
-    <memberTool name="merge"/>
     <memberTool name="set_plane"/>
   </toolshelf>
 
@@ -263,11 +263,6 @@ if sel_nodes and len(sel_nodes) > 1:
     <script scriptType="python"><![CDATA[import toolutils
 import soptoolutils
 
-sv = toolutils.sceneViewer()
-cp = sv.constructionPlane()
-#sel_nodes = hou.selectedNodes()
-
-
 def set_origin(construction_plane, new_origin):
     translation = hou.hmath.buildTranslate(hou.Vector3(new_origin) - origin(construction_plane))
     construction_plane.setTransform(construction_plane.transform() * translation)
@@ -287,6 +282,10 @@ def normal(construction_plane):
 def origin(construction_plane):
     return hou.Vector3(0, 0, 0) * construction_plane.transform()
 
+
+sv = toolutils.sceneViewer()
+cp = sv.constructionPlane()
+#sel_nodes = hou.selectedNodes()
 
 cp.setTransform(sv.curViewport().viewTransform())
 #set_origin(cp, sel_nodes[-1].parmTuple('t').eval() )
