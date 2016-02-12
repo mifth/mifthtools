@@ -7,6 +7,42 @@
 
   <toolshelf name="mf_obj" label="MObj">
     <memberTool name="instance"/>
-    <memberTool name="tool_1"/>
   </toolshelf>
+
+  <tool name="instance" label="Instance" icon="OBJ_instance">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    obj_source = sel_nodes[-1]
+    obj_inst = cur_obj.createNode("instance")
+
+    if obj_source.type().name() == 'instance':
+        obj_inst.parm('instancepath').set(obj_source.parm('instancepath').eval())
+    else:
+        #obj_inst.parm('instancepath').set(obj_source.path())
+
+        obj_inst.parmTuple('i_t').set(obj_source.parmTuple('t').eval())
+        obj_inst.parmTuple('i_r').set(obj_source.parmTuple('r').eval())
+        obj_inst.parmTuple('i_s').set(obj_source.parmTuple('s').eval())
+        #obj_inst.parmTuple('i_p').set(obj_source.parmTuple('p').eval())
+        obj_inst.parm('i_scale').set(obj_source.parm('scale').eval())
+    
+        obj_inst.setName(obj_source.name(), unique_name=True)
+    
+        attr_cr = obj_inst.children()[0].createOutputNode('attribcreate')
+        attr_cr.parm('type1').set(3)
+        attr_cr.parm('name1').set('instancepath')
+        attr_cr.parm('string1').set('op:../../../' + obj_source.name())
+    
+        instance = attr_cr.createOutputNode('instance')
+        instance.setDisplayFlag(True)
+        instance.setRenderFlag(True)
+    
+    obj_inst.moveToGoodPosition()
+    obj_inst.setSelected(True, clear_all_selected=False)
+    obj_source.setSelected(False, clear_all_selected=False)
+]]></script>
+  </tool>
 </shelfDocument>
