@@ -47,7 +47,7 @@ if image_path:
     grid_node = grid_obj.createNode('grid')
     grid_node.parm('type').set(0)
     grid_node.parm('surftype').set(4)
-    grid_node.parm('orient').set(2)
+    grid_node.parm('orient').set(0)
     grid_node.parm('rows').set(2)
     grid_node.parm('cols').set(2)
     grid_node.moveToGoodPosition()
