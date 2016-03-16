@@ -275,7 +275,7 @@ if sel_nodes and len(sel_nodes) > 1:
     merge_node.moveToGoodPosition()]]></script>
   </tool>
 
-  <tool name="set_plane" label="Set CPlane" icon="OBJ_null">
+  <tool name="set_plane" label="SetPlane" icon="OBJ_null">
     <script scriptType="python"><![CDATA[import toolutils
 import soptoolutils
 
@@ -308,18 +308,25 @@ sv = toolutils.sceneViewer()
 cp = sv.constructionPlane()
 #sel_nodes = hou.selectedNodes()
 
-cp.setTransform(sv.curViewport().viewTransform())
-set_origin(cp, sv.curViewport().viewPivot() )
+if kwargs['ctrlclick']:
+    cp.setTransform(sv.curViewport().viewTransform())
+    set_origin(cp, sv.curViewport().viewPivot() )
 
-if not kwargs['ctrlclick']:
+elif kwargs['shiftclick']:
+    cp.setTransform(hou.Vector3(0, 0, 1).matrixToRotateTo(hou.Vector3(0, 1, 0)))
+
+else:
+    cp.setTransform(sv.curViewport().viewTransform())
+    set_origin(cp, sv.curViewport().viewPivot() )
+
     cp_n = normal(cp)
     cp_axis = 'x'
-    
+
     if abs(cp_n[1]) > abs(cp_n[0]) and abs(cp_n[1]) > abs(cp_n[2]):
         cp_axis = 'y'
     if abs(cp_n[2]) > abs(cp_n[0]) and abs(cp_n[2]) > abs(cp_n[1]):
         cp_axis = 'z'
-    
+
     if cp_axis == 'x':
         set_direct_normal(cp, hou.Vector3(1, 0, 0))
     elif cp_axis == 'y':
