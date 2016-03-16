@@ -43,8 +43,8 @@ node.parm('group').set(sel_str)]]></script>
 import toolutils
 
 viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_scale_edges')
 node.parm('group').set(sel_str)]]></script>
@@ -207,18 +207,19 @@ for node in sel_nodes:
 import toolutils
 
 viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
 
 sel_nodes = hou.selectedNodes()
-last_node = hou.selectedNodes()[-1]
+last_node = sel_nodes[-1]
 
-if sel_str and sel_nodes:
-    if last_node.parmTuple('p'):
-        if kwargs['shiftclick']:
-    
+if sel_nodes and last_node.parmTuple('p'):
+    if kwargs['shiftclick']:
+
+        geo = viewer.selectGeometry()
+        sel_str = geo.mergedSelectionString()
+
+        if sel_str:
             blast_node = last_node.parent().createNode('blast')
-            blast_node.setNextInput(sel_nodes[-1])
+            blast_node.setNextInput(last_node)
     
             # fix for changing group for Points only
             if geo.geometryType() == hou.geometryType.Points:
@@ -237,21 +238,22 @@ if sel_str and sel_nodes:
     
             trans_node.moveToGoodPosition()
     
-            if sel_nodes[-1].parmTuple('p'):
-                p_pos = trans_node.geometry().points()[0].position()
-                sel_nodes[-1].parmTuple('p').set(p_pos)
+            p_pos = trans_node.geometry().points()[0].position()
+            last_node.parmTuple('p').deleteAllKeyframes()
+            last_node.parmTuple('p').set(p_pos)
     
             trans_node.destroy()
             blast_node.destroy()
+
+    else:
+        if kwargs['ctrlclick']:
+            last_node.parm('px').setExpression('$GCX')
+            last_node.parm('py').setExpression('$GCY')
+            last_node.parm('pz').setExpression('$GCZ')
         else:
-            if kwargs['ctrlclick']:
-                last_node.parm('px').setExpression('$GCX')
-                last_node.parm('py').setExpression('$GCY')
-                last_node.parm('pz').setExpression('$GCZ')
-            else:
-                last_node.parm('px').setExpression('$CEX')
-                last_node.parm('py').setExpression('$CEY')
-                last_node.parm('pz').setExpression('$CEZ')]]></script>
+            last_node.parm('px').setExpression('$CEX')
+            last_node.parm('py').setExpression('$CEY')
+            last_node.parm('pz').setExpression('$CEZ')]]></script>
   </tool>
 
   <tool name="merge" label="Merge" icon="SOP_merge">
