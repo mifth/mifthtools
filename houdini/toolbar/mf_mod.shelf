@@ -16,7 +16,6 @@
     <memberTool name="symmetrize"/>
     <memberTool name="part_mesh"/>
     <memberTool name="merge"/>
-    <memberTool name="pivot_center"/>
     <memberTool name="pivot_selected"/>
     <memberTool name="set_plane"/>
   </toolshelf>
@@ -193,12 +192,17 @@ if sel_str and sel_nodes:
 
 for node in sel_nodes:
     if node.parmTuple('p'):
-        node.parm('px').setExpression('$CEX')
-        node.parm('py').setExpression('$CEY')
-        node.parm('pz').setExpression('$CEZ')]]></script>
+        if kwargs['ctrlclick']:
+            node.parm('px').setExpression('$GCX')
+            node.parm('py').setExpression('$GCY')
+            node.parm('pz').setExpression('$GCZ')
+        else:
+            node.parm('px').setExpression('$CEX')
+            node.parm('py').setExpression('$CEY')
+            node.parm('pz').setExpression('$CEZ')]]></script>
   </tool>
 
-  <tool name="pivot_selected" label="PivotSelected" icon="OBJ_null">
+  <tool name="pivot_selected" label="PivotCenter" icon="OBJ_null">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -207,35 +211,47 @@ geo = viewer.selectGeometry()
 sel_str = geo.mergedSelectionString()
 
 sel_nodes = hou.selectedNodes()
+last_node = hou.selectedNodes()[-1]
 
 if sel_str and sel_nodes:
-    blast_node = sel_nodes[-1].parent().createNode('blast')
-    blast_node.setNextInput(sel_nodes[-1])
-
-    # fix for changing group for Points only
-    if geo.geometryType() == hou.geometryType.Points:
-        blast_node.parm('grouptype').set(3)
-
-    blast_node.parm('group').set(sel_str)
-    blast_node.parm('negate').set(True)
-
-    blast_node.moveToGoodPosition()
-
-    trans_node = blast_node.createOutputNode('xform')
-    trans_node.parm('px').setExpression('$CEX')
-    trans_node.parm('py').setExpression('$CEY')
-    trans_node.parm('pz').setExpression('$CEZ')
-    trans_node.parmTuple('s').set((0, 0, 0))
-
-    trans_node.moveToGoodPosition()
-
-    if sel_nodes[-1].parmTuple('p'):
-        p_pos = trans_node.geometry().points()[0].position()
-        sel_nodes[-1].parmTuple('p').set(p_pos)
-
-    trans_node.destroy()
-    blast_node.destroy()
-]]></script>
+    if last_node.parmTuple('p'):
+        if kwargs['shiftclick']:
+    
+            blast_node = last_node.parent().createNode('blast')
+            blast_node.setNextInput(sel_nodes[-1])
+    
+            # fix for changing group for Points only
+            if geo.geometryType() == hou.geometryType.Points:
+                blast_node.parm('grouptype').set(3)
+    
+            blast_node.parm('group').set(sel_str)
+            blast_node.parm('negate').set(True)
+    
+            blast_node.moveToGoodPosition()
+    
+            trans_node = blast_node.createOutputNode('xform')
+            trans_node.parm('px').setExpression('$CEX')
+            trans_node.parm('py').setExpression('$CEY')
+            trans_node.parm('pz').setExpression('$CEZ')
+            trans_node.parmTuple('s').set((0, 0, 0))
+    
+            trans_node.moveToGoodPosition()
+    
+            if sel_nodes[-1].parmTuple('p'):
+                p_pos = trans_node.geometry().points()[0].position()
+                sel_nodes[-1].parmTuple('p').set(p_pos)
+    
+            trans_node.destroy()
+            blast_node.destroy()
+        else:
+            if kwargs['ctrlclick']:
+                last_node.parm('px').setExpression('$GCX')
+                last_node.parm('py').setExpression('$GCY')
+                last_node.parm('pz').setExpression('$GCZ')
+            else:
+                last_node.parm('px').setExpression('$CEX')
+                last_node.parm('py').setExpression('$CEY')
+                last_node.parm('pz').setExpression('$CEZ')]]></script>
   </tool>
 
   <tool name="merge" label="Merge" icon="SOP_merge">
@@ -259,7 +275,7 @@ if sel_nodes and len(sel_nodes) > 1:
     merge_node.moveToGoodPosition()]]></script>
   </tool>
 
-  <tool name="set_plane" label="Set C-Plane" icon="OBJ_null">
+  <tool name="set_plane" label="Set CPlane" icon="OBJ_null">
     <script scriptType="python"><![CDATA[import toolutils
 import soptoolutils
 
@@ -276,6 +292,11 @@ def set_normal(construction_plane, normal_vector):
     translation = hou.hmath.buildTranslate(origin(construction_plane))
     construction_plane.setTransform(rotation * translation)
 
+def set_direct_normal(construction_plane, normal_vector):
+    rotation = hou.Vector3(0, 0, 1).matrixToRotateTo(normal_vector)
+    translation = hou.hmath.buildTranslate(origin(construction_plane))
+    construction_plane.setTransform(rotation * translation)
+
 def normal(construction_plane):
     return hou.Vector3(0, 0, 1) * construction_plane.transform().inverted().transposed()
 
@@ -288,7 +309,22 @@ cp = sv.constructionPlane()
 #sel_nodes = hou.selectedNodes()
 
 cp.setTransform(sv.curViewport().viewTransform())
-#set_origin(cp, sel_nodes[-1].parmTuple('t').eval() )
-set_origin(cp, sv.curViewport().viewPivot() )]]></script>
+set_origin(cp, sv.curViewport().viewPivot() )
+
+if not kwargs['ctrlclick']:
+    cp_n = normal(cp)
+    cp_axis = 'x'
+    
+    if abs(cp_n[1]) > abs(cp_n[0]) and abs(cp_n[1]) > abs(cp_n[2]):
+        cp_axis = 'y'
+    if abs(cp_n[2]) > abs(cp_n[0]) and abs(cp_n[2]) > abs(cp_n[1]):
+        cp_axis = 'z'
+    
+    if cp_axis == 'x':
+        set_direct_normal(cp, hou.Vector3(1, 0, 0))
+    elif cp_axis == 'y':
+        set_direct_normal(cp, hou.Vector3(0, 1, 0))
+    elif cp_axis == 'z':
+        set_direct_normal(cp, hou.Vector3(0, 0, 1))]]></script>
   </tool>
 </shelfDocument>
