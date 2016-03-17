@@ -9,12 +9,10 @@
     <memberTool name="symmetry_extrude"/>
     <memberTool name="edges_to_face"/>
     <memberTool name="divide_edges"/>
-    <memberTool name="merge_verts"/>
     <memberTool name="scale_edges"/>
     <memberTool name="transform_primitives"/>
-    <memberTool name="bend"/>
-    <memberTool name="symmetrize"/>
     <memberTool name="part_mesh"/>
+    <memberTool name="merge_verts"/>
     <memberTool name="merge"/>
     <memberTool name="pivot_selected"/>
     <memberTool name="set_plane"/>
@@ -62,21 +60,6 @@ geo = viewer.selectGeometry()
 sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_transform_primitives')
-node.parm('group').set(sel_str)]]></script>
-  </tool>
-
-  <tool name="bend" label="Bend" icon="SOP_bend">
-    <toolMenuContext name="viewer">
-      <contextNetType>SOP</contextNetType>
-    </toolMenuContext>
-    <script scriptType="python"><![CDATA[import soptoolutils
-import toolutils
-
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
-
-node = soptoolutils.genericTool(kwargs, 'animatrix::bend::2.00')
 node.parm('group').set(sel_str)]]></script>
   </tool>
 
@@ -135,21 +118,6 @@ node.parm('group').set(sel_str)
 ]]></script>
   </tool>
 
-  <tool name="symmetrize" label="Symmetrize" icon="SOP_mirror">
-    <toolMenuContext name="viewer">
-      <contextNetType>SOP</contextNetType>
-    </toolMenuContext>
-    <script scriptType="python"><![CDATA[import soptoolutils
-import toolutils
-
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
-
-node = soptoolutils.genericTool(kwargs, 'mifth_symmetrize')
-node.parm('group').set(sel_str)]]></script>
-  </tool>
-
   <tool name="part_mesh" label="PartMesh" icon="SOP_blast">
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
@@ -167,20 +135,30 @@ if sel_str and sel_nodes:
 
     main_node = sel_nodes[-1]
 
-#    new_node = soptoolutils.genericTool(kwargs, 'blast')
-    new_node = main_node.parent().createNode('blast')
-    new_node.parm('negate').set(True)
-    new_node.parm('group').set(sel_str)
-    new_node.setNextInput(main_node)
-    new_node.setDisplayFlag(True)
-    new_node.setRenderFlag(True)
-    new_node.setCurrent(True, clear_all_selected=True)
-    new_node.moveToGoodPosition()
+    if kwargs['ctrlclick']:
+        blast_2 = main_node.parent().createNode('blast', node_name='blast_base')
+        blast_2.parm('negate').set(False)
+        blast_2.parm('group').set(sel_str)
+        blast_2.setNextInput(main_node)
+        blast_2.moveToGoodPosition()
+
+    blast_1 = main_node.parent().createNode('blast', node_name='blast_part')
+    blast_1.parm('negate').set(True)
+    blast_1.parm('group').set(sel_str)
+    blast_1.setNextInput(main_node)
+    blast_1.setDisplayFlag(True)
+    blast_1.setRenderFlag(True)
+    blast_1.setCurrent(True, clear_all_selected=True)
+    blast_1.moveToGoodPosition()
 
     final_merge = main_node.parent().createNode("merge")
 
-    final_merge.setNextInput(main_node)
-    final_merge.setNextInput(new_node)
+    if kwargs['ctrlclick']:
+        final_merge.setNextInput(blast_2)
+    else:
+        final_merge.setNextInput(main_node)
+
+    final_merge.setNextInput(blast_1)
     final_merge.setTemplateFlag(True)
 
     final_merge.moveToGoodPosition()
