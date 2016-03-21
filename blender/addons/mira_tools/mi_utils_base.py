@@ -95,9 +95,9 @@ def obj_raycast(obj, matrix, view_vector, ray_origin, ray_max):
     ray_target_obj = matrix_inv * ray_target
 
     # cast the ray
-    hit, normal, face_index = obj.ray_cast(ray_origin_obj, ray_target_obj)
+    hit_result, hit, normal, face_index = obj.ray_cast(ray_origin_obj, ray_target_obj)
 
-    if hit is not None:
+    if hit_result:
         hit_world = matrix * hit
 
         length_squared = (hit_world - ray_origin).length_squared
