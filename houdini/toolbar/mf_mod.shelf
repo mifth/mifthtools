@@ -41,8 +41,8 @@ node.parm('group').set(sel_str)]]></script>
 import toolutils
 
 viewer = toolutils.sceneViewer()
-#geo = viewer.selectGeometry()
-#sel_str = geo.mergedSelectionString()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_scale_edges')
 node.parm('group').set(sel_str)]]></script>
