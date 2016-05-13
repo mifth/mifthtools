@@ -20,7 +20,7 @@ bl_info = {
     "name": "Mifth Tools",
     "author": "Paul Geraskin",
     "version": (0, 1, 0),
-    "blender": (2, 71, 0),
+    "blender": (2, 77, 0),
     "location": "3D Viewport",
     "description": "Mifth Tools",
     "warning": "",

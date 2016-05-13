@@ -92,10 +92,10 @@ def obj_raycast(obj, matrix, view_vector, ray_origin, ray_max):
     # get the ray relative to the object
     matrix_inv = matrix.inverted()
     ray_origin_obj = matrix_inv * ray_origin
-    ray_target_obj = matrix_inv * ray_target
+    #ray_target_obj = matrix_inv * ray_target
 
     # cast the ray
-    hit_result, hit, normal, face_index = obj.ray_cast(ray_origin_obj, ray_target_obj)
+    hit_result, hit, normal, face_index = obj.ray_cast(ray_origin_obj, view_vector, ray_max)
 
     if hit_result:
         hit_world = matrix * hit
