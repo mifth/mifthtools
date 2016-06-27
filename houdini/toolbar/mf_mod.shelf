@@ -28,9 +28,22 @@ import toolutils
 viewer = toolutils.sceneViewer()
 geo = viewer.selectGeometry()
 sel_str = geo.mergedSelectionString()
+ 
+sel_nodes = hou.selectedNodes()
 
-node = soptoolutils.genericTool(kwargs, 'mifth_divide_edges')
-node.parm('group').set(sel_str)]]></script>
+if sel_str and sel_nodes:
+
+    main_node = sel_nodes[-1]
+
+    node = main_node.parent().createNode('mifth_divide_edges')
+    node.parm('group').set(sel_str)
+    node.setNextInput(main_node)
+    node.moveToGoodPosition()
+    node.setDisplayFlag(True)
+    node.setRenderFlag(True)
+    node.setCurrent(True, clear_all_selected=True)
+#node = soptoolutils.genericTool(kwargs, 'mifth_divide_edges')
+#node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="scale_edges" label="Scale Edges" icon="SOP_edgeflip">
@@ -131,33 +144,39 @@ import toolutils
 viewer = toolutils.sceneViewer()
 geo = viewer.selectGeometry()
 sel_str = geo.mergedSelectionString()
-
+print viewer
 sel_nodes = hou.selectedNodes()
 
 if sel_str and sel_nodes:
 
     main_node = sel_nodes[-1]
 
-    if kwargs['ctrlclick']:
+    if kwargs['ctrlclick'] and geo.geometryType() == hou.geometryType.Primitives:
         blast_2 = main_node.parent().createNode('blast', node_name='blast_base')
         blast_2.parm('negate').set(False)
         blast_2.parm('group').set(sel_str)
         blast_2.setNextInput(main_node)
         blast_2.moveToGoodPosition()
 
-    blast_1 = main_node.parent().createNode('blast', node_name='blast_part')
-    blast_1.parm('negate').set(True)
+    if geo.geometryType() == hou.geometryType.Edges:
+        blast_1 = main_node.parent().createNode('mifth_extract_edges', node_name='extract_edges')
+
+    else:
+        blast_1 = main_node.parent().createNode('blast', node_name='blast_part')
+        blast_1.parm('negate').set(True)
+
     blast_1.parm('group').set(sel_str)
     blast_1.setNextInput(main_node)
-    blast_1.setDisplayFlag(True)
-    blast_1.setRenderFlag(True)
     blast_1.setCurrent(True, clear_all_selected=True)
     blast_1.moveToGoodPosition()
 
     final_merge = main_node.parent().createNode("merge")
+    final_merge.setDisplayFlag(True)
+    final_merge.setRenderFlag(True)
 
     if kwargs['ctrlclick']:
-        final_merge.setNextInput(blast_2)
+        if geo.geometryType() == hou.geometryType.Primitives:
+            final_merge.setNextInput(blast_2)
     else:
         final_merge.setNextInput(main_node)
 
