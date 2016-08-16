@@ -7,6 +7,7 @@
 
   <toolshelf name="pk_tools" label="PK">
     <memberTool name="sc_camera"/>
+    <memberTool name="kn_cam"/>
     <memberTool name="ImagePlane"/>
   </toolshelf>
 
@@ -87,5 +88,28 @@ if image_path:
     grid_obj.parm('shop_materialpath').set(const_n.path())
 
     cop_n.destroy()]]></script>
+  </tool>
+
+  <tool name="kn_cam" label="KN Cam" icon="OBJ_camera">
+    <script scriptType="python"><![CDATA[obj = hou.node('/obj')
+cam = obj.createNode('cam', 'kn_cam')
+
+cam.parm('iconscale').set(20)
+cam.parm('resx').set(768)
+cam.parm('resy').set(768)
+
+cam.parm('aspect').set(1)
+cam.parm('projection').set(1)
+
+cam.parm('focal').set(50)
+cam.parm('aperture').set(41.4214)
+cam.parm('orthowidth').set(8.5)
+cam.parm('near').set(0.01)
+cam.parm('far').set(2000)
+
+cam.parmTuple('t').set((38.7442, 31.9752, 37.9657))
+cam.parmTuple('r').set((-30, 45, 0))
+
+cam.moveToGoodPosition()]]></script>
   </tool>
 </shelfDocument>
