@@ -11,6 +11,8 @@
 - Draw your clones on target object(s) with left mouse button pressed
 - Right click (or esc) to stop painting
 
+When many objects are selected as sources for clones, the tool randomly clone objects from this list
+
 
 ## Options
 
