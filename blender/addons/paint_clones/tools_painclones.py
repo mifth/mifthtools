@@ -102,7 +102,7 @@ yAxis = Vector((0, 1, 0))
 zAxis = Vector((0, 0, 1))
   
 def get_rot_quat(obj, track_vec, up_vec, track_axis, up_axis):
-    m1 = generateRotationMatrix(up_vec, track_vec, track_axis, up_axis)
+    m1 = generateRotationMatrix(track_vec, up_vec, track_axis, up_axis)
     return obj.rotation_quaternion.rotation_difference(m1.to_quaternion())
 		
 def update_track_axis(self, context):
