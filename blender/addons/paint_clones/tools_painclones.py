@@ -17,159 +17,117 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 #
-# Inspired and many parts from mifth tools cloning 
+# Inspired by mifth tools cloning and Animation Nodes
 
 bl_info = {
     "name": "Paint Clones",
     "author": "Stephen Leger",
     "version": (0, 1, 0),
     "blender": (2, 77, 0),
-    "location": "3D Viewport",
-    "description": "Paint Clones, inspired and many parts from mifth tools cloning",
+    "location": "3D View -> Tool Shelf -> Object Tools Panel (at the bottom)",
+    "description": "Paint Clones",
     "warning": "",
     "wiki_url": "",
-    "tracker_url": "",
+    "tracker_url": "https://github.com/mifth/mifthtools/edit/master/blender/addons/paint_clones/",
     "category": "Tools"}
 
 import bpy
 from bpy_extras import view3d_utils
 
-#import math
 from math import pi
 import random
 from bpy.types import Operator, Panel, PropertyGroup
-from bpy.props import EnumProperty, BoolProperty, FloatProperty, PointerProperty
+from bpy.props import EnumProperty, BoolProperty, FloatProperty, PointerProperty, StringProperty
 from mathutils import Vector, Matrix
-
-# bpy.paintClonesTools = dict()
 
 global paintClonesSourceList
 paintClonesSourceList = []  # Array of Objects Names
-           
-track_list ={
-    'TRACK_NEGATIVE_X':3,
-    'TRACK_NEGATIVE_Y':4,
-    'TRACK_NEGATIVE_Z':5,
-    'TRACK_POSITIVE_X':0,
-    'TRACK_POSITIVE_Y':1,
-    'TRACK_POSITIVE_Z':2
-}
-up_list ={
-    'UP_X':0,
-    'UP_Y':1,
-    'UP_Z':2
-}
-cross_list={
-  -2:1,
-  -1:-1,
-  0:0,
-  1:1,
-  2:-1
+
+# source : Animation Nodes
+def generateRotationMatrix(direction, guide, trackAxis = "Z", guideAxis = "X"):
+    '''
+    trackAxis in ("X", "Y", "Z", "-X", "-Y", "-Z")
+    guideAxis in ("X", "Y", "Z")
+    '''
+
+    matrix = Matrix.Identity(4)
+
+    if guideAxis[-1:] == trackAxis[-1:]:
+        return matrix
+
+    if direction == zero:
+        return matrix
+
+    z = direction.normalized()
+    y = z.cross(guide.normalized())
+    if y == zero:
+        if guideAxis == "X":
+            if z.cross(xAxis) != zero: y = z.cross(xAxis)
+            else: y = zAxis
+        elif guideAxis == "Y":
+            if z.cross(yAxis) != zero: y = z.cross(yAxis)
+            else: y = zAxis
+        elif guideAxis == "Z":
+            if z.cross(zAxis) != zero: y = z.cross(zAxis)
+            else: y = yAxis
+
+    x = y.cross(z)
+
+    mx, my, mz = changeAxesDict[(trackAxis, guideAxis)](x, y, z)
+    matrix.col[0][:3] = mx
+    matrix.col[1][:3] = my
+    matrix.col[2][:3] = mz
+    return matrix
+
+changeAxesDict = {
+    ( "X", "Z"): lambda x, y, z: ( z, -y,  x),
+    ( "X", "Y"): lambda x, y, z: ( z,  x,  y),
+    ( "Y", "Z"): lambda x, y, z: ( y,  z,  x),
+    ( "Y", "X"): lambda x, y, z: ( x,  z, -y),
+
+    ( "Z", "X"): lambda x, y, z: ( x,  y,  z),
+    ( "Z", "Y"): lambda x, y, z: (-y,  x,  z),
+    ("-X", "Z"): lambda x, y, z: (-z,  y,  x),
+    ("-X", "Y"): lambda x, y, z: (-z,  x, -y),
+
+    ("-Y", "Z"): lambda x, y, z: (-y, -z,  x),
+    ("-Y", "X"): lambda x, y, z: ( x, -z,  y),
+    ("-Z", "X"): lambda x, y, z: ( x, -y, -z),
+    ("-Z", "Y"): lambda x, y, z: ( y,  x, -z),
 }
 
-def mul_m4_m3m4(m, _m3, _m4):
-    m2 = _m4.copy()
-    m3 = _m3.copy()
-    m[0][0] = m2[0][0] * m3[0][0] + m2[0][1] * m3[1][0] + m2[0][2] * m3[2][0]
-    m[0][1] = m2[0][0] * m3[0][1] + m2[0][1] * m3[1][1] + m2[0][2] * m3[2][1]
-    m[0][2] = m2[0][0] * m3[0][2] + m2[0][1] * m3[1][2] + m2[0][2] * m3[2][2]
-    m[1][0] = m2[1][0] * m3[0][0] + m2[1][1] * m3[1][0] + m2[1][2] * m3[2][0]
-    m[1][1] = m2[1][0] * m3[0][1] + m2[1][1] * m3[1][1] + m2[1][2] * m3[2][1]
-    m[1][2] = m2[1][0] * m3[0][2] + m2[1][1] * m3[1][2] + m2[1][2] * m3[2][2]
-    m[2][0] = m2[2][0] * m3[0][0] + m2[2][1] * m3[1][0] + m2[2][2] * m3[2][0]
-    m[2][1] = m2[2][0] * m3[0][1] + m2[2][1] * m3[1][1] + m2[2][2] * m3[2][1]
-    m[2][2] = m2[2][0] * m3[0][2] + m2[2][1] * m3[1][2] + m2[2][2] * m3[2][2]
-    return m
+zero = Vector((0, 0, 0))
+xAxis = Vector((1, 0, 0))
+yAxis = Vector((0, 1, 0))
+zAxis = Vector((0, 0, 1))
   
-def mat4_to_size(m):
-    size_0 = m[0].to_3d().length
-    size_1 = m[1].to_3d().length
-    size_2 = m[2].to_3d().length    
-    m[0][0] = size_0 
-    m[0][1] = 0
-    m[0][2] = 0   
-    m[1][0] = 0
-    m[1][1] = size_1
-    m[1][2] = 0
-    m[2][0] = 0
-    m[2][1] = 0
-    m[2][2] = size_2 
-    return m
-    
-def dot_v3v3(a, b):
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-
-def project_v3_v3v3(v1, v2):
-    c = Vector()
-    mul = dot_v3v3(v1, v2) / dot_v3v3(v2, v2)
-    c[0] = mul * v2[0]
-    c[1] = mul * v2[1]
-    c[2] = mul * v2[2]    
-    return c
-    
-def vectomat(track_vec, up_vec, track_axis, up_axis):
-    m = Matrix()
-    n = track_vec.normalized()
-    n.resize_3d() 
-    u = up_vec.copy()
-    u.resize_3d()
-    if n[0] != n[0]:
-        n[0] = 0.0
-        n[1] = 0.0
-        n[2] = 1.0
-    if track_axis > 2:
-        track_axis = track_axis-3
-        n = -n
-        
-    proj = project_v3_v3v3(u,n)    
-    proj = u-proj
-    proj.normalize()
-    if proj[0] != proj[0]:
-        proj[0] = 0.0
-        proj[1] = 1.0
-        proj[2] = 0.0
-    right = proj.cross(n)
-    right.normalize()
-    if track_axis != up_axis:
-        right_index = 3-track_axis-up_axis
-        neg = cross_list[track_axis-up_axis]
-        m[right_index][0] = neg*right[0]
-        m[right_index][1] = neg*right[1]
-        m[right_index][2] = neg*right[2]
-        m[up_axis][0] = proj[0]
-        m[up_axis][1] = proj[1]
-        m[up_axis][2] = proj[2]
-        m[track_axis][0] = n[0]
-        m[track_axis][1] = n[1]
-        m[track_axis][2] = n[2]
-    return m
-    
 def get_rot_quat(obj, track_vec, up_vec, track_axis, up_axis):
-    cob = obj.matrix_world.transposed()
-    cob = mat4_to_size(cob)
-    m = vectomat(track_vec, up_vec, track_axis, up_axis)
-    cob = mul_m4_m3m4(cob, m, cob)
-    cob.transpose()
-    return cob.to_quaternion()
+    m1 = generateRotationMatrix(up_vec, track_vec, track_axis, up_axis)
+    return obj.rotation_quaternion.rotation_difference(m1.to_quaternion())
 		
 def update_track_axis(self, context):
     if self.up_axis[-1:] == self.track_axis[-1:]:
-        if self.up_axis in ['UP_X','UP_Y']:
-            self.track_axis = 'TRACK_POSITIVE_Z'
+        if self.up_axis in ['X','Y']:
+            self.track_axis = 'Z'
         else: 
-            self.track_axis = 'TRACK_POSITIVE_X'  
+            self.track_axis = 'X'  
             
 def update_up_axis(self, context):
     if self.up_axis[-1:] == self.track_axis[-1:]:
         if self.track_axis[-1:] in ['X','Y']:
-            self.up_axis = 'UP_Z'
+            self.up_axis = 'Z'
         else:
-            self.up_axis = 'UP_X'  
+            self.up_axis = 'X'  
          
-    
+def enumerate_groups(self, context):
+    items = [(group.name, group.name, '') for group in bpy.data.groups]
+    items.append(('GRONONE','Dont group',''))
+    items.append(('GROCREATE','Create a new group'))
+    return tuple(items)
+  
 class PaintClonesProperties(PropertyGroup):
     # Draw Cloned Settings
-         
+    
     align_mode = EnumProperty(
         name ="Align mode",
         description="Rotate clone along ..",
@@ -184,24 +142,24 @@ class PaintClonesProperties(PropertyGroup):
     track_axis = EnumProperty(
         name="Axis",
         description="Main axis",
-        items=(('TRACK_POSITIVE_X', 'X', ''),
-               ('TRACK_NEGATIVE_X', '-X', ''),
-               ('TRACK_POSITIVE_Y', 'Y', ''),
-               ('TRACK_NEGATIVE_Y', '-Y', ''),
-               ('TRACK_POSITIVE_Z', 'Z', ''),
-               ('TRACK_NEGATIVE_Z', '-Z', '')
+        items=(('X', 'X', ''),
+               ('-X', '-X', ''),
+               ('Y', 'Y', ''),
+               ('-Y', '-Y', ''),
+               ('Z', 'Z', ''),
+               ('-Z', '-Z', '')
                ),
-        default = 'TRACK_POSITIVE_Z',
+        default = 'Z',
         update=update_up_axis
     )
     up_axis = EnumProperty(
         name="Up",
         description="Up axis",
-        items=(('UP_X', 'X', ''),
-               ('UP_Y', 'Y', ''),
-               ('UP_Z', 'Z', ''),
+        items=(('X', 'X', ''),
+               ('Y', 'Y', ''),
+               ('Z', 'Z', ''),
                ),
-        default = 'UP_X',
+        default = 'X',
         update=update_track_axis
     )
     drawClonesOptimize = BoolProperty(
@@ -209,7 +167,6 @@ class PaintClonesProperties(PropertyGroup):
         description="Create linked data to optimize...",
         default=True
     )
-
     drawStrokeLength = FloatProperty(
         description="Spacing between clones",
         subtype="DISTANCE",
@@ -219,7 +176,6 @@ class PaintClonesProperties(PropertyGroup):
         min=0.001,
         max=10000.0
     )
-
     drawRandomStrokeScatter = FloatProperty(
         description="Scatter arround stroke",
         subtype="DISTANCE",
@@ -229,7 +185,6 @@ class PaintClonesProperties(PropertyGroup):
         min=0.0,
         max=10000.0
     )
-
     randRotationX = FloatProperty(
         description="Random rotation on x axis",
         subtype="ANGLE",
@@ -257,7 +212,6 @@ class PaintClonesProperties(PropertyGroup):
         min=0.0,
         max=pi
     )
-
     randScale = FloatProperty(
         subtype="PERCENTAGE",
         name="Scale",
@@ -266,66 +220,108 @@ class PaintClonesProperties(PropertyGroup):
         min=0.0,
         max=99.9
     )
-
     drawPressure = FloatProperty(
+        name = "Pressure",
         default=0.7,
         min=0.0,
         max=0.95
     )
-
     drawPressureRelativeStroke = BoolProperty(
-        name="drawPressureRelativeStroke",
+        name="PStroke",
         description="Relative Stroke To Scale and Pressure",
         default=True
     )
-
     drawPressureScale = BoolProperty(
-        name="drawPressureScale",
+        name="PScale",
         description="Pressure for Scale",
         default=True
     )
-
     drawPressureScatter = BoolProperty(
-        name="drawPressureScatter",
+        name="PScatter",
         description="Pressure for Scatter",
         default=True
     )
-
+    group_use = BoolProperty(
+        name="Use source group(s)",
+        description="Group in source group(s)",
+        default=True
+    )
+    group_add_use = BoolProperty(
+        name="Group",
+        description="Add to existing group",
+        default=False
+    )    
+    group_add = StringProperty(
+        name="Group",
+        description="Add to existing group",
+        default=""
+    )
+    group_name_use = BoolProperty(
+        name="Create",
+        description="Create new group and add objects",
+        default=False
+    )
+    group_name = StringProperty(
+        name="Create",
+        description="New group name",
+        default="PaintClones"
+    )
+    
 class TOOLS_PT_PaintClones(Panel):
     bl_label = "Paint Clones"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_context = "objectmode"
-    bl_category = 'PC'
-    # bl_options = {'DEFAULT_CLOSED'}
-
+    bl_category = 'Tools'
+    bl_options = {'DEFAULT_CLOSED'}
+    
     def draw(self, context):
         layout = self.layout
-        paintClonesTools = bpy.context.scene.paintClonesTools
+        pct = bpy.context.scene.paintClonesTools
         row = layout.row()
-        row.operator("tools.paint_clones_pick_sources")
-        row.operator("tools.paint_clones")
-        layout.prop(paintClonesTools, "drawClonesOptimize")
-        layout.prop(paintClonesTools, "align_mode")
+        row.operator("tools.paint_clones_pick_sources", icon="GROUP")
+        row.operator("tools.paint_clones", icon="BRUSH_DATA")
+        layout.separator()
+        layout.prop(pct, "drawClonesOptimize")
+        layout.separator()
+        layout.prop(pct, "align_mode")
         row = layout.row()
-        row.prop(paintClonesTools, "track_axis")
-        row.prop(paintClonesTools, "up_axis")
+        row.prop(pct, "track_axis")
+        row.prop(pct, "up_axis")
+        layout.separator()
         layout.label(text="Randomize:")
         row = layout.row()
-        row.prop(paintClonesTools, "randRotationX")
-        row.prop(paintClonesTools, "randRotationY")
-        row.prop(paintClonesTools, "randRotationZ")
-        layout.prop(paintClonesTools, "randScale")
+        row.prop(pct, "randRotationX")
+        row.prop(pct, "randRotationY")
+        row.prop(pct, "randRotationZ")
+        layout.prop(pct, "randScale")
+        layout.separator()
         layout.label(text="Distribution:")
         row = layout.row()
-        row.prop(paintClonesTools, "drawStrokeLength")
-        row.prop(paintClonesTools, "drawRandomStrokeScatter")
-        layout.label(text="Pressure:")
-        layout.prop(paintClonesTools, "drawPressure", text='DrawPressure')
+        row.prop(pct, "drawStrokeLength")
+        row.prop(pct, "drawRandomStrokeScatter")
+        layout.separator()
+        layout.label(text="Grouping:")
+        layout.prop(pct, "group_use")
         row = layout.row()
-        row.prop(paintClonesTools, "drawPressureRelativeStroke", text='Stroke')
-        row.prop(paintClonesTools, "drawPressureScale", text='Scale')
-        row.prop(paintClonesTools, "drawPressureScatter", text='Scatter')
+        col = row.column()
+        col.prop(pct, "group_add_use")
+        col_add = row.column()
+        col_add.prop_search(pct, "group_add", bpy.data, "groups","")
+        col_add.active = pct.group_add_use
+        row = layout.row()
+        col = row.column()
+        col.prop(pct, "group_name_use")
+        col_name = row.column()
+        col_name.prop(pct, "group_name","")
+        col_name.active = pct.group_name_use
+        layout.separator()
+        layout.label(text="Pressure:")
+        layout.prop(pct, "drawPressure")
+        row = layout.row()
+        row.prop(pct, "drawPressureRelativeStroke")
+        row.prop(pct, "drawPressureScale")
+        row.prop(pct, "drawPressureScatter")
         
 class TOOLS_OP_PaintClones(Operator):
     bl_idname = "tools.paint_clones"
@@ -346,7 +342,7 @@ class TOOLS_OP_PaintClones(Operator):
                  'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE']
 
     def modal(self, context, event):
-        paintClonesTools = bpy.context.scene.paintClonesTools
+        pct = bpy.context.scene.paintClonesTools
         if event.type in self.pass_keys:
             # allow navigation
             return {'PASS_THROUGH'}
@@ -358,12 +354,13 @@ class TOOLS_OP_PaintClones(Operator):
             self.currentStrokeList = []
         elif event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
             self.doPick = False
-            self.allStrokesList.append(self.currentStrokeList)
+            if len(self.currentStrokeList) > 0:
+                self.allStrokesList.append(self.currentStrokeList)
 
             # Do optimization
-            if paintClonesTools.drawClonesOptimize is True and self.currentStrokeList is not None:
+            if pct.drawClonesOptimize is True and self.currentStrokeList is not None:
                 for point in self.currentStrokeList:
-                    copy_settings_clones(point.objNew, point.objOriginal)
+                    copy_settings_clones(pct, point.objNew, point.objOriginal)
             self.currentStrokeList = None
 
         if self.doPick is True:
@@ -373,7 +370,6 @@ class TOOLS_OP_PaintClones(Operator):
         return {'RUNNING_MODAL'}
 
     def invoke(self, context, event):
-        paintClonesTools = bpy.context.scene.paintClonesTools
         # global paintClonesSourceList
         if len(paintClonesSourceList) == 0 or len(context.selected_objects) == 0:
             self.report({'WARNING'}, "Pick target object(s)")
@@ -400,21 +396,21 @@ class TOOLS_OP_PaintClonesPickSources(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        paintClonesTools = context.scene.paintClonesTools
+        pct = context.scene.paintClonesTools
 
         if len(context.selected_objects) > 0:
             # global paintClonesSourceList
             paintClonesSourceList.clear()
             for obj in context.selected_objects:
                 paintClonesSourceList.append(obj.name)
-            if paintClonesTools.track_axis[-1:] == 'X':
+            if pct.track_axis[-1:] == 'X':
                 x, y = 1, 2
-            if paintClonesTools.track_axis[-1:] == 'Y':
+            if pct.track_axis[-1:] == 'Y':
                 x, y = 0, 2
-            if paintClonesTools.track_axis[-1:] == 'Z':
+            if pct.track_axis[-1:] == 'Z':
                 x, y = 0, 1
             sizes = [(obj.dimensions[x] * obj.scale[x] + obj.dimensions[y] * obj.scale[y]) / 2.0 for obj in context.selected_objects]
-            paintClonesTools.drawStrokeLength = sum(sizes)/len(sizes)
+            pct.drawStrokeLength = sum(sizes)/len(sizes)
         return {'FINISHED'}
 
 class StrokePoint:
@@ -474,12 +470,28 @@ def selected_objects_and_duplis(self, context):
     return listObjMatrix
 
 
-def copy_settings_clones(newObj, oldObj):
+def copy_settings_clones(pct, newObj, oldObj):
     # Copy Groups
-    for thisGroup in bpy.data.groups:
-        if oldObj.name in thisGroup.objects:
-            thisGroup.objects.link(newObj)
-
+    if pct.group_use:
+        for thisGroup in bpy.data.groups:
+            if oldObj.name in thisGroup.objects:
+                thisGroup.objects.link(newObj)
+    
+    if pct.group_add_use and pct.group_add != "":
+        addToGroup = bpy.data.groups.get(pct.group_add)
+        if addToGroup is None:
+            addToGroup = bpy.data.groups.new(pct.group_add)
+        if newObj.name not in addToGroup.objects:
+            addToGroup.objects.link(newObj)
+ 
+    if pct.group_name_use and pct.group_name  != "":
+        addToGroup = bpy.data.groups.get(pct.group_name)
+        if addToGroup is None:
+            addToGroup = bpy.data.groups.new(pct.group_name)
+        if newObj.name not in addToGroup.objects:
+            addToGroup.objects.link(newObj)
+    
+    
     # Copy Modifiers
     for old_modifier in oldObj.modifiers.values():
             new_modifier = newObj.modifiers.new(name=old_modifier.name,
@@ -525,13 +537,13 @@ def pick_and_clone(self, context, event, ray_max=10000.0):
         """Wrapper for ray casting that moves the ray into object space"""
 
         ray_target = ray_origin + (view_vector * ray_max)
-
+        
         # get the ray relative to the object
         matrix_inv = matrix.inverted()
-        ray_origin_obj = matrix_inv * ray_origin
+        ray_origin_obj = matrix_inv * ray_origin 
         ray_target_obj = matrix_inv * ray_target
         ray_vector_obj = ray_target_obj - ray_origin_obj
-	
+        
         # cast the ray
         hit_result, hit, normal, face_index = obj.ray_cast(ray_origin_obj, ray_vector_obj, ray_max)
 
@@ -557,12 +569,8 @@ def pick_and_clone(self, context, event, ray_max=10000.0):
     best_obj_rand, best_obj_nor_rand, best_obj_pos_rand = None, None, None
     best_obj_hit = None
     
-    x_axis = Vector((1.0, 0.0, 0.0))
-    y_axis = Vector((0.0, 1.0, 0.0))
-    z_axis = Vector((0.0, 0.0, 1.0))
-    
-    paintClonesTools = context.scene.paintClonesTools
-    thePressure = max(1.0 - paintClonesTools.drawPressure,
+    pct = context.scene.paintClonesTools
+    thePressure = max(1.0 - pct.drawPressure,
                       self.tabletPressure)  # The pressure of a pen!
 
     for obj, matrix in self.dupliList:
@@ -587,23 +595,23 @@ def pick_and_clone(self, context, event, ray_max=10000.0):
                 previousHit = self.currentStrokeList[-1]  # get Last Element
 
             # Check for stroke
-            strokeLength = paintClonesTools.drawStrokeLength
-            if paintClonesTools.drawPressureScale is True and paintClonesTools.drawPressureRelativeStroke is True and self.tabletPressure < 1.0 and paintClonesTools.drawPressure > 0.0:
+            strokeLength = pct.drawStrokeLength
+            if pct.drawPressureScale is True and pct.drawPressureRelativeStroke is True and self.tabletPressure < 1.0 and pct.drawPressure > 0.0:
                 strokeLength *= thePressure
             if previousHit is not None and (best_obj_pos - previousHit.hitPoint).length < strokeLength:
                 best_obj = None  # Don't do cloning
 
     # random scatter things
-    if paintClonesTools.drawRandomStrokeScatter > 0.0 and best_obj is not None and t1 is not None:
+    if pct.drawRandomStrokeScatter > 0.0 and best_obj is not None and t1 is not None:
         # Random Vec
         randX = random.uniform(
-            -1.0, 1.0) * paintClonesTools.drawRandomStrokeScatter  # 3.0 is random addition
+            -1.0, 1.0) * pct.drawRandomStrokeScatter  # 3.0 is random addition
         randY = random.uniform(
-            -1.0, 1.0) * paintClonesTools.drawRandomStrokeScatter  # 3.0 is random addition
+            -1.0, 1.0) * pct.drawRandomStrokeScatter  # 3.0 is random addition
         randZ = random.uniform(
-            -1.0, 1.0) * paintClonesTools.drawRandomStrokeScatter
+            -1.0, 1.0) * pct.drawRandomStrokeScatter
 
-        if paintClonesTools.drawPressureScatter is True and self.tabletPressure < 1.0 and paintClonesTools.drawPressure > 0.0:
+        if pct.drawPressureScatter is True and self.tabletPressure < 1.0 and pct.drawPressure > 0.0:
             randX *= thePressure
             randY *= thePressure
             randZ *= thePressure
@@ -621,7 +629,7 @@ def pick_and_clone(self, context, event, ray_max=10000.0):
             t1, t2, t3 = obj_ray_cast(
                 obj, matrix, view_vector_rand, ray_origin_rand)
             # 3.0 is random addition
-            if t1 is not None and (t2 - best_obj_hit).length <= paintClonesTools.drawRandomStrokeScatter * 3.0:
+            if t1 is not None and (t2 - best_obj_hit).length <= pct.drawRandomStrokeScatter * 3.0:
                 best_obj_nor, best_obj_pos = t1, t2
 
     # now we have the object under the mouse cursor,
@@ -639,7 +647,7 @@ def pick_and_clone(self, context, event, ray_max=10000.0):
         if previousHit is not None:
             stroke_axis = (best_obj_hit - previousHit.hitPoint).normalized()
         else:
-            stroke_axis = x_axis
+            stroke_axis = xAxis
         # clone object
         newDup = bpy.data.objects.new(objToClone.name, objToClone.data)
 
@@ -660,58 +668,56 @@ def pick_and_clone(self, context, event, ray_max=10000.0):
         
         # Random Rotation (PreRotate)
         randRotX, randRotY, randRotZ = random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0)
-        bpy.ops.transform.rotate(value=randRotX*paintClonesTools.randRotationX, axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
-        bpy.ops.transform.rotate(value=randRotY*paintClonesTools.randRotationY, axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
-        bpy.ops.transform.rotate(value=randRotZ*paintClonesTools.randRotationZ, axis=get_obj_axis(newDup, 'Z'), proportional='DISABLED')
+        bpy.ops.transform.rotate(value=randRotX*pct.randRotationX, axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
+        bpy.ops.transform.rotate(value=randRotY*pct.randRotationY, axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
+        bpy.ops.transform.rotate(value=randRotZ*pct.randRotationZ, axis=get_obj_axis(newDup, 'Z'), proportional='DISABLED')
         
         # Rotation To Stroke direction
-        if paintClonesTools.align_mode == 'STROKE':
+        if pct.align_mode == 'STROKE':
             track_vec = stroke_axis
             up_vec = best_obj_nor
         
         # Rotation To Normal
-        if paintClonesTools.align_mode == 'NORMAL':
+        if pct.align_mode == 'NORMAL':
             track_vec = best_obj_nor
             up_vec = stroke_axis
             
         # Rotation To X_AXIS
-        if paintClonesTools.align_mode == 'X_AXIS':
-            track_vec = x_axis
+        if pct.align_mode == 'X_AXIS':
+            track_vec = xAxis
             up_vec = stroke_axis
         
         # Rotation To Y_AXIS
-        if paintClonesTools.align_mode == 'Y_AXIS':
-            track_vec = y_axis
+        if pct.align_mode == 'Y_AXIS':
+            track_vec = yAxis
             up_vec = stroke_axis
         
         # Rotation To Z_AXIS
-        if paintClonesTools.align_mode == 'Z_AXIS':
-            track_vec = z_axis
+        if pct.align_mode == 'Z_AXIS':
+            track_vec = zAxis
             up_vec = stroke_axis
             
-        up_axis = up_list.get(paintClonesTools.up_axis,5)
-        track_axis = track_list.get(paintClonesTools.track_axis,0)
-        q = get_rot_quat(newDup, track_vec, up_vec, track_axis, up_axis)
+        q = get_rot_quat(newDup, track_vec, up_vec, pct.track_axis, pct.up_axis)
         
         bpy.ops.transform.rotate(value=q.angle, axis=(q.axis), proportional='DISABLED')
         
         
         # Scale
-        if paintClonesTools.drawPressure > 0.0 or paintClonesTools.randScale > 0.0:
+        if pct.drawPressure > 0.0 or pct.randScale > 0.0:
             newSize = newDup.scale
-            if self.tabletPressure < 1.0 and paintClonesTools.drawPressure > 0.0 and paintClonesTools.drawPressureScale is True:
+            if self.tabletPressure < 1.0 and pct.drawPressure > 0.0 and pct.drawPressureScale is True:
                 newSize *= thePressure
 
-            if paintClonesTools.randScale > 0.0:
+            if pct.randScale > 0.0:
                 randScale = 1.0 - \
                     (random.uniform(0.0, 1.0) *
-                     paintClonesTools.randScale / 100.0)
+                     pct.randScale / 100.0)
                 newSize *= randScale
 
 
         # do optimization for a stroke or not
-        if paintClonesTools.drawClonesOptimize is False:
-            copy_settings_clones(newDup, objToClone)
+        if pct.drawClonesOptimize is False:
+            copy_settings_clones(pct, newDup, objToClone)
 
         newDup.select = False  # Clear Selection
 
@@ -722,19 +728,16 @@ def pick_and_clone(self, context, event, ray_max=10000.0):
         
 def register():
     bpy.utils.register_module(__name__)
-
     bpy.types.Scene.paintClonesTools = PointerProperty(
         name="Paint Clones Variables",
         type=PaintClonesProperties,
         description="Paint Clones Properties"
     )
 
-
 def unregister():
     import bpy
     del bpy.types.Scene.paintClonesTools
     bpy.utils.unregister_module(__name__)
-
 
 if __name__ == "__main__":
     register()
