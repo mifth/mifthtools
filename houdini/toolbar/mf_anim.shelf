@@ -6,44 +6,62 @@
  a single file. -->
 
   <tool name="mirror_pretransform" label="MirrorPreTr" icon="OBJ_STATE_mirrorcapture">
-    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+    <script scriptType="python"><![CDATA[def change_pretransform(node_copy, node_paste):
+    ncopy_pre = node_copy.preTransform()
 
-if len(sel_nodes)%2 == 0:
+    trans = ncopy_pre.extractTranslates()
+    trans[0] = -trans[0]
 
-    half_range = len(sel_nodes) / 2
+    rots = ncopy_pre.extractRotates()
+    rots[1] = -rots[1]
+    rots[2] = -rots[2]
 
-    for i in range(0, half_range):
-        node_copy = sel_nodes[i]
-        node_paste = sel_nodes[i + half_range]
-        ncopy_pre = node_copy.preTransform()
+    scs =  ncopy_pre.extractScales()
+    mat_t = hou.hmath.buildTranslate(trans)
+    mat_r = hou.hmath.buildRotate(rots)
+    mat_s = hou.hmath.buildScale(scs)
+    mat_all =  mat_r * mat_s * mat_t
+    node_paste.setPreTransform(mat_all)
 
-        trans = ncopy_pre.extractTranslates()
-        trans[0] = -trans[0]
+    if node_copy.type().name() == 'bone' and node_paste.type().name() == 'bone':
+        node_paste.parm('length').set(node_copy.parm('length').eval())
 
-        rots = ncopy_pre.extractRotates()
-        rots[1] = -rots[1]
-        rots[2] = -rots[2]
 
-        scs =  ncopy_pre.extractScales()
-        mat_t = hou.hmath.buildTranslate(trans)
-        mat_r = hou.hmath.buildRotate(rots)
-        mat_s = hou.hmath.buildScale(scs)
-        mat_all =  mat_r * mat_s * mat_t
-        node_paste.setPreTransform(mat_all)
+sel_nodes = hou.selectedNodes()
 
-        if node_copy.type().name() == 'bone' and node_paste.type().name() == 'bone':
-            node_paste.parm('length').set(node_copy.parm('length').eval())
+if kwargs['ctrlclick']:
+    if len(sel_nodes)%2 == 0:
+    
+        half_range = len(sel_nodes) / 2
+    
+        for i in range(0, half_range):
+            node_copy = sel_nodes[i]
+            node_paste = sel_nodes[i + half_range]
+    
+            change_pretransform(node_copy, node_paste)
 
-#        extractTranslates()
-#        extractShears()
+else:
+    cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+    for node in cur_obj.children():
+        node_copy = node
+        node_paste = None
 
-#        node_paste.parm('ptx').setExpression("-ch('../" + node_copy.name() + "/ptx')")
-#        node_paste.parm('pty').setExpression("ch('../" + node_copy.name() + "/pty')")
-#        node_paste.parm('ptz').setExpression("ch('../" + node_copy.name() + "/ptz')")\
-#
-#        node_paste.parm('prx').setExpression("ch('../" + node_copy.name() + "/prx')")
-#        node_paste.parm('pry').setExpression("-ch('../" + node_copy.name() + "/pry')")
-#        node_paste.parm('prz').setExpression("-ch('../" + node_copy.name() + "/prz')")
+        if '_R' in node.name() or 'R_' in node.name():
+            paste_name = node.name().replace('_R', '_L')
+            paste_name = paste_name.replace('R_', 'L_')
+            node_paste = cur_obj.node(paste_name)
+
+            if node_paste:
+                change_pretransform(node_copy, node_paste)
+        
+
+##        node_paste.parm('ptx').setExpression("-ch('../" + node_copy.name() + "/ptx')")
+##        node_paste.parm('pty').setExpression("ch('../" + node_copy.name() + "/pty')")
+##        node_paste.parm('ptz').setExpression("ch('../" + node_copy.name() + "/ptz')")\
+##
+##        node_paste.parm('prx').setExpression("ch('../" + node_copy.name() + "/prx')")
+##        node_paste.parm('pry').setExpression("-ch('../" + node_copy.name() + "/pry')")
+##        node_paste.parm('prz').setExpression("-ch('../" + node_copy.name() + "/prz')")
 
         ]]></script>
   </tool>
