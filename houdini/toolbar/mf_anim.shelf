@@ -5,7 +5,7 @@
  Note, that two definitions of the same element are not allowed in
  a single file. -->
 
-  <tool name="mirror_pretransform" label="Mirror PreTr" icon="OBJ_STATE_mirrorcapture">
+  <tool name="mirror_pretransform" label="MirrorPreTr" icon="OBJ_STATE_mirrorcapture">
     <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
 
 if len(sel_nodes)%2 == 0:
@@ -49,6 +49,7 @@ if len(sel_nodes)%2 == 0:
   </tool>
 
   <toolshelf name="mfanim" label="MAnim">
+    <memberTool name="rename_symm"/>
     <memberTool name="mirror_pretransform"/>
   </toolshelf>
 </shelfDocument>
