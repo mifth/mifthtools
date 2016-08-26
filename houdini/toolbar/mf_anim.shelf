@@ -7,16 +7,23 @@
 
   <tool name="mirror_pretransform" label="MirrorPreTr" icon="OBJ_STATE_mirrorcapture">
     <script scriptType="python"><![CDATA[def change_pretransform(node_copy, node_paste):
+    #if node_copy.type().name() != 'bone':
     ncopy_pre = node_copy.preTransform()
 
     trans = ncopy_pre.extractTranslates()
-    trans[0] = -trans[0]
+    if node_copy.type().name() != 'bone':
+        trans[0] = -trans[0]
 
     rots = ncopy_pre.extractRotates()
-    rots[1] = -rots[1]
-    rots[2] = -rots[2]
+    if node_copy.type().name() != 'bone':
+        rots[0] = rots[0] - 180
 
     scs =  ncopy_pre.extractScales()
+    if node_copy.type().name() != 'bone':
+        scs[0] = -scs[0]
+        scs[1] = -scs[1]
+        scs[2] = -scs[2]
+
     mat_t = hou.hmath.buildTranslate(trans)
     mat_r = hou.hmath.buildRotate(rots)
     mat_s = hou.hmath.buildScale(scs)
@@ -25,6 +32,67 @@
 
     if node_copy.type().name() == 'bone' and node_paste.type().name() == 'bone':
         node_paste.parm('length').set(node_copy.parm('length').eval())
+
+        # capture
+        node_paste.parm('ccrcenterx').set(node_copy.parm('ccrcenterx').eval())
+        node_paste.parm('ccrcentery').set(node_copy.parm('ccrcentery').eval())
+        node_paste.parm('ccrcenterz').set(node_copy.parm('ccrcenterz').eval())
+
+        node_paste.parm('ccrrotatex').set(node_copy.parm('ccrrotatex').eval())
+        node_paste.parm('ccrrotatey').set(node_copy.parm('ccrrotatey').eval())
+        node_paste.parm('ccrrotatez').set(node_copy.parm('ccrrotatez').eval())
+
+        node_paste.parm('ccrscalex').set(node_copy.parm('ccrscalex').eval())
+        node_paste.parm('ccrscaley').set(node_copy.parm('ccrscaley').eval())
+        node_paste.parm('ccrscalez').set(node_copy.parm('ccrscalez').eval())
+
+        node_paste.parm('ccrtopcapx').set(node_copy.parm('ccrtopcapx').eval())
+        node_paste.parm('ccrtopcapy').set(node_copy.parm('ccrtopcapy').eval())
+        node_paste.parm('ccrtopcapz').set(node_copy.parm('ccrtopcapz').eval())
+
+        node_paste.parm('ccrbotheight').set(node_copy.parm('ccrbotheight').eval())
+
+        node_paste.parm('ccrbotcapx').set(node_copy.parm('ccrbotcapx').eval())
+        node_paste.parm('ccrbotcapy').set(node_copy.parm('ccrbotcapy').eval())
+        node_paste.parm('ccrbotcapz').set(node_copy.parm('ccrbotcapz').eval())
+
+        # deform
+        node_paste.parm('crtopcapx').set(node_copy.parm('crtopcapx').eval())
+        node_paste.parm('crtopcapy').set(node_copy.parm('crtopcapy').eval())
+        node_paste.parm('crtopcapz').set(node_copy.parm('crtopcapz').eval())
+
+        node_paste.parm('crbotheight').set(node_copy.parm('crbotheight').eval())
+
+        node_paste.parm('crbotcapx').set(node_copy.parm('crbotcapx').eval())
+        node_paste.parm('crbotcapy').set(node_copy.parm('crbotcapy').eval())
+        node_paste.parm('crbotcapz').set(node_copy.parm('crbotcapz').eval())
+
+        node_paste.parm('crcenterx').set(node_copy.parm('crcenterx').eval())
+        node_paste.parm('crcentery').set(node_copy.parm('crcentery').eval())
+        node_paste.parm('crcenterz').set(node_copy.parm('crcenterz').eval())
+
+        node_paste.parm('crrotatex').set(node_copy.parm('crrotatex').eval())
+        node_paste.parm('crrotatey').set(node_copy.parm('crrotatey').eval())
+        node_paste.parm('crrotatez').set(node_copy.parm('crrotatez').eval())
+
+        node_paste.parm('crscalex').set(node_copy.parm('crscalex').eval())
+        node_paste.parm('crscaley').set(node_copy.parm('crscaley').eval())
+        node_paste.parm('crscalez').set(node_copy.parm('crscalez').eval())
+
+        # center
+        node_paste.parm('captposelen').set(node_copy.parm('captposelen').eval())
+
+        node_paste.parm('captposetx').set(-node_copy.parm('captposetx').eval())
+        node_paste.parm('captposety').set(node_copy.parm('captposety').eval())
+        node_paste.parm('captposetz').set(node_copy.parm('captposetz').eval())
+
+        node_paste.parm('captposerx').set(node_copy.parm('captposerx').eval())
+        node_paste.parm('captposery').set(-node_copy.parm('captposery').eval() + 180)
+        node_paste.parm('captposerz').set(node_copy.parm('captposerz').eval() + 180)
+
+        node_paste.parm('captposesx').set(-node_copy.parm('captposesx').eval())
+        node_paste.parm('captposesy').set(-node_copy.parm('captposesy').eval())
+        node_paste.parm('captposesz').set(-node_copy.parm('captposesz').eval())
 
 
 sel_nodes = hou.selectedNodes()
@@ -69,5 +137,6 @@ else:
   <toolshelf name="mfanim" label="MAnim">
     <memberTool name="rename_symm"/>
     <memberTool name="mirror_pretransform"/>
+    <memberTool name="change_weight"/>
   </toolshelf>
 </shelfDocument>
