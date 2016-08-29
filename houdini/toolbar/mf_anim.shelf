@@ -110,7 +110,7 @@ if kwargs['ctrlclick']:
 
 else:
     cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
-    for node in cur_obj.children():
+    for node in sel_nodes:
         node_copy = node
         node_paste = None
 
@@ -121,16 +121,6 @@ else:
 
             if node_paste:
                 change_pretransform(node_copy, node_paste)
-        
-
-##        node_paste.parm('ptx').setExpression("-ch('../" + node_copy.name() + "/ptx')")
-##        node_paste.parm('pty').setExpression("ch('../" + node_copy.name() + "/pty')")
-##        node_paste.parm('ptz').setExpression("ch('../" + node_copy.name() + "/ptz')")\
-##
-##        node_paste.parm('prx').setExpression("ch('../" + node_copy.name() + "/prx')")
-##        node_paste.parm('pry').setExpression("-ch('../" + node_copy.name() + "/pry')")
-##        node_paste.parm('prz').setExpression("-ch('../" + node_copy.name() + "/prz')")
-
         ]]></script>
   </tool>
 
@@ -139,4 +129,45 @@ else:
     <memberTool name="mirror_pretransform"/>
     <memberTool name="change_weight"/>
   </toolshelf>
+
+  <tool name="rename_symm" label="RenameSym" icon="OBJ_STATE_mirrorcapture">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+
+if len(sel_nodes)%2 == 0:
+
+    half_range = len(sel_nodes) / 2
+
+    for i in range(0, half_range):
+        node_orig = sel_nodes[i]
+        node_change = sel_nodes[i + half_range]
+
+        orig_name = node_orig.name()
+
+        node_parent = node_orig.parent()
+
+        if '_R' in orig_name or 'R_' in orig_name:
+            new_name = orig_name.replace('_R', '_L')
+            new_name = new_name.replace('R_', 'L_')
+
+            contained_node = node_parent.node(new_name)
+            if contained_node:
+                contained_node.setName(contained_node.name() + '_FIXME')
+
+            node_change.setName(new_name)
+
+        elif '_L' in orig_name or 'L_' in orig_name:
+            new_name = orig_name.replace('_L', '_R')
+            new_name = new_name.replace('L_', 'R_')
+
+            contained_node = node_parent.node(new_name)
+            if contained_node:
+                contained_node.setName(contained_node.name() + '_FIXME')
+
+            node_change.setName(new_name)
+]]></script>
+  </tool>
+
+  <tool name="change_weight" label="ChangeWeights" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()]]></script>
+  </tool>
 </shelfDocument>
