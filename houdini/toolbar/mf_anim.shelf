@@ -30,70 +30,6 @@
     mat_all =  mat_r * mat_s * mat_t
     node_paste.setPreTransform(mat_all)
 
-    if node_copy.type().name() == 'bone' and node_paste.type().name() == 'bone':
-        node_paste.parm('length').set(node_copy.parm('length').eval())
-
-        # capture
-        node_paste.parm('ccrcenterx').set(node_copy.parm('ccrcenterx').eval())
-        node_paste.parm('ccrcentery').set(node_copy.parm('ccrcentery').eval())
-        node_paste.parm('ccrcenterz').set(node_copy.parm('ccrcenterz').eval())
-
-        node_paste.parm('ccrrotatex').set(node_copy.parm('ccrrotatex').eval())
-        node_paste.parm('ccrrotatey').set(node_copy.parm('ccrrotatey').eval())
-        node_paste.parm('ccrrotatez').set(node_copy.parm('ccrrotatez').eval())
-
-        node_paste.parm('ccrscalex').set(node_copy.parm('ccrscalex').eval())
-        node_paste.parm('ccrscaley').set(node_copy.parm('ccrscaley').eval())
-        node_paste.parm('ccrscalez').set(node_copy.parm('ccrscalez').eval())
-
-        node_paste.parm('ccrtopcapx').set(node_copy.parm('ccrtopcapx').eval())
-        node_paste.parm('ccrtopcapy').set(node_copy.parm('ccrtopcapy').eval())
-        node_paste.parm('ccrtopcapz').set(node_copy.parm('ccrtopcapz').eval())
-
-        node_paste.parm('ccrbotheight').set(node_copy.parm('ccrbotheight').eval())
-
-        node_paste.parm('ccrbotcapx').set(node_copy.parm('ccrbotcapx').eval())
-        node_paste.parm('ccrbotcapy').set(node_copy.parm('ccrbotcapy').eval())
-        node_paste.parm('ccrbotcapz').set(node_copy.parm('ccrbotcapz').eval())
-
-        # deform
-        node_paste.parm('crtopcapx').set(node_copy.parm('crtopcapx').eval())
-        node_paste.parm('crtopcapy').set(node_copy.parm('crtopcapy').eval())
-        node_paste.parm('crtopcapz').set(node_copy.parm('crtopcapz').eval())
-
-        node_paste.parm('crbotheight').set(node_copy.parm('crbotheight').eval())
-
-        node_paste.parm('crbotcapx').set(node_copy.parm('crbotcapx').eval())
-        node_paste.parm('crbotcapy').set(node_copy.parm('crbotcapy').eval())
-        node_paste.parm('crbotcapz').set(node_copy.parm('crbotcapz').eval())
-
-        node_paste.parm('crcenterx').set(node_copy.parm('crcenterx').eval())
-        node_paste.parm('crcentery').set(node_copy.parm('crcentery').eval())
-        node_paste.parm('crcenterz').set(node_copy.parm('crcenterz').eval())
-
-        node_paste.parm('crrotatex').set(node_copy.parm('crrotatex').eval())
-        node_paste.parm('crrotatey').set(node_copy.parm('crrotatey').eval())
-        node_paste.parm('crrotatez').set(node_copy.parm('crrotatez').eval())
-
-        node_paste.parm('crscalex').set(node_copy.parm('crscalex').eval())
-        node_paste.parm('crscaley').set(node_copy.parm('crscaley').eval())
-        node_paste.parm('crscalez').set(node_copy.parm('crscalez').eval())
-
-        # center
-        node_paste.parm('captposelen').set(node_copy.parm('captposelen').eval())
-
-        node_paste.parm('captposetx').set(-node_copy.parm('captposetx').eval())
-        node_paste.parm('captposety').set(node_copy.parm('captposety').eval())
-        node_paste.parm('captposetz').set(node_copy.parm('captposetz').eval())
-
-        node_paste.parm('captposerx').set(node_copy.parm('captposerx').eval())
-        node_paste.parm('captposery').set(-node_copy.parm('captposery').eval() + 180)
-        node_paste.parm('captposerz').set(node_copy.parm('captposerz').eval() + 180)
-
-        node_paste.parm('captposesx').set(-node_copy.parm('captposesx').eval())
-        node_paste.parm('captposesy').set(-node_copy.parm('captposesy').eval())
-        node_paste.parm('captposesz').set(-node_copy.parm('captposesz').eval())
-
 
 sel_nodes = hou.selectedNodes()
 
@@ -121,13 +57,15 @@ else:
 
             if node_paste:
                 change_pretransform(node_copy, node_paste)
-        ]]></script>
+]]></script>
   </tool>
 
   <toolshelf name="mfanim" label="MAnim">
     <memberTool name="rename_symm"/>
     <memberTool name="mirror_pretransform"/>
-    <memberTool name="change_weight"/>
+    <memberTool name="mirror_captures"/>
+    <memberTool name="copy_keys"/>
+    <memberTool name="paste_keys"/>
   </toolshelf>
 
   <tool name="rename_symm" label="RenameSym" icon="OBJ_STATE_mirrorcapture">
@@ -167,7 +105,179 @@ if len(sel_nodes)%2 == 0:
 ]]></script>
   </tool>
 
-  <tool name="change_weight" label="ChangeWeights" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()]]></script>
+  <tool name="mirror_captures" label="MirrorCapt" icon="OBJ_STATE_mirrorcapture">
+    <script scriptType="python"><![CDATA[def change_capture(node_copy, node_paste):
+    #if node_copy.type().name() != 'bone':
+    ncopy_pre = node_copy.preTransform()
+
+    if node_copy.type().name() == 'bone' and node_paste.type().name() == 'bone':
+        node_paste.parm('length').set(node_copy.parm('length').eval())
+
+        # capture
+        node_paste.parmTuple('ccrcenter').set(node_copy.parmTuple('ccrcenter').eval())
+#        node_paste.parm('ccrcenterx').set(node_copy.parm('ccrcenterx').eval())
+#        node_paste.parm('ccrcentery').set(node_copy.parm('ccrcentery').eval())
+#        node_paste.parm('ccrcenterz').set(node_copy.parm('ccrcenterz').eval())
+
+        node_paste.parmTuple('ccrrotate').set(node_copy.parmTuple('ccrrotate').eval())
+#        node_paste.parm('ccrrotatex').set(node_copy.parm('ccrrotatex').eval())
+#        node_paste.parm('ccrrotatey').set(node_copy.parm('ccrrotatey').eval())
+#        node_paste.parm('ccrrotatez').set(node_copy.parm('ccrrotatez').eval())
+
+        node_paste.parmTuple('ccrscale').set(node_copy.parmTuple('ccrscale').eval())
+#        node_paste.parm('ccrscalex').set(node_copy.parm('ccrscalex').eval())
+#        node_paste.parm('ccrscaley').set(node_copy.parm('ccrscaley').eval())
+#        node_paste.parm('ccrscalez').set(node_copy.parm('ccrscalez').eval())
+
+        node_paste.parmTuple('ccrtopcap').set(node_copy.parmTuple('ccrtopcap').eval())
+#        node_paste.parm('ccrtopcapx').set(node_copy.parm('ccrtopcapx').eval())
+#        node_paste.parm('ccrtopcapy').set(node_copy.parm('ccrtopcapy').eval())
+#        node_paste.parm('ccrtopcapz').set(node_copy.parm('ccrtopcapz').eval())
+
+        node_paste.parm('ccrbotheight').set(node_copy.parm('ccrbotheight').eval())
+
+        node_paste.parmTuple('ccrbotcap').set(node_copy.parmTuple('ccrbotcap').eval())
+#        node_paste.parm('ccrbotcapx').set(node_copy.parm('ccrbotcapx').eval())
+#        node_paste.parm('ccrbotcapy').set(node_copy.parm('ccrbotcapy').eval())
+#        node_paste.parm('ccrbotcapz').set(node_copy.parm('ccrbotcapz').eval())
+
+        # deform
+        node_paste.parmTuple('crtopcap').set(node_copy.parmTuple('crtopcap').eval())
+#        node_paste.parm('crtopcapx').set(node_copy.parm('crtopcapx').eval())
+#        node_paste.parm('crtopcapy').set(node_copy.parm('crtopcapy').eval())
+#        node_paste.parm('crtopcapz').set(node_copy.parm('crtopcapz').eval())
+
+        node_paste.parm('crbotheight').set(node_copy.parm('crbotheight').eval())
+
+        node_paste.parmTuple('crbotcap').set(node_copy.parmTuple('crbotcap').eval())
+#        node_paste.parm('crbotcapx').set(node_copy.parm('crbotcapx').eval())
+#        node_paste.parm('crbotcapy').set(node_copy.parm('crbotcapy').eval())
+#        node_paste.parm('crbotcapz').set(node_copy.parm('crbotcapz').eval())
+
+        node_paste.parmTuple('crcenter').set(node_copy.parmTuple('crcenter').eval())
+#        node_paste.parm('crcenterx').set(node_copy.parm('crcenterx').eval())
+#        node_paste.parm('crcentery').set(node_copy.parm('crcentery').eval())
+#        node_paste.parm('crcenterz').set(node_copy.parm('crcenterz').eval())
+
+        node_paste.parmTuple('crrotate').set(node_copy.parmTuple('crrotate').eval())
+#        node_paste.parm('crrotatex').set(node_copy.parm('crrotatex').eval())
+#        node_paste.parm('crrotatey').set(node_copy.parm('crrotatey').eval())
+#        node_paste.parm('crrotatez').set(node_copy.parm('crrotatez').eval())
+
+        node_paste.parmTuple('crscale').set(node_copy.parmTuple('crscale').eval())
+#        node_paste.parm('crscalex').set(node_copy.parm('crscalex').eval())
+#        node_paste.parm('crscaley').set(node_copy.parm('crscaley').eval())
+#        node_paste.parm('crscalez').set(node_copy.parm('crscalez').eval())
+
+        # center
+        node_paste.parm('captposelen').set(node_copy.parm('captposelen').eval())
+
+        node_paste.parm('captposetx').set(-node_copy.parm('captposetx').eval())
+        node_paste.parm('captposety').set(node_copy.parm('captposety').eval())
+        node_paste.parm('captposetz').set(node_copy.parm('captposetz').eval())
+
+        node_paste.parm('captposerx').set(node_copy.parm('captposerx').eval())
+        node_paste.parm('captposery').set(-node_copy.parm('captposery').eval() + 180)
+        node_paste.parm('captposerz').set(node_copy.parm('captposerz').eval() + 180)
+
+        node_paste.parm('captposesx').set(-node_copy.parm('captposesx').eval())
+        node_paste.parm('captposesy').set(-node_copy.parm('captposesy').eval())
+        node_paste.parm('captposesz').set(-node_copy.parm('captposesz').eval())
+
+
+sel_nodes = hou.selectedNodes()
+
+if kwargs['ctrlclick']:
+    if len(sel_nodes)%2 == 0:
+    
+        half_range = len(sel_nodes) / 2
+    
+        for i in range(0, half_range):
+            node_copy = sel_nodes[i]
+            node_paste = sel_nodes[i + half_range]
+    
+            change_capture(node_copy, node_paste)
+
+else:
+    cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+    for node in sel_nodes:
+        node_copy = node
+        node_paste = None
+
+        if '_R' in node.name() or 'R_' in node.name():
+            paste_name = node.name().replace('_R', '_L')
+            paste_name = paste_name.replace('R_', 'L_')
+            node_paste = cur_obj.node(paste_name)
+
+            if node_paste:
+                change_capture(node_copy, node_paste)
+]]></script>
+  </tool>
+
+  <tool name="copy_keys" label="CopyKeys" icon="OBJ_STATE_mirrorcapture">
+    <script scriptType="python"><![CDATA[ses = hou.session
+
+try:
+    ses.mf_ani_cp
+except:
+    ses.mf_ani_cp = {}
+
+sel_nodes = hou.selectedNodes()
+
+# Copy
+ses.mf_ani_cp = {}
+for node in sel_nodes:
+    tr = node.parmTuple('t').eval()
+    rot = node.parmTuple('r').eval()
+    if node.type().name() == 'bone':
+        sc = node.parm('scale').eval()
+    else:
+        sc = node.parmTuple('s').eval()
+
+    ses.mf_ani_cp[node.path()] = [tr, rot, sc]
+]]></script>
+  </tool>
+
+  <tool name="paste_keys" label="PasteKeys" icon="OBJ_STATE_mirrorcapture">
+    <script scriptType="python"><![CDATA[ses = hou.session
+
+try:
+    ses.mf_ani_cp
+except:
+    ses.mf_ani_cp = {}
+
+def paste_keys(paste_node):
+
+    if not paste_node.parm('tx').isLocked():
+        paste_node.parm('tx').set(ses.mf_ani_cp[node_name][0][0])
+    if not paste_node.parm('ty').isLocked():
+        paste_node.parm('ty').set(ses.mf_ani_cp[node_name][0][1])
+    if not paste_node.parm('ty').isLocked():
+        paste_node.parm('ty').set(ses.mf_ani_cp[node_name][0][2])
+
+    if not paste_node.parm('rx').isLocked():
+        paste_node.parm('rx').setPending(ses.mf_ani_cp[node_name][1][0])
+    if not paste_node.parm('ry').isLocked():
+        paste_node.parm('ry').setPending(ses.mf_ani_cp[node_name][1][1])
+    if not paste_node.parm('rz').isLocked():
+        paste_node.parm('rz').setPending(ses.mf_ani_cp[node_name][1][2])
+
+    if paste_node.type().name() == 'bone':
+        if not paste_node.parm('scale').isLocked():
+            sc = paste_node.parm('scale').set(ses.mf_ani_cp[node_name][2])
+    else:
+        if not paste_node.parm('sx').isLocked():
+            sc = paste_node.parm('sx').set(ses.mf_ani_cp[node_name][2][0])
+        if not paste_node.parm('sy').isLocked():
+            sc = paste_node.parm('sy').set(ses.mf_ani_cp[node_name][2][1])
+        if not paste_node.parm('sz').isLocked():
+            sc = paste_node.parm('sz').set(ses.mf_ani_cp[node_name][2][2])
+
+sel_nodes = hou.selectedNodes()
+
+# Paste
+for node_name in ses.mf_ani_cp.keys():
+    paste_node = hou.node(node_name)
+    paste_keys(paste_node)]]></script>
   </tool>
 </shelfDocument>
