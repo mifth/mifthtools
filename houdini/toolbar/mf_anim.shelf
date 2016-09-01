@@ -215,20 +215,24 @@ else:
   </tool>
 
   <tool name="copy_keys" label="CopyKeys" icon="OBJ_STATE_mirrorcapture">
-    <script scriptType="python"><![CDATA[ses = hou.session
+    <script scriptType="python"><![CDATA[import collections
+
+ses = hou.session
 
 try:
     ses.mf_ani_cp
 except:
-    ses.mf_ani_cp = {}
+    ses.mf_ani_cp = collections.OrderedDict()
 
 sel_nodes = hou.selectedNodes()
 
 # Copy
-ses.mf_ani_cp = {}
+ses.mf_ani_cp = collections.OrderedDict()
+
 for node in sel_nodes:
     tr = node.parmTuple('t').eval()
     rot = node.parmTuple('r').eval()
+
     if node.type().name() == 'bone':
         sc = node.parm('scale').eval()
     else:
@@ -239,45 +243,53 @@ for node in sel_nodes:
   </tool>
 
   <tool name="paste_keys" label="PasteKeys" icon="OBJ_STATE_mirrorcapture">
-    <script scriptType="python"><![CDATA[ses = hou.session
+    <script scriptType="python"><![CDATA[import collections
+
+ses = hou.session
 
 try:
     ses.mf_ani_cp
 except:
-    ses.mf_ani_cp = {}
+    ses.mf_ani_cp = collections.OrderedDict()
 
-def paste_keys(paste_node):
+def paste_keys(paste_node, node_name):
 
-    if not paste_node.parm('tx').isLocked():
-        paste_node.parm('tx').set(ses.mf_ani_cp[node_name][0][0])
-    if not paste_node.parm('ty').isLocked():
-        paste_node.parm('ty').set(ses.mf_ani_cp[node_name][0][1])
-    if not paste_node.parm('ty').isLocked():
-        paste_node.parm('ty').set(ses.mf_ani_cp[node_name][0][2])
+    if paste_node.parmTuple('t'):
+        if not paste_node.parm('tx').isLocked():
+            paste_node.parm('tx').set(ses.mf_ani_cp[node_name][0][0])
+        if not paste_node.parm('ty').isLocked():
+            paste_node.parm('ty').set(ses.mf_ani_cp[node_name][0][1])
+        if not paste_node.parm('tz').isLocked():
+            paste_node.parm('tz').set(ses.mf_ani_cp[node_name][0][2])
 
-    if not paste_node.parm('rx').isLocked():
-        paste_node.parm('rx').setPending(ses.mf_ani_cp[node_name][1][0])
-    if not paste_node.parm('ry').isLocked():
-        paste_node.parm('ry').setPending(ses.mf_ani_cp[node_name][1][1])
-    if not paste_node.parm('rz').isLocked():
-        paste_node.parm('rz').setPending(ses.mf_ani_cp[node_name][1][2])
+    if paste_node.parmTuple('r'):
+        if not paste_node.parm('rx').isLocked():
+            paste_node.parm('rx').setPending(ses.mf_ani_cp[node_name][1][0])
+        if not paste_node.parm('ry').isLocked():
+            paste_node.parm('ry').setPending(ses.mf_ani_cp[node_name][1][1])
+        if not paste_node.parm('rz').isLocked():
+            paste_node.parm('rz').setPending(ses.mf_ani_cp[node_name][1][2])
 
     if paste_node.type().name() == 'bone':
         if not paste_node.parm('scale').isLocked():
             sc = paste_node.parm('scale').set(ses.mf_ani_cp[node_name][2])
     else:
-        if not paste_node.parm('sx').isLocked():
-            sc = paste_node.parm('sx').set(ses.mf_ani_cp[node_name][2][0])
-        if not paste_node.parm('sy').isLocked():
-            sc = paste_node.parm('sy').set(ses.mf_ani_cp[node_name][2][1])
-        if not paste_node.parm('sz').isLocked():
-            sc = paste_node.parm('sz').set(ses.mf_ani_cp[node_name][2][2])
+        #print paste_node.type()
+        if paste_node.parmTuple('s'):
+            if not paste_node.parm('sx').isLocked():
+                sc = paste_node.parm('sx').set(ses.mf_ani_cp[node_name][2][0])
+            if not paste_node.parm('sy').isLocked():
+                sc = paste_node.parm('sy').set(ses.mf_ani_cp[node_name][2][1])
+            if not paste_node.parm('sz').isLocked():
+                sc = paste_node.parm('sz').set(ses.mf_ani_cp[node_name][2][2])
 
 sel_nodes = hou.selectedNodes()
 
 # Paste
-for node_name in ses.mf_ani_cp.keys():
-    paste_node = hou.node(node_name)
-    paste_keys(paste_node)]]></script>
+for i, node in enumerate(sel_nodes):
+    if i <= len(ses.mf_ani_cp.keys())-1:
+        #paste_node = node
+        paste_keys(node, ses.mf_ani_cp.keys()[i])
+        #print ses.mf_ani_cp[ses.mf_ani_cp.keys()[i]], ses.mf_ani_cp.keys()[i], node.name()]]></script>
   </tool>
 </shelfDocument>
