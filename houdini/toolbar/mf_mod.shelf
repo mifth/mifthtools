@@ -33,17 +33,18 @@ sel_nodes = hou.selectedNodes()
 
 if sel_str and sel_nodes:
 
-    main_node = sel_nodes[-1]
+#    main_node = sel_nodes[-1]
+#
+#    node = main_node.parent().createNode('mifth_divide_edges')
+#    node.parm('group').set(sel_str)
+#    node.setNextInput(main_node)
+#    node.moveToGoodPosition()
+#    node.setDisplayFlag(True)
+#    node.setRenderFlag(True)
+#    node.setCurrent(True, clear_all_selected=True)
 
-    node = main_node.parent().createNode('mifth_divide_edges')
-    node.parm('group').set(sel_str)
-    node.setNextInput(main_node)
-    node.moveToGoodPosition()
-    node.setDisplayFlag(True)
-    node.setRenderFlag(True)
-    node.setCurrent(True, clear_all_selected=True)
-#node = soptoolutils.genericTool(kwargs, 'mifth_divide_edges')
-#node.parm('group').set(sel_str)]]></script>
+    node = soptoolutils.genericTool(kwargs, 'mifth_divide_edges')
+    node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="scale_edges" label="Scale Edges" icon="SOP_edgeflip">
