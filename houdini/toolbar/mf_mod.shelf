@@ -25,13 +25,13 @@
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
+#viewer = toolutils.sceneViewer()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
  
 sel_nodes = hou.selectedNodes()
 
-if sel_str and sel_nodes:
+if sel_nodes:
 
 #    main_node = sel_nodes[-1]
 #
@@ -44,7 +44,7 @@ if sel_str and sel_nodes:
 #    node.setCurrent(True, clear_all_selected=True)
 
     node = soptoolutils.genericTool(kwargs, 'mifth_divide_edges')
-    node.parm('group').set(sel_str)]]></script>
+#    node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="scale_edges" label="Scale Edges" icon="SOP_edgeflip">
@@ -54,12 +54,12 @@ if sel_str and sel_nodes:
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
+#viewer = toolutils.sceneViewer()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_scale_edges')
-node.parm('group').set(sel_str)]]></script>
+#node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="transform_primitives" label="TransformPrims" icon="SOP_primitive">
@@ -69,12 +69,12 @@ node.parm('group').set(sel_str)]]></script>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
+#viewer = toolutils.sceneViewer()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_transform_primitives')
-node.parm('group').set(sel_str)]]></script>
+#node.parm('group').set(sel_str)]]></script>
   </tool>
 
   <tool name="merge_verts" label="Merge Verts" icon="SOP_fuse">
@@ -108,13 +108,13 @@ node.parm('group').set(sel_str)]]></script>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
+#viewer = toolutils.sceneViewer()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
 
 if kwargs['ctrlclick']:
     node = soptoolutils.genericTool(kwargs, 'mifth_symmetry_extrude_v1')
-    node.parm('group').set(sel_str)
+    #node.parm('group').set(sel_str)
 else:
     soptoolutils.customStateTool(kwargs, 'polyextrude::2.0')]]></script>
   </tool>
@@ -126,12 +126,12 @@ else:
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
+#viewer = toolutils.sceneViewer()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_edgestoface')
-node.parm('group').set(sel_str)
+#node.parm('group').set(sel_str)
 ]]></script>
   </tool>
 
