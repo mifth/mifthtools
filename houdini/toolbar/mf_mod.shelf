@@ -16,6 +16,7 @@
     <memberTool name="merge"/>
     <memberTool name="pivot_selected"/>
     <memberTool name="set_plane"/>
+    <memberTool name="subdive"/>
   </toolshelf>
 
   <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
@@ -339,5 +340,12 @@ else:
         set_direct_normal(cp, hou.Vector3(0, 1, 0))
     elif cp_axis == 'z':
         set_direct_normal(cp, hou.Vector3(0, 0, 1))]]></script>
+  </tool>
+
+  <tool name="subdive" label="Subdive" icon="SOP_subdivide">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+node = soptoolutils.genericTool(kwargs, 'mifth_subdive_plus')]]></script>
   </tool>
 </shelfDocument>
