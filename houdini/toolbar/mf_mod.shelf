@@ -13,6 +13,7 @@
     <memberTool name="transform_primitives"/>
     <memberTool name="part_mesh"/>
     <memberTool name="merge_verts"/>
+    <memberTool name="falloff"/>
     <memberTool name="merge"/>
     <memberTool name="pivot_selected"/>
     <memberTool name="set_plane"/>
@@ -26,26 +27,8 @@
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-#viewer = toolutils.sceneViewer()
-#geo = viewer.selectGeometry()
-#sel_str = geo.mergedSelectionString()
- 
-sel_nodes = hou.selectedNodes()
-
-if sel_nodes:
-
-#    main_node = sel_nodes[-1]
-#
-#    node = main_node.parent().createNode('mifth_divide_edges')
-#    node.parm('group').set(sel_str)
-#    node.setNextInput(main_node)
-#    node.moveToGoodPosition()
-#    node.setDisplayFlag(True)
-#    node.setRenderFlag(True)
-#    node.setCurrent(True, clear_all_selected=True)
-
-    node = soptoolutils.genericTool(kwargs, 'mifth_divide_edges')
-#    node.parm('group').set(sel_str)]]></script>
+node = soptoolutils.genericTool(kwargs, 'mifth_divide_edges')
+]]></script>
   </tool>
 
   <tool name="scale_edges" label="Scale Edges" icon="SOP_edgeflip">
@@ -85,21 +68,15 @@ node = soptoolutils.genericTool(kwargs, 'mifth_transform_primitives')
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
+#viewer = toolutils.sceneViewer()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
 
-# fix for changing group
-if geo.geometryType() == hou.geometryType.Points:
-    node.parm('grouptype').set(3)
-elif geo.geometryType() == hou.geometryType.Edges:
-    node.parm('grouptype').set(2)
-elif geo.geometryType() == hou.geometryType.Primitives:
-    node.parm('grouptype').set(4)
-    
-node.parm('group').set(sel_str)]]></script>
+if not kwargs['ctrlclick']:
+    node.parm('merge_type').set('last')
+]]></script>
   </tool>
 
   <tool name="symmetry_extrude" label="SymExtrude" icon="SOP_polyextrude">
@@ -347,5 +324,15 @@ else:
 import toolutils
 
 node = soptoolutils.genericTool(kwargs, 'mifth_subdive_plus')]]></script>
+  </tool>
+
+  <tool name="falloff" label="Faloff" icon="SOP_edit">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+if kwargs['ctrlclick']:
+    soptoolutils.genericTool(kwargs, 'mifth_edit_radial_falloff')
+else:
+    soptoolutils.genericTool(kwargs, 'mifth_edit_falloff')]]></script>
   </tool>
 </shelfDocument>
