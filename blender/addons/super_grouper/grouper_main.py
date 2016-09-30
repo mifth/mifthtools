@@ -465,7 +465,7 @@ class SG_super_group_remove(bpy.types.Operator):
 
                     # remove group_scene if it's empty
                     if len(sgr_scene.objects) == 0:
-                        bpy.data.scenes.remove(sgr_scene, do_unlink = True)
+                        bpy.data.scenes.remove(sgr_scene, do_unlink=True)
 
                 # finally remove s_group
                 scene_parse.super_groups.remove(self.group_idx)
@@ -682,7 +682,7 @@ class SG_toggle_visibility(bpy.types.Operator):
                         SGR_switch_object(
                             obj, group_scene, scene, current_s_group.unique_id)
                     if len(group_scene.objects) == 0:
-                        bpy.data.scenes.remove(group_scene, do_unlink = True)
+                        bpy.data.scenes.remove(group_scene, do_unlink=True)
 
             current_s_group.use_toggle = not current_s_group.use_toggle  # switch visibility
 
