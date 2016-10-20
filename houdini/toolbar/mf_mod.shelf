@@ -331,8 +331,34 @@ node = soptoolutils.genericTool(kwargs, 'mifth_subdive_plus')]]></script>
 import toolutils
 
 if kwargs['ctrlclick']:
-    soptoolutils.genericTool(kwargs, 'mifth_edit_radial_falloff')
+    node = soptoolutils.genericTool(kwargs, 'mifth_edit_radial_falloff')
+
+    bou = node.node('./bound1').geometry().boundingBox()
+    bou_size = bou.sizevec()
+    bou_min = bou.minvec()
+    bou_max = bou.maxvec()
+    bou_cr = bou.center()
+
+    #node.parmTuple('falloff_scale').set(bo u_max)
+    node.parm('set_to_size').pressButton()
+    node.parmTuple('p').set( node.parmTuple('falloff_pos').eval() )
+
 else:
-    soptoolutils.genericTool(kwargs, 'mifth_edit_falloff')]]></script>
+    node = soptoolutils.genericTool(kwargs, 'mifth_edit_falloff')
+
+    c = node.parmTuple('./transform2/p').eval()
+    node.parmTuple('p').set(c)
+
+    bou = node.node('./bound1').geometry().boundingBox()
+    bou_size = bou.sizevec()
+    if bou_size[0] >= bou_size[1] and bou_size[0] >= bou_size[2]:
+        node.parm('set_to_axis').set(0)
+    elif bou_size[1] >= bou_size[0] and bou_size[1] >= bou_size[2]:
+        node.parm('set_to_axis').set(1)
+    else:
+        node.parm('set_to_axis').set(2)
+
+    node.parm('set_pos_axis').pressButton()
+]]></script>
   </tool>
 </shelfDocument>
