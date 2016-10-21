@@ -339,8 +339,11 @@ if kwargs['ctrlclick']:
     bou_max = bou.maxvec()
     bou_cr = bou.center()
 
-    #node.parmTuple('falloff_scale').set(bo u_max)
+    the_max = max( max(bou_size[0], bou_size[1]), bou_size[2])
+
     node.parm('set_to_size').pressButton()
+    node.parmTuple('falloff_scale').set(hou.Vector3(the_max, the_max, the_max))
+
     node.parmTuple('p').set( node.parmTuple('falloff_pos').eval() )
 
 else:
