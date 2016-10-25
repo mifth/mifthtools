@@ -522,7 +522,7 @@ def snap_to_surface(context, selected_points, picked_meshes, region, rv3d, move_
         point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, final_pos)
 
         if point_pos_2d:
-            best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, picked_meshes, point_pos_2d, 10000.0)
+            best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, picked_meshes, point_pos_2d)
             #best_obj, hit_normal, hit_position = ut_base.get_3dpoint_raycast(context, self.picked_meshes, final_pos, camera_dir, 10000.0)
         if hit_position:
             point.position = hit_position

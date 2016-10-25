@@ -20,7 +20,7 @@ bl_info = {
     "name": "Mira Tools",
     "author": "Paul Geraskin, Marvin K. Breuer",
     "version": (0, 3, 0),
-    "blender": (2, 74, 0),
+    "blender": (2, 78, 0),
     "location": "3D Viewport",
     "description": "Mira Tools",
     "warning": "",

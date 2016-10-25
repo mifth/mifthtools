@@ -412,11 +412,14 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
 
         # get the ray relative to the object
         matrix_inv = matrix.inverted()
+        ray_target = ray_origin + view_vector
+
         ray_origin_obj = matrix_inv * ray_origin
-        #ray_target_obj = matrix_inv * ray_target
+        ray_target_obj = matrix_inv * ray_target
+        ray_direction_obj = ray_target_obj - ray_origin_obj
 
         # cast the ray
-        hit_result, hit, normal, face_index = obj.ray_cast(ray_origin_obj, view_vector, ray_max)
+        hit_result, hit, normal, face_index = obj.ray_cast(ray_origin_obj, ray_direction_obj)
 
         if hit_result:
             hit_world = matrix * hit
