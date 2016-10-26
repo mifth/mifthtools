@@ -187,7 +187,7 @@ class MI_PolyLoop(bpy.types.Operator):
                 # get position
                 new_point_pos = None
                 if mi_settings.surface_snap is True and self.picked_meshes:
-                    best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords, 10000.0)
+                    best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords)
                     if hit_position:
                         new_point_pos = active_obj.matrix_world.inverted() * hit_position
                 else:
@@ -372,7 +372,7 @@ class MI_PolyLoop(bpy.types.Operator):
 
                 last_vert = ut_base.get_verts_from_ids([self.all_loops_ids[-1].loop_ids[-1]], self.id_layer, bm)[0]
                 if mi_settings.surface_snap is True and self.picked_meshes:
-                    best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords, 10000.0)
+                    best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords)
                     if hit_position:
                         last_vert.co = active_obj.matrix_world.inverted() * hit_position
 
