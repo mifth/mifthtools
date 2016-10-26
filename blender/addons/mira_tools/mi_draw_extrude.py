@@ -281,7 +281,7 @@ class MI_StartDraw(bpy.types.Operator):
 
             if mi_settings.surface_snap is True:
                 best_obj, hit_normal, hit_position = ut_base.get_mouse_raycast(
-                    context, self.picked_meshes, m_coords, 10000.0)
+                    context, self.picked_meshes, m_coords)
                 new_pos = hit_position
 
                 # set offset for surface normal and extrude_center

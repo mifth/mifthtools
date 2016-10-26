@@ -48,7 +48,7 @@ def get_mouse_raycast(context, objects_list, coords_2d):
     rv3d = context.region_data
 
     best_obj, hit_normal, hit_position = None, None, None
-    best_length_squared = 100000000.0
+    best_length_squared = 20000.0 * 20000.0
 
     # get the ray from the viewport and mouse
     view_vector = view3d_utils.region_2d_to_vector_3d(
@@ -70,7 +70,7 @@ def get_mouse_raycast(context, objects_list, coords_2d):
 # mesh picking from 3d space
 def get_3dpoint_raycast(context, objects_list, vec_pos, vec_dir):
     best_obj, hit_normal, hit_position = None, None, None
-    best_length_squared = 100000000.0
+    best_length_squared = 20000.0 * 20000.0
 
     for obj, matrix in objects_list:
         # Do RayCast! t1,t2,t3,t4 - temp values
