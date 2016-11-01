@@ -50,6 +50,7 @@ class MI_Noise(bpy.types.Operator):
         default = 'Turbulence'
     )
 
+    frequency = FloatProperty(default=1.0)
     intensity = FloatProperty(default=1.0)
     offset_x = FloatProperty(default=0.0)
     offset_y = FloatProperty(default=0.0)
@@ -86,7 +87,7 @@ def noise_obj(obj, context, self):
         verts = [v for v in bm.verts if v.hide is False]
 
     for vert in verts:
-        noise_pos = vert.co.copy()
+        noise_pos = self.frequency * vert.co.copy()
         noise_pos.x += self.offset_x
         noise_pos.z += self.offset_y
         noise_pos.z += self.offset_z
