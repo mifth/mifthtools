@@ -51,6 +51,9 @@ def make_merge(final_merge, new_node, node_to_merge):
     if node_to_merge.type().name() == "subnet":
         merge_path += "/*"
 
+    if kwargs['ctrlclick']:
+        merge_node.parm('pack').set(True)
+
     merge_node.parm('objpath1').set(merge_path)
     merge_node.parm('xformtype').set(1)
     merge_node.setName(node_to_merge.name())
