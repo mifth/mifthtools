@@ -176,6 +176,8 @@ class MIRA_Panel(bpy.types.Panel):
             row.operator("mira.linear_deformer", text="LinearDeformer", icon="OUTLINER_OB_MESH")
             row.prop(context.scene.mi_ldeformer_settings, "manual_update", text='ManualUpdate')
 
+            row.operator("mira.make_arc", text="MakeArc")
+
 # --------------------------------------------------
 
         #col = layout.column(align = True)

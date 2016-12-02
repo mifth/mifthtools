@@ -19,7 +19,7 @@
 bl_info = {
     "name": "Mira Tools",
     "author": "Paul Geraskin, Marvin K. Breuer",
-    "version": (1, 0, 0),
+    "version": (2, 0, 0),
     "blender": (2, 78, 0),
     "location": "3D Viewport",
     "description": "Mira Tools",
@@ -42,6 +42,7 @@ if "bpy" in locals():
     imp.reload(mi_curve_guide)
     imp.reload(mi_draw_extrude)
     imp.reload(mi_poly_loop)
+    imp.reload(mi_make_arc)
 else:
     from . import mi_curve_test
     from . import mi_curve_stretch
@@ -54,6 +55,7 @@ else:
     from . import mi_noise
     from . import mi_draw_extrude
     from . import mi_poly_loop
+    from . import mi_make_arc
 
 
 import bpy
