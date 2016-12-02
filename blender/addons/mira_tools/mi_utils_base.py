@@ -43,7 +43,7 @@ def get_obj_dup_meshes(obj_snap_mode, convert_instances, context):
 
 
 # mesh picking from screen
-def get_mouse_raycast(context, objects_list, coords_2d):
+def get_mouse_raycast(context, objects_list, coords_2d, ray_max=10000.0):
     region = context.region
     rv3d = context.region_data
 
@@ -59,7 +59,7 @@ def get_mouse_raycast(context, objects_list, coords_2d):
     for obj, matrix in objects_list:
         # Do RayCast! t1,t2,t3,t4 - temp values
         t1, t2, t3 = obj_raycast(
-            obj, matrix, view_vector, ray_origin)
+            obj, matrix, view_vector, ray_origin, ray_max)
         if t1 is not None and t3 < best_length_squared:
             best_obj, hit_normal, hit_position = obj, t1, t2
             best_length_squared = t3
@@ -68,14 +68,14 @@ def get_mouse_raycast(context, objects_list, coords_2d):
 
 
 # mesh picking from 3d space
-def get_3dpoint_raycast(context, objects_list, vec_pos, vec_dir):
+def get_3dpoint_raycast(context, objects_list, vec_pos, vec_dir, ray_max=10000.0):
     best_obj, hit_normal, hit_position = None, None, None
     best_length_squared = 20000.0 * 20000.0
 
     for obj, matrix in objects_list:
         # Do RayCast! t1,t2,t3,t4 - temp values
         t1, t2, t3 = obj_raycast(
-            obj, matrix, vec_dir, vec_pos)
+            obj, matrix, vec_dir, vec_pos, ray_max)
         if t1 is not None and t3 < best_length_squared:
             best_obj, hit_normal, hit_position = obj, t1, t2
             best_length_squared = t3
@@ -84,12 +84,12 @@ def get_3dpoint_raycast(context, objects_list, vec_pos, vec_dir):
 
 
 # mesh picking
-def obj_raycast(obj, matrix, view_vector, ray_origin):
+def obj_raycast(obj, matrix, view_vector, ray_origin, ray_max=10000.0):
     """Wrapper for ray casting that moves the ray into object space"""
 
     # get the ray relative to the object
     matrix_inv = matrix.inverted()
-    ray_target = ray_origin + view_vector
+    ray_target = ray_origin + (view_vector * ray_max)
 
     ray_origin_obj = matrix_inv * ray_origin
     ray_target_obj = matrix_inv * ray_target
@@ -97,7 +97,7 @@ def obj_raycast(obj, matrix, view_vector, ray_origin):
     #ray_target_obj = matrix_inv * ray_target
 
     # cast the ray
-    hit_result, hit, normal, face_index = obj.ray_cast(ray_origin_obj, ray_direction_obj)
+    hit_result, hit, normal, face_index = obj.ray_cast(ray_origin_obj, ray_direction_obj, ray_max)
 
     if hit_result:
         hit_world = matrix * hit
