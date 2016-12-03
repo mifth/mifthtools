@@ -40,8 +40,9 @@ class MI_Make_Arc(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     reverse_direction = BoolProperty(default=False)
-#    twist_angle = FloatProperty(default=0.0)
+    upvec_offset = FloatProperty(default=0.0)
 
+    rotate_axis = bpy.props.FloatVectorProperty(name="Rotate Axis", description="Rotate Axis", default=(0.0, 0.0, 1.0), size=3)
 
     #deform_axis = EnumProperty(
         #items=(('X', 'X', ''),
@@ -80,16 +81,20 @@ class MI_Make_Arc(bpy.types.Operator):
 
             if loops:
                 first_indexes = []
-                for element in bm.select_history:
-                    first_indexes.append(element.index)
+                if isinstance(bm.select_history[0], bmesh.types.BMVert):
+                    for element in bm.select_history:
+                        first_indexes.append(element.index)
+                elif isinstance(bm.select_history[0], bmesh.types.BMEdge):
+                    for element in bm.select_history:
+                        el_verts = element.verts
+                        first_indexes.append(el_verts[0].index)
+                        first_indexes.append(el_verts[1].index)
 
                 for loop in loops:
                     loop_verts = []
 
                     for ind in loop[0]:
                         loop_verts.append(bm.verts[ind])
-
-                    loop_centr = ut_base.get_vertices_center(loop_verts, active_obj, False)
 
                     #  for the case if we need to reverse it
                     if loop[0][-1] in first_indexes:
@@ -99,13 +104,29 @@ class MI_Make_Arc(bpy.types.Operator):
                     if self.reverse_direction is True:
                         loop_verts = list(reversed(loop_verts))
 
+                    # positions
+                    first_vert_pos = active_obj.matrix_world * loop_verts[0].co
+                    last_vert_pos = active_obj.matrix_world * loop_verts[-1].co
+                    rot_dir = Vector((self.rotate_axis[0], self.rotate_axis[1], self.rotate_axis[2]))
+
+                    sidevec = (first_vert_pos - last_vert_pos).normalized()
+                    upvec = rot_dir.cross(sidevec).normalized()
+
+                    loop_centr = first_vert_pos.lerp(last_vert_pos, 0.5)
+                    loop_centr += ( self.upvec_offset * upvec * (first_vert_pos - loop_centr).length )
+
+                    loop_angle = (first_vert_pos - loop_centr).normalized().angle((last_vert_pos - loop_centr).normalized())
+                    if self.upvec_offset > 0:
+                        loop_angle = math.radians( (360 - math.degrees(loop_angle)) )
+
                     for i, vert in enumerate(loop_verts):
                         if i != 0:
-                            rot_angle = 180 * (i / (len(loop_verts) - 1))
-                            rot_dir = Vector( (0.0, 0.0, 1.0) )
-                            rot_mat = Matrix.Rotation(math.radians(rot_angle), 3, rot_dir)
+                            rot_angle = loop_angle * (i / (len(loop_verts) - 1))
+                            #rot_angle = math.radians(rot_angle)
+                            rot_mat = Matrix.Rotation(rot_angle, 3, rot_dir)
 
-                            vert.co = (rot_mat * (loop_verts[0].co - loop_centr)) + loop_centr
+                            vert_pos = (rot_mat * (first_vert_pos - loop_centr)) + loop_centr
+                            vert.co = active_obj.matrix_world.inverted() * vert_pos
 
                 bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
