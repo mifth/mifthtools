@@ -107,7 +107,7 @@ class MI_Make_Arc(bpy.types.Operator):
                     # positions
                     first_vert_pos = active_obj.matrix_world * loop_verts[0].co
                     last_vert_pos = active_obj.matrix_world * loop_verts[-1].co
-                    rot_dir = Vector((self.rotate_axis[0], self.rotate_axis[1], self.rotate_axis[2]))
+                    rot_dir = Vector((self.rotate_axis[0], self.rotate_axis[1], self.rotate_axis[2])).normalized()
 
                     sidevec = (first_vert_pos - last_vert_pos).normalized()
                     upvec = rot_dir.cross(sidevec).normalized()
