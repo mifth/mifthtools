@@ -114,6 +114,12 @@ def register():
         description="Curve Guide Settings"
     )
 
+    bpy.types.Scene.mi_makearc_settings = PointerProperty(
+        name="Make Arc Variables",
+        type=mi_make_arc.MI_MakeArc_Settings,
+        description="Make Arc Settings"
+    )
+
     # alternative gui
     bpy.types.WindowManager.mirawindow = bpy.props.PointerProperty(type = mi_gui.DropdownMiraToolProps)
 
@@ -128,6 +134,7 @@ def unregister():
     del bpy.types.Scene.mi_extrude_settings
     del bpy.types.Scene.mi_ldeformer_settings
     del bpy.types.Scene.mi_curguide_settings
+    del bpy.types.Scene.mi_makearc_settings
 
     del bpy.types.WindowManager.mirawindow
 
