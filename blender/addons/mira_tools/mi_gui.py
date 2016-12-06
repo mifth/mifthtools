@@ -310,5 +310,6 @@ class MIRA_Object_Panel(bpy.types.Panel):
         mi_settings = context.scene.mi_settings
         extrude_settings = context.scene.mi_extrude_settings
 
-        row = layout.row()
+        #row = layout.row()
         layout.operator("mira.wrap_object", text="WrapObject")
+        layout.operator("mira.wrap_master", text="WrapMaster")

@@ -38,37 +38,62 @@ class MI_Wrap_Object(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        active_obj = context.scene.objects.active
-        #bm = bmesh.from_edit_mesh(active_obj.data)
+        wrap_obj = context.scene.objects.active
+        #bm = bmesh.from_edit_mesh(wrap_obj.data)
 
-        if active_obj and active_obj.select and active_obj.data.uv_layers:
-            uvs = active_obj.data.uv_layers.active.data
+        if wrap_obj and wrap_obj.select and wrap_obj.data.uv_layers:
+            uvs = wrap_obj.data.uv_layers.active.data
 
-            new_mesh = bpy.data.meshes.new(active_obj.data.name + 'wrap')
-            new_obj = bpy.data.objects.new(active_obj.name + 'wrap', new_mesh)
+            new_mesh = bpy.data.meshes.new(wrap_obj.data.name + '_Wrap')
+            new_obj = bpy.data.objects.new(wrap_obj.name + '_Wrap', new_mesh)
             context.scene.objects.link(new_obj)
-            #new_obj.select = True
-            #context.scene.objects.active = new_obj
-            #bpy.ops.object.mode_set(mode='EDIT')
 
-            for face in active_obj.data.polygons:
+            new_obj.select = True
+            context.scene.objects.active = new_obj
+            bpy.ops.object.mode_set(mode='EDIT')
+
+            bm = bmesh.from_edit_mesh(new_obj.data)
+
+            for face in wrap_obj.data.polygons:
                 verts_list = []
-                verts_idx_list = []
+                #verts_idx_list = []
 
                 for li in face.loop_indices:
                     uv = uvs[li].uv
-                    new_mesh.vertices.add(1)
-                    new_vert = new_mesh.vertices[-1]
-                    new_vert.co = (uv[0], 0.0, uv[1])
+                    new_vert = bm.verts.new((uv[0], 0.0, uv[1]))
 
                     verts_list.append(new_vert)
-                    verts_idx_list.append(new_vert.index)
+                    #verts_idx_list.append(new_vert.index)
 
-                new_obj.data.polygons.add(1)
-                new_face = new_obj.data.polygons[-1]
-                new_face.vertices = verts_idx_list
+                bm.faces.new(verts_list)
                 #new_obj.data.update()
 
+            #bmesh.update_edit_mesh(new_obj.data)
+            bpy.ops.object.mode_set(mode='OBJECT')
             new_obj.data.update()
+
+        return {'FINISHED'}
+
+
+class MI_Wrap_Master(bpy.types.Operator):
+    bl_idname = "mira.wrap_master"
+    bl_label = "Wrap Master"
+    bl_description = "Wrap Master"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        selected_objects = context.selected_objects
+        if len(selected_objects) >= 2:
+            #wrap_obj = selected_objects[-1]
+            uv_obj = context.scene.objects.active
+            bvh = mathu.bvhtree.BVHTree.FromObject(uv_obj, context.scene, deform=True, render=False, cage=False, epsilon=0.0)
+
+            for the_obj in selected_objects:
+                if the_obj != uv_obj:
+                    for vert in the_obj.data.vertices:
+                        vert_pos = the_obj.matrix_world * vert.co.copy()
+                        vert_pos[1] = 0  # set position of uv_obj!!!
+                        nearest = bvh.find_nearest(vert_pos)
+                        print(nearest)
 
         return {'FINISHED'}
