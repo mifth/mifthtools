@@ -43,6 +43,7 @@ if "bpy" in locals():
     imp.reload(mi_draw_extrude)
     imp.reload(mi_poly_loop)
     imp.reload(mi_make_arc)
+    imp.reload(mi_wrap_master)
 else:
     from . import mi_curve_test
     from . import mi_curve_stretch
@@ -56,6 +57,7 @@ else:
     from . import mi_draw_extrude
     from . import mi_poly_loop
     from . import mi_make_arc
+    from . import mi_wrap_master
 
 
 import bpy

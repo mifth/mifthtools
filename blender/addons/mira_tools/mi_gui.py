@@ -294,3 +294,21 @@ class MIRA_Panel(bpy.types.Panel):
 
             row.prop(context.scene.mi_settings, "draw_handlers", text='Handlers')
             row.operator("mira.curve_test", text="Curve Test")
+
+
+class MIRA_Object_Panel(bpy.types.Panel):
+    bl_label = "Wrap"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    bl_context = "objectmode"
+    bl_category = 'Mira'
+
+    def draw(self, context):
+        lt = context.window_manager.mirawindow
+        layout = self.layout
+
+        mi_settings = context.scene.mi_settings
+        extrude_settings = context.scene.mi_extrude_settings
+
+        row = layout.row()
+        layout.operator("mira.wrap_object", text="WrapObject")
