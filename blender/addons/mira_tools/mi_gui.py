@@ -208,8 +208,8 @@ class MIRA_Panel(bpy.types.Panel):
         row.label("Arc")
 
         sub = row.row(1)
-        sub.scale_x = 0.95
-        sub.operator("mira.make_arc", text="Make", icon ="SPHERECURVE") 
+        sub.scale_x = 1.7
+        sub.operator("mira.make_arc", text="", icon ="SPHERECURVE") 
         row.operator("mira.make_arc_get_axis", text="", icon ="FACESEL")
         
         ###space###    
