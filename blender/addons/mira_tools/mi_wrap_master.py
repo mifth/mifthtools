@@ -106,59 +106,60 @@ class MI_Wrap_Master(bpy.types.Operator):
                         vert_pos_zero = uv_obj.matrix_world.inverted() * vert_pos_zero
                         nearest = bvh.find_nearest(vert_pos_zero)
 
-                        near_face = uv_obj.data.polygons[nearest[2]]
-                        near_center = uv_obj.matrix_world * near_face.center
+                        if nearest and nearest[2]:
+                            near_face = uv_obj.data.polygons[nearest[2]]
+                            near_center = uv_obj.matrix_world * near_face.center
 
-                        near_axis1 = ut_base.get_normal_world(near_face.normal, uv_matrix, uv_matrix_inv)
+                            near_axis1 = ut_base.get_normal_world(near_face.normal, uv_matrix, uv_matrix_inv)
 
 
-                        near_v1 = uv_obj.matrix_world * uv_obj.data.vertices[near_face.vertices[0]].co
-                        near_v2 = uv_obj.matrix_world * uv_obj.data.vertices[near_face.vertices[1]].co
-                        near_axis2 = (near_v1 - near_v2).normalized()
+                            near_v1 = uv_obj.matrix_world * uv_obj.data.vertices[near_face.vertices[0]].co
+                            near_v2 = uv_obj.matrix_world * uv_obj.data.vertices[near_face.vertices[1]].co
+                            near_axis2 = (near_v1 - near_v2).normalized()
 
-                        near_axis3 = near_axis1.cross(near_axis2).normalized()
+                            near_axis3 = near_axis1.cross(near_axis2).normalized()
 
-                        dist_1 = mathu.geometry.distance_point_to_plane(vert_pos, near_center, near_axis1)
-                        dist_2 = mathu.geometry.distance_point_to_plane(vert_pos, near_center, near_axis2)
-                        dist_3 = mathu.geometry.distance_point_to_plane(vert_pos, near_center, near_axis3)
+                            dist_1 = mathu.geometry.distance_point_to_plane(vert_pos, near_center, near_axis1)
+                            dist_2 = mathu.geometry.distance_point_to_plane(vert_pos, near_center, near_axis2)
+                            dist_3 = mathu.geometry.distance_point_to_plane(vert_pos, near_center, near_axis3)
 
-                        # wrap
-                        wrap_face = wrap_obj.data.polygons[nearest[2]]
-                        wrap_center = wrap_obj.matrix_world * wrap_face.center
+                            # wrap
+                            wrap_face = wrap_obj.data.polygons[nearest[2]]
+                            wrap_center = wrap_obj.matrix_world * wrap_face.center
 
-                        wrap_axis1 = ut_base.get_normal_world(wrap_face.normal, wrap_matrix, wrap_matrix_inv)
+                            wrap_axis1 = ut_base.get_normal_world(wrap_face.normal, wrap_matrix, wrap_matrix_inv)
 
-                        wrap_v1 = wrap_obj.matrix_world * wrap_obj.data.vertices[wrap_face.vertices[0]].co
-                        wrap_v2 = wrap_obj.matrix_world * wrap_obj.data.vertices[wrap_face.vertices[1]].co
-                        wrap_axis2 = (wrap_v1 - wrap_v2).normalized()
+                            wrap_v1 = wrap_obj.matrix_world * wrap_obj.data.vertices[wrap_face.vertices[0]].co
+                            wrap_v2 = wrap_obj.matrix_world * wrap_obj.data.vertices[wrap_face.vertices[1]].co
+                            wrap_axis2 = (wrap_v1 - wrap_v2).normalized()
 
-                        wrap_axis3 = wrap_axis1.cross(wrap_axis2).normalized()
+                            wrap_axis3 = wrap_axis1.cross(wrap_axis2).normalized()
 
-                        # move to face
-                        relative_scale = (wrap_v1 - wrap_center).length / (near_v1 - near_center).length
-                        new_vert_pos = wrap_center + (wrap_axis2 * dist_2 * relative_scale) + (wrap_axis3 * dist_3 * relative_scale)
-                        new_vert_pos_loc = wrap_obj.matrix_world.inverted() * new_vert_pos
+                            # move to face
+                            relative_scale = (wrap_v1 - wrap_center).length / (near_v1 - near_center).length
+                            new_vert_pos = wrap_center + (wrap_axis2 * dist_2 * relative_scale) + (wrap_axis3 * dist_3 * relative_scale)
+                            new_vert_pos_loc = wrap_obj.matrix_world.inverted() * new_vert_pos
 
-                        vert2_min = None
-                        vert2_min_dist = None
-                        for vert2_id in wrap_face.vertices:
-                            vert2 = wrap_obj.data.vertices[vert2_id]
-                            v2_dist = (vert2.co - new_vert_pos_loc).length
+                            vert2_min = None
+                            vert2_min_dist = None
+                            for vert2_id in wrap_face.vertices:
+                                vert2 = wrap_obj.data.vertices[vert2_id]
+                                v2_dist = (vert2.co - new_vert_pos_loc).length
 
-                            if not vert2_min:
-                                vert2_min = vert2
-                                vert2_min_dist = v2_dist
-                            elif vert2_min_dist > v2_dist:
-                                vert2_min = vert2
-                                vert2_min_dist = v2_dist
+                                if not vert2_min:
+                                    vert2_min = vert2
+                                    vert2_min_dist = v2_dist
+                                elif vert2_min_dist > v2_dist:
+                                    vert2_min = vert2
+                                    vert2_min_dist = v2_dist
 
-                        vert2_min_nor = ut_base.get_normal_world(vert2_min.normal, wrap_matrix, wrap_matrix_inv)
-                        vert2_min_nor = vert2_min_nor.lerp(wrap_axis1, 0.5).normalized()
+                            vert2_min_nor = ut_base.get_normal_world(vert2_min.normal, wrap_matrix, wrap_matrix_inv)
+                            vert2_min_nor = vert2_min_nor.lerp(wrap_axis1, 0.5).normalized()
 
-                        # move from normal
-                        new_vert_pos += (vert2_min_nor * dist_1 * relative_scale)
+                            # move from normal
+                            new_vert_pos += (vert2_min_nor * dist_1 * relative_scale)
 
-                        vert.co = the_obj.matrix_world.inverted() * new_vert_pos
+                            vert.co = the_obj.matrix_world.inverted() * new_vert_pos
 
                     the_obj.data.update()
 
