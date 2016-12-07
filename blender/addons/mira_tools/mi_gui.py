@@ -209,7 +209,7 @@ class MIRA_Panel(bpy.types.Panel):
 
         sub = row.row(1)
         sub.scale_x = 1.7
-        sub.operator("mira.make_arc", text="", icon ="SPHERECURVE") 
+        sub.operator("mira.make_arc", text="", icon ="SPHERECURVE")
         row.operator("mira.make_arc_get_axis", text="", icon ="FACESEL")
         
         ###space###    
@@ -230,7 +230,7 @@ class MIRA_Panel(bpy.types.Panel):
             box.separator()
             
             row = box.column()
-            row.prop(context.scene.mi_makearc_settings, "arc_axis", text="ArcAxis")            
+            row.prop(context.scene.mi_makearc_settings, "arc_axis", text="ArcAxis")
              
             box.separator() 
             
