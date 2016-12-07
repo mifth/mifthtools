@@ -44,32 +44,31 @@ class MI_Wrap_Object(bpy.types.Operator):
         if wrap_obj and wrap_obj.select and wrap_obj.data.uv_layers:
             uvs = wrap_obj.data.uv_layers.active.data
 
-            new_mesh = bpy.data.meshes.new(wrap_obj.data.name + '_Wrap')
-            new_obj = bpy.data.objects.new(wrap_obj.name + '_Wrap', new_mesh)
+            new_mesh = bpy.data.meshes.new(wrap_obj.data.name + '_WRAP')
+            new_obj = bpy.data.objects.new(wrap_obj.name + '_WRAP', new_mesh)
+            new_obj.show_wire = True
             context.scene.objects.link(new_obj)
 
             new_obj.select = True
             context.scene.objects.active = new_obj
-            bpy.ops.object.mode_set(mode='EDIT')
-
-            bm = bmesh.from_edit_mesh(new_obj.data)
-
+                        
+            # get verts and faces
+            out_verts=[]
+            out_faces=[]
             for face in wrap_obj.data.polygons:
-                verts_list = []
-                #verts_idx_list = []
+                oface=[]   
 
-                for li in face.loop_indices:
-                    uv = uvs[li].uv
-                    new_vert = bm.verts.new((uv[0], 0.0, uv[1]))
+                for vert, loop in zip(face.vertices, face.loop_indices):
+                    coord = wrap_obj.data.vertices[vert].normal
+                    normal = wrap_obj.data.vertices[vert].co
+                    uv = wrap_obj.data.uv_layers.active.data[loop].uv 
+                    out_verts.append((uv.x, 0, uv.y))
+                    oface.append(loop)
 
-                    verts_list.append(new_vert)
-                    #verts_idx_list.append(new_vert.index)
+                out_faces.append(oface)
 
-                bm.faces.new(verts_list)
-                #new_obj.data.update()
-
-            #bmesh.update_edit_mesh(new_obj.data)
-            bpy.ops.object.mode_set(mode='OBJECT')
+            # create mesh
+            new_obj.data.from_pydata(out_verts, [], out_faces)
             new_obj.data.update()
 
         return {'FINISHED'}
@@ -83,17 +82,83 @@ class MI_Wrap_Master(bpy.types.Operator):
 
     def execute(self, context):
         selected_objects = context.selected_objects
-        if len(selected_objects) >= 2:
-            #wrap_obj = selected_objects[-1]
-            uv_obj = context.scene.objects.active
-            bvh = mathu.bvhtree.BVHTree.FromObject(uv_obj, context.scene, deform=True, render=False, cage=False, epsilon=0.0)
+        uv_obj = context.scene.objects.active
+        wrap_name = uv_obj.name.replace('_WRAP', '')
+
+        if len(selected_objects) >= 2 and wrap_name in context.scene.objects:
+            wrap_obj = context.scene.objects[wrap_name]
+
+            bvh = mathu.bvhtree.BVHTree.FromObject(uv_obj, context.scene)
+
+            uv_matrix = uv_obj.matrix_world
+            uv_matrix_inv = uv_matrix.inverted()
+            wrap_matrix = wrap_obj.matrix_world
+            wrap_matrix_inv = wrap_matrix.inverted()
 
             for the_obj in selected_objects:
                 if the_obj != uv_obj:
                     for vert in the_obj.data.vertices:
                         vert_pos = the_obj.matrix_world * vert.co.copy()
-                        vert_pos[1] = 0  # set position of uv_obj!!!
-                        nearest = bvh.find_nearest(vert_pos)
-                        print(nearest)
+
+                        # near
+                        vert_pos_zero = vert_pos.copy()
+                        vert_pos_zero[1] = 0  # set position of uv_obj!!!
+                        vert_pos_zero = uv_obj.matrix_world.inverted() * vert_pos_zero
+                        nearest = bvh.find_nearest(vert_pos_zero)
+
+                        near_face = uv_obj.data.polygons[nearest[2]]
+                        near_center = uv_obj.matrix_world * near_face.center
+
+                        near_axis1 = ut_base.get_normal_world(near_face.normal, uv_matrix, uv_matrix_inv)
+
+
+                        near_v1 = uv_obj.matrix_world * uv_obj.data.vertices[near_face.vertices[0]].co
+                        near_v2 = uv_obj.matrix_world * uv_obj.data.vertices[near_face.vertices[1]].co
+                        near_axis2 = (near_v1 - near_v2).normalized()
+
+                        near_axis3 = near_axis1.cross(near_axis2).normalized()
+
+                        dist_1 = mathu.geometry.distance_point_to_plane(vert_pos, near_center, near_axis1)
+                        dist_2 = mathu.geometry.distance_point_to_plane(vert_pos, near_center, near_axis2)
+                        dist_3 = mathu.geometry.distance_point_to_plane(vert_pos, near_center, near_axis3)
+
+                        # wrap
+                        wrap_face = wrap_obj.data.polygons[nearest[2]]
+                        wrap_center = wrap_obj.matrix_world * wrap_face.center
+
+                        wrap_axis1 = ut_base.get_normal_world(wrap_face.normal, wrap_matrix, wrap_matrix_inv)
+
+                        wrap_v1 = wrap_obj.matrix_world * wrap_obj.data.vertices[wrap_face.vertices[0]].co
+                        wrap_v2 = wrap_obj.matrix_world * wrap_obj.data.vertices[wrap_face.vertices[1]].co
+                        wrap_axis2 = (wrap_v1 - wrap_v2).normalized()
+
+                        wrap_axis3 = wrap_axis1.cross(wrap_axis2).normalized()
+
+                        # move to face
+                        relative_scale = (wrap_v1 - wrap_center).length / (near_v1 - near_center).length
+                        new_vert_pos = wrap_center + (wrap_axis2 * dist_2 * relative_scale) + (wrap_axis3 * dist_3 * relative_scale)
+                        new_vert_pos_loc = wrap_obj.matrix_world.inverted() * new_vert_pos
+
+                        vert2_min = None
+                        vert2_min_dist = None
+                        for vert2_id in wrap_face.vertices:
+                            vert2 = wrap_obj.data.vertices[vert2_id]
+                            v2_dist = (vert2.co - new_vert_pos_loc).length
+
+                            if not vert2_min:
+                                vert2_min = vert2
+                                vert2_min_dist = v2_dist
+                            elif vert2_min_dist > v2_dist:
+                                vert2_min = vert2
+                                vert2_min_dist = v2_dist
+
+                        vert2_min_nor = ut_base.get_normal_world(vert2_min.normal, wrap_matrix, wrap_matrix_inv)
+
+                        # move from normal
+                        new_vert_pos += (vert2_min_nor * dist_1 * relative_scale)
+
+                        vert.co = the_obj.matrix_world.inverted() * new_vert_pos
+
+                    the_obj.data.update()
 
         return {'FINISHED'}
