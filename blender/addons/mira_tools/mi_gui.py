@@ -29,14 +29,14 @@ class DropdownMiraToolProps(bpy.types.PropertyGroup):
     Fake module like class
     bpy.context.window_manager.mirawindow
     """
-
-    display_mirastretch = bpy.props.BoolProperty(name="Curve Stretch", description="UI Curve Stretch Tools", default=False)
-    display_mirasface = bpy.props.BoolProperty(name="Curve Surface", description="UI Curve Surface Tools", default=False)
-    display_miraguide = bpy.props.BoolProperty(name="Curve Guide", description="UI Curve Guide Tools", default=False)
-    display_miramodify = bpy.props.BoolProperty(name="Modify Tools", description="UI Modify Tools", default=False)
-    display_miradeform = bpy.props.BoolProperty(name="Deform Tools", description="UI Deform Tools", default=False)
-    display_miraextrude = bpy.props.BoolProperty(name="Draw Extrude", description="UI Draw Extrude", default=False)
-    display_mirasettings = bpy.props.BoolProperty(name="Settings", description="UI Settings", default=False)
+    display_mira_arc = bpy.props.BoolProperty(name="Make Arc", description="UI Make Arc Tools", default=False)
+    display_mira_stretch = bpy.props.BoolProperty(name="Curve Stretch", description="UI Curve Stretch Tools", default=False)
+    display_mira_sface = bpy.props.BoolProperty(name="Curve Surface", description="UI Curve Surface Tools", default=False)
+    display_mira_guide = bpy.props.BoolProperty(name="Curve Guide", description="UI Curve Guide Tools", default=False)
+    display_mira_modify = bpy.props.BoolProperty(name="Modify Tools", description="UI Modify Tools", default=False)
+    display_mira_deform = bpy.props.BoolProperty(name="Deform Tools", description="UI Deform Tools", default=False)
+    display_mira_extrude = bpy.props.BoolProperty(name="Draw Extrude", description="UI Draw Extrude", default=False)
+    display_mira_settings = bpy.props.BoolProperty(name="Settings", description="UI Settings", default=False)
 
 
 ############-----------------------------############
@@ -51,22 +51,22 @@ class MIRA_Panel(bpy.types.Panel):
     bl_category = 'Mira'
 
     def draw(self, context):
-        lt = context.window_manager.mirawindow
+        mt = context.window_manager.mirawindow
         layout = self.layout
         #mi_settings = context.scene.mi_settings
 
 # --------------------------------------------------
 
         #col = layout.column(align = True)
-        if lt.display_miraextrude:
+        if mt.display_mira_extrude:
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_miraextrude", text="", icon='TRIA_DOWN')
+            row.prop(mt, "display_mira_extrude", text="", icon='TRIA_DOWN')
 
         else:
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_miraextrude", text="", icon='TRIA_RIGHT')
+            row.prop(mt, "display_mira_extrude", text="", icon='TRIA_RIGHT')
 
         row.label("Extrude")
         if context.scene.mi_settings.surface_snap is False:
@@ -79,7 +79,7 @@ class MIRA_Panel(bpy.types.Panel):
         row.operator("mira.draw_extrude", text="", icon="VPAINT_HLT")
 
         ###space###
-        if lt.display_miraextrude:
+        if mt.display_mira_extrude:
             ###space###
             col = layout.column(align=True)
             box = col.column(align=True).box().column()
@@ -103,18 +103,20 @@ class MIRA_Panel(bpy.types.Panel):
                 if context.scene.mi_extrude_settings.do_symmetry:
                     row.prop(context.scene.mi_extrude_settings, "symmetry_axys", text='Axys')
 
+            box.separator()       
+                    
 # --------------------------------------------------
 
         #col = layout.column(align = True)
-        if lt.display_mirasface:
+        if mt.display_mira_sface:
 
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_mirasface", text="", icon='TRIA_DOWN')
+            row.prop(mt, "display_mira_sface", text="", icon='TRIA_DOWN')
         else:
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_mirasface", text="", icon='TRIA_RIGHT')
+            row.prop(mt, "display_mira_sface", text="", icon='TRIA_RIGHT')
 
         row.label("Surfaces")
 
@@ -125,7 +127,7 @@ class MIRA_Panel(bpy.types.Panel):
         row.operator("mira.curve_surfaces", text="", icon="SURFACE_NCURVE")
 
         ###space###
-        if lt.display_mirasface:
+        if mt.display_mira_sface:
             ###space###
 
             col = layout.column(align=True)
@@ -143,18 +145,21 @@ class MIRA_Panel(bpy.types.Panel):
             row.operator("mira.curve_surfaces", text="CurveSurfaces", icon="SURFACE_NCURVE")
             row.prop(context.scene.mi_cur_surfs_settings, "spread_loops_type", text='Points')
 
+            box.separator()
+            
+            
 # --------------------------------------------------
 
         #col = layout.column(align = True)
-        if lt.display_miradeform:
+        if mt.display_mira_deform:
 
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_miradeform", text="", icon='TRIA_DOWN')
+            row.prop(mt, "display_mira_deform", text="", icon='TRIA_DOWN')
         else:
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_miradeform", text="", icon='TRIA_RIGHT')
+            row.prop(mt, "display_mira_deform", text="", icon='TRIA_RIGHT')
 
         row.label("Deform")
         row.operator("mira.noise", text="", icon="RNDCURVE")
@@ -162,7 +167,7 @@ class MIRA_Panel(bpy.types.Panel):
         row.operator("mira.linear_deformer", text="", icon="OUTLINER_OB_MESH")
 
         ###space###
-        if lt.display_miradeform:
+        if mt.display_mira_deform:
             ###space###
 
             col = layout.column(align=True)
@@ -183,19 +188,65 @@ class MIRA_Panel(bpy.types.Panel):
             row.operator("mira.make_arc_get_axis", text="GetAxis")
             row = box.column()
             row.prop(context.scene.mi_makearc_settings, "arc_axis", text="ArcAxis")
+            
+            box.separator()
+            
+            
+# --------------------------------------------------
 
+
+        if mt.display_mira_arc:
+
+            box = layout.box()
+            row = box.row(align=True)
+            row.prop(mt, "display_mira_arc", text="", icon='TRIA_DOWN')
+        else:
+            box = layout.box()
+            row = box.row(align=True)
+            row.prop(mt, "display_mira_arc", text="", icon='TRIA_RIGHT')
+
+        row.label("Arc")
+
+        sub = row.row(1)
+        sub.scale_x = 0.95
+        sub.operator("mira.make_arc", text="Make", icon ="SPHERECURVE") 
+        row.operator("mira.make_arc_get_axis", text="", icon ="FACESEL")
+        
+        ###space###    
+        if mt.display_mira_arc:          
+            ###space###
+            
+            box = layout.box().column(align=True)
+
+            row = box.row(align=True)
+            row.label("Arc Creation")
+                
+            box.separator() 
+
+            row = box.row(align=True)                             
+            row.operator("mira.make_arc_get_axis", text="GetAxis")
+            row.operator("mira.make_arc", text="MakeArc")
+            
+            box.separator()
+            
+            row = box.column()
+            row.prop(context.scene.mi_makearc_settings, "arc_axis", text="ArcAxis")            
+             
+            box.separator() 
+            
+            
 # --------------------------------------------------
 
         #col = layout.column(align = True)
-        if lt.display_miraguide:
+        if mt.display_mira_guide:
 
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_miraguide", text="", icon='TRIA_DOWN')
+            row.prop(mt, "display_mira_guide", text="", icon='TRIA_DOWN')
         else:
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_miraguide", text="", icon='TRIA_RIGHT')
+            row.prop(mt, "display_mira_guide", text="", icon='TRIA_RIGHT')
 
         row.label("CGuide")
 
@@ -207,7 +258,7 @@ class MIRA_Panel(bpy.types.Panel):
         row.operator("mira.curve_guide", text='', icon="RNA")
 
         ###space###
-        if lt.display_miraguide:
+        if mt.display_mira_guide:
             ###space###
 
             col = layout.column(align=True)
@@ -221,18 +272,21 @@ class MIRA_Panel(bpy.types.Panel):
             row = col_top.column(align=True)
             row.prop(context.scene.mi_curguide_settings, "deform_type", text='DeformType')
 
+            box.separator()
+            
+            
 # --------------------------------------------------
 
         #col = layout.column(align = True)
-        if lt.display_mirastretch:
+        if mt.display_mira_stretch:
 
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_mirastretch", text="", icon='TRIA_DOWN')
+            row.prop(mt, "display_mira_stretch", text="", icon='TRIA_DOWN')
         else:
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_mirastretch", text="", icon='TRIA_RIGHT')
+            row.prop(mt, "display_mira_stretch", text="", icon='TRIA_RIGHT')
 
         row.label("CStretch")
         sub = row.row(1)
@@ -241,7 +295,7 @@ class MIRA_Panel(bpy.types.Panel):
         row.operator("mira.curve_stretch", text="", icon="STYLUS_PRESSURE")
 
         ###space###
-        if lt.display_mirastretch:
+        if mt.display_mira_stretch:
             ###space###
 
             col = layout.column(align=True)
@@ -251,18 +305,21 @@ class MIRA_Panel(bpy.types.Panel):
             row = col_top.column(align=True)
             row.operator("mira.curve_stretch", text="CurveStretch", icon="STYLUS_PRESSURE")
             row.prop(context.scene.mi_cur_stretch_settings, "points_number", text='PointsNumber')
-
+            
+            box.separator()
+            
+            
 # --------------------------------------------------
 
-        if lt.display_mirasettings:
+        if mt.display_mira_settings:
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_mirasettings", text="", icon='TRIA_DOWN')
+            row.prop(mt, "display_mira_settings", text="", icon='TRIA_DOWN')
 
         else:
             box = layout.box()
             row = box.row(1)
-            row.prop(lt, "display_mirasettings", text="", icon='TRIA_RIGHT')
+            row.prop(mt, "display_mira_settings", text="", icon='TRIA_RIGHT')
 
         row.label("Settings")
         row.prop(context.scene.mi_settings, "convert_instances", text='', icon="BOIDS")
@@ -272,7 +329,7 @@ class MIRA_Panel(bpy.types.Panel):
         row.prop(context.scene.mi_settings, "surface_snap", text='', icon="SNAP_SURFACE")
 
         ###space###
-        if lt.display_mirasettings:
+        if mt.display_mira_settings:
             ###space###
 
             col = layout.column(align=True)
@@ -294,6 +351,8 @@ class MIRA_Panel(bpy.types.Panel):
 
             row.prop(context.scene.mi_settings, "draw_handlers", text='Handlers')
             row.operator("mira.curve_test", text="Curve Test")
+            
+            box.separator()
 
 
 class MIRA_Object_Panel(bpy.types.Panel):
@@ -304,7 +363,7 @@ class MIRA_Object_Panel(bpy.types.Panel):
     bl_category = 'Mira'
 
     def draw(self, context):
-        lt = context.window_manager.mirawindow
+        mt = context.window_manager.mirawindow
         layout = self.layout
 
         mi_settings = context.scene.mi_settings
