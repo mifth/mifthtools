@@ -153,6 +153,7 @@ class MI_Wrap_Master(bpy.types.Operator):
                                 vert2_min_dist = v2_dist
 
                         vert2_min_nor = ut_base.get_normal_world(vert2_min.normal, wrap_matrix, wrap_matrix_inv)
+                        vert2_min_nor = vert2_min_nor.lerp(wrap_axis1, 0.5).normalized()
 
                         # move from normal
                         new_vert_pos += (vert2_min_nor * dist_1 * relative_scale)
