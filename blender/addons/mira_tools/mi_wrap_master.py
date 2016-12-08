@@ -39,7 +39,6 @@ class MI_Wrap_Object(bpy.types.Operator):
 
     def execute(self, context):
         wrap_obj = context.scene.objects.active
-        #bm = bmesh.from_edit_mesh(wrap_obj.data)
 
         if wrap_obj and wrap_obj.select and wrap_obj.data.uv_layers:
             uvs = wrap_obj.data.uv_layers.active.data
@@ -79,6 +78,13 @@ class MI_Wrap_Master(bpy.types.Operator):
     bl_label = "Wrap Master"
     bl_description = "Wrap Master"
     bl_options = {'REGISTER', 'UNDO'}
+
+    deform_normal = EnumProperty(
+        items=(('Face', 'Face', ''),
+               ('FaceAndVert', 'FaceAndVert', '')
+               ),
+        default = 'FaceAndVert'
+    )
 
     def execute(self, context):
         selected_objects = context.selected_objects
@@ -140,24 +146,36 @@ class MI_Wrap_Master(bpy.types.Operator):
                             new_vert_pos = wrap_center + (wrap_axis2 * dist_2 * relative_scale) + (wrap_axis3 * dist_3 * relative_scale)
                             new_vert_pos_loc = wrap_obj.matrix_world.inverted() * new_vert_pos
 
-                            vert2_min = None
-                            vert2_min_dist = None
-                            for vert2_id in wrap_face.vertices:
-                                vert2 = wrap_obj.data.vertices[vert2_id]
-                                v2_dist = (vert2.co - new_vert_pos_loc).length
+                            if self.deform_normal == 'FaceAndVert':
+                                vert2_min = None
+                                vert2_min_dist = None
+                                for vert2_id in wrap_face.vertices:
+                                    vert2 = wrap_obj.data.vertices[vert2_id]
+                                    v2_dist = (vert2.co - new_vert_pos_loc).length
 
-                                if not vert2_min:
-                                    vert2_min = vert2
-                                    vert2_min_dist = v2_dist
-                                elif vert2_min_dist > v2_dist:
-                                    vert2_min = vert2
-                                    vert2_min_dist = v2_dist
+                                    if not vert2_min:
+                                        vert2_min = vert2
+                                        vert2_min_dist = v2_dist
+                                    elif vert2_min_dist > v2_dist:
+                                        vert2_min = vert2
+                                        vert2_min_dist = v2_dist
 
-                            vert2_min_nor = ut_base.get_normal_world(vert2_min.normal, wrap_matrix, wrap_matrix_inv)
-                            vert2_min_nor = vert2_min_nor.lerp(wrap_axis1, 0.5).normalized()
+                                vert2_min_nor = ut_base.get_normal_world(vert2_min.normal, wrap_matrix, wrap_matrix_inv)
+                                vert2_pos_world = wrap_obj.matrix_world * vert2_min.co
+
+                                mix_val = 0.0
+                                mix_v1 = (new_vert_pos - wrap_center).length
+                                mix_v2 = (vert2_pos_world - wrap_center).length
+                                if mix_v2 != 0:
+                                    mix_val = mix_v1 / mix_v2
+
+                                wrap_normal = wrap_axis1.lerp(vert2_min_nor, mix_val).normalized()
+
+                            else:
+                                wrap_normal = wrap_axis1
 
                             # move from normal
-                            new_vert_pos += (vert2_min_nor * dist_1 * relative_scale)
+                            new_vert_pos += (wrap_normal * dist_1 * relative_scale)
 
                             vert.co = the_obj.matrix_world.inverted() * new_vert_pos
 
