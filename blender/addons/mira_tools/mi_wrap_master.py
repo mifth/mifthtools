@@ -106,7 +106,7 @@ class MI_Wrap_Master(bpy.types.Operator):
                         vert_pos_zero = uv_obj.matrix_world.inverted() * vert_pos_zero
                         nearest = bvh.find_nearest(vert_pos_zero)
 
-                        if nearest and nearest[2]:
+                        if nearest and nearest[2] is not None:
                             near_face = uv_obj.data.polygons[nearest[2]]
                             near_center = uv_obj.matrix_world * near_face.center
 
