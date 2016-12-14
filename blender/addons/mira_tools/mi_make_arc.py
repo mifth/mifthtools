@@ -27,6 +27,7 @@ from bpy.types import Operator, AddonPreferences
 
 
 from . import mi_utils_base as ut_base
+from . import mi_curve_main as cur_main
 from . import mi_looptools as loop_t
 from mathutils import Vector, Matrix
 
@@ -66,6 +67,14 @@ class MI_Make_Arc(bpy.types.Operator):
 
     reset_values = BoolProperty(default=False)
     reverse_direction = BoolProperty(default=False)
+
+    spread_mode = EnumProperty(
+        items=(('Normal', 'Normal', ''),
+               ('Even', 'Even', '')
+               ),
+        default = 'Normal'
+    )
+
     upvec_offset = FloatProperty(name="Offset", description="Offset Arc", default=0.0)
     scale_arc = FloatProperty(name="Scale", description="Scale Arc", default=0.0)
 
@@ -140,10 +149,19 @@ class MI_Make_Arc(bpy.types.Operator):
                 if self.upvec_offset > 0:
                     loop_angle = math.radians( (360 - math.degrees(loop_angle)) )
 
+                # even spread
+                line_data = None
+                if self.spread_mode == 'Even':
+                    world_verts = [active_obj.matrix_world * vert.co for vert in loop_verts]
+                    line_data = cur_main.pass_line(world_verts, False)
+
                 for i, vert in enumerate(loop_verts):
-                    if i != 0:
-                        rot_angle = loop_angle * (i / (len(loop_verts) - 1))
-                        #rot_angle = math.radians(rot_angle)
+                    if i != 0 and i != len(loop_verts)-1:
+                        if self.spread_mode == 'Normal':
+                            rot_angle = loop_angle * (i / (len(loop_verts) - 1))
+                        else:
+                            rot_angle = loop_angle * (line_data[i][1] / line_data[len(loop_verts)-1][1])
+
                         rot_mat = Matrix.Rotation(rot_angle, 3, rot_dir)
 
                         vert_pos = (rot_mat * (first_vert_pos - loop_centr)) + loop_centr

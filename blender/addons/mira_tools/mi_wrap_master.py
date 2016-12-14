@@ -73,6 +73,24 @@ class MI_Wrap_Object(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MI_Wrap_Scale(bpy.types.Operator):
+    bl_idname = "mira.wrap_scale_wrap"
+    bl_label = "Scale Wrap"
+    bl_description = "Scale Wrap"
+    bl_options = {'REGISTER', 'UNDO'}
+
+
+    def execute(self, context):
+        selected_objects = context.selected_objects
+        uv_obj = context.scene.objects.active
+        wrap_name = uv_obj.name.replace('_WRAP', '')
+
+        if uv_obj in selected_objects and wrap_name in context.scene.objects:
+            wrap_obj = context.scene.objects[wrap_name]
+
+        return {'FINISHED'}
+
+
 class MI_Wrap_Master(bpy.types.Operator):
     bl_idname = "mira.wrap_master"
     bl_label = "Wrap Master"
@@ -85,6 +103,10 @@ class MI_Wrap_Master(bpy.types.Operator):
                ),
         default = 'FaceAndVert'
     )
+
+    normal_offset = FloatProperty(name="NormalOffset", description="Custom Normal Offset", default=0.0)
+    copy_objects = BoolProperty(name="CopyObjects", description="Copy objects with modifiers", default=True)
+
 
     def execute(self, context):
         selected_objects = context.selected_objects
@@ -103,12 +125,26 @@ class MI_Wrap_Master(bpy.types.Operator):
 
             for the_obj in selected_objects:
                 if the_obj != uv_obj:
-                    for vert in the_obj.data.vertices:
-                        vert_pos = the_obj.matrix_world * vert.co.copy()
+
+                    if self.copy_objects:
+                        # create new object
+                        new_mesh = the_obj.to_mesh(scene=context.scene, apply_modifiers=True, settings='PREVIEW')
+                        new_obj = bpy.data.objects.new(wrap_obj.name + '_WRAP', new_mesh)
+                        new_obj.select = True
+                        context.scene.objects.link(new_obj)
+                        new_obj.matrix_world = the_obj.matrix_world
+                        new_obj.data.update()
+
+                        final_obj = new_obj
+                    else:
+                        final_obj = the_obj
+
+                    for vert in final_obj.data.vertices:
+                        vert_pos = final_obj.matrix_world * vert.co.copy()
 
                         # near
                         vert_pos_zero = vert_pos.copy()
-                        vert_pos_zero[1] = 0  # set position of uv_obj!!!
+                        vert_pos_zero[1] = uv_obj.location[1]
                         vert_pos_zero = uv_obj.matrix_world.inverted() * vert_pos_zero
                         nearest = bvh.find_nearest(vert_pos_zero)
 
@@ -117,7 +153,6 @@ class MI_Wrap_Master(bpy.types.Operator):
                             near_center = uv_obj.matrix_world * near_face.center
 
                             near_axis1 = ut_base.get_normal_world(near_face.normal, uv_matrix, uv_matrix_inv)
-
 
                             near_v1 = uv_obj.matrix_world * uv_obj.data.vertices[near_face.vertices[0]].co
                             near_v2 = uv_obj.matrix_world * uv_obj.data.vertices[near_face.vertices[1]].co
@@ -144,14 +179,16 @@ class MI_Wrap_Master(bpy.types.Operator):
                             # move to face
                             relative_scale = (wrap_v1 - wrap_center).length / (near_v1 - near_center).length
                             new_vert_pos = wrap_center + (wrap_axis2 * dist_2 * relative_scale) + (wrap_axis3 * dist_3 * relative_scale)
-                            new_vert_pos_loc = wrap_obj.matrix_world.inverted() * new_vert_pos
+                            #new_vert_pos_loc = wrap_obj.matrix_world.inverted() * new_vert_pos
 
                             if self.deform_normal == 'FaceAndVert':
                                 vert2_min = None
                                 vert2_min_dist = None
+                                vert2_pos_world = None
                                 for vert2_id in wrap_face.vertices:
                                     vert2 = wrap_obj.data.vertices[vert2_id]
-                                    v2_dist = (vert2.co - new_vert_pos_loc).length
+                                    vert2_pos_world = wrap_obj.matrix_world * vert2.co
+                                    v2_dist = (vert2_pos_world - new_vert_pos).length
 
                                     if not vert2_min:
                                         vert2_min = vert2
@@ -161,13 +198,12 @@ class MI_Wrap_Master(bpy.types.Operator):
                                         vert2_min_dist = v2_dist
 
                                 vert2_min_nor = ut_base.get_normal_world(vert2_min.normal, wrap_matrix, wrap_matrix_inv)
-                                vert2_pos_world = wrap_obj.matrix_world * vert2_min.co
 
                                 mix_val = 0.0
                                 mix_v1 = (new_vert_pos - wrap_center).length
                                 mix_v2 = (vert2_pos_world - wrap_center).length
                                 if mix_v2 != 0:
-                                    mix_val = mix_v1 / mix_v2
+                                    mix_val = min(mix_v1 / mix_v2, 1.0)
 
                                 wrap_normal = wrap_axis1.lerp(vert2_min_nor, mix_val).normalized()
 
@@ -175,10 +211,15 @@ class MI_Wrap_Master(bpy.types.Operator):
                                 wrap_normal = wrap_axis1
 
                             # move from normal
-                            new_vert_pos += (wrap_normal * dist_1 * relative_scale)
+                            if self.normal_offset == 0:
+                                normal_dist = dist_1 * relative_scale
+                            else:
+                                normal_dist = dist_1 * self.normal_offset
 
-                            vert.co = the_obj.matrix_world.inverted() * new_vert_pos
+                            new_vert_pos += (wrap_normal * normal_dist)
 
-                    the_obj.data.update()
+                            vert.co = final_obj.matrix_world.inverted() * new_vert_pos
+
+                    final_obj.data.update()
 
         return {'FINISHED'}
