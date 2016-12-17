@@ -27,7 +27,6 @@ from bpy.types import Operator, AddonPreferences
 
 
 from . import mi_utils_base as ut_base
-from . import mi_curve_main as cur_main
 from . import mi_looptools as loop_t
 from mathutils import Vector, Matrix
 
@@ -153,14 +152,23 @@ class MI_Make_Arc(bpy.types.Operator):
                 line_data = None
                 if self.spread_mode == 'Even':
                     world_verts = [active_obj.matrix_world * vert.co for vert in loop_verts]
-                    line_data = cur_main.pass_line(world_verts, False)
 
+                    line_data = []
+                    line_length = 0.0
+                    for i, vec in enumerate(world_verts):
+                        if i == 0:
+                            line_data.append(0)
+                        else:
+                            line_length += (vec - world_verts[i-1]).length
+                            line_data.append(line_length)
+
+                # make arc!
                 for i, vert in enumerate(loop_verts):
                     if i != 0 and i != len(loop_verts)-1:
                         if self.spread_mode == 'Normal':
                             rot_angle = loop_angle * (i / (len(loop_verts) - 1))
                         else:
-                            rot_angle = loop_angle * (line_data[i][1] / line_data[len(loop_verts)-1][1])
+                            rot_angle = loop_angle * (line_data[i] / line_data[len(loop_verts)-1])
 
                         rot_mat = Matrix.Rotation(rot_angle, 3, rot_dir)
 

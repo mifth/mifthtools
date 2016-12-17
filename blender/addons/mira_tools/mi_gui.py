@@ -371,4 +371,5 @@ class MIRA_Object_Panel(bpy.types.Panel):
 
         #row = layout.row()
         layout.operator("mira.wrap_object", text="WrapObject")
+        layout.operator("mira.wrap_scale", text="WrapScale")
         layout.operator("mira.wrap_master", text="WrapMaster")

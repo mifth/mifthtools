@@ -74,7 +74,7 @@ class MI_Wrap_Object(bpy.types.Operator):
 
 
 class MI_Wrap_Scale(bpy.types.Operator):
-    bl_idname = "mira.wrap_scale_wrap"
+    bl_idname = "mira.wrap_scale"
     bl_label = "Scale Wrap"
     bl_description = "Scale Wrap"
     bl_options = {'REGISTER', 'UNDO'}
@@ -87,6 +87,20 @@ class MI_Wrap_Scale(bpy.types.Operator):
 
         if uv_obj in selected_objects and wrap_name in context.scene.objects:
             wrap_obj = context.scene.objects[wrap_name]
+
+            uv_obj.update_from_editmode()
+            selected_polygons = [p for p in uv_obj.data.polygons if p.select]
+
+            poly_uv = selected_polygons[0]
+            len1 = ( (uv_obj.matrix_world * poly_uv.center) - (uv_obj.matrix_world * uv_obj.data.vertices[poly_uv.vertices[0]].co) ).length
+
+            poly_wrap = wrap_obj.data.polygons[poly_uv.index]
+            len2 = ( (uv_obj.matrix_world * poly_wrap.center) - (uv_obj.matrix_world * wrap_obj.data.vertices[poly_wrap.vertices[0]].co) ).length
+
+            scale = 0
+            if len1 != 0:
+                scale = len2/len1
+            uv_obj.scale *= scale
 
         return {'FINISHED'}
 
