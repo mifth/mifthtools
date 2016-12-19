@@ -74,6 +74,14 @@ class MI_Make_Arc(bpy.types.Operator):
         default = 'Normal'
     )
 
+    direction_vector = EnumProperty(
+        items=(('Custom', 'Custom', ''),
+               ('Middle', 'Middle', ''),
+               ('MiddleCrossed', 'MiddleCrossed', '')
+               ),
+        default = 'Custom'
+    )
+
     upvec_offset = FloatProperty(name="Offset", description="Offset Arc", default=0.0)
     scale_arc = FloatProperty(name="Scale", description="Scale Arc", default=0.0)
 
@@ -135,13 +143,23 @@ class MI_Make_Arc(bpy.types.Operator):
                 # positions
                 first_vert_pos = active_obj.matrix_world * loop_verts[0].co
                 last_vert_pos = active_obj.matrix_world * loop_verts[-1].co
-                rot_dir = Vector((self.rotate_axis[0], self.rotate_axis[1], self.rotate_axis[2])).normalized()
-
-                sidevec = (first_vert_pos - last_vert_pos).normalized()
-                upvec = rot_dir.cross(sidevec).normalized()
 
                 loop_centr_orig = first_vert_pos.lerp(last_vert_pos, 0.5)
                 relative_dist = (first_vert_pos - loop_centr_orig).length
+                sidevec = (first_vert_pos - last_vert_pos).normalized()
+
+                if self.direction_vector == 'Custom':
+                    rot_dir = Vector((self.rotate_axis[0], self.rotate_axis[1], self.rotate_axis[2])).normalized()
+                elif self.direction_vector == 'MiddleCrossed':
+                    middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
+                    rot_dir = middle_nor.cross(sidevec).normalized()
+                else:
+                    rot_dir = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
+
+                if self.reverse_direction and (self.direction_vector == 'MiddleCrossed' or self.direction_vector == 'Middle'):
+                    rot_dir.negate()
+
+                upvec = rot_dir.cross(sidevec).normalized()
                 loop_centr = ( self.upvec_offset * upvec * relative_dist ) + loop_centr_orig
 
                 loop_angle = (first_vert_pos - loop_centr).normalized().angle((last_vert_pos - loop_centr).normalized())
