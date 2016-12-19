@@ -148,21 +148,29 @@ class MI_Make_Arc(bpy.types.Operator):
                 relative_dist = (first_vert_pos - loop_centr_orig).length
                 sidevec = (first_vert_pos - last_vert_pos).normalized()
 
+                obj_matrix = active_obj.matrix_world
+                obj_matrix_inv = obj_matrix.inverted()
+
                 if self.direction_vector == 'Custom':
                     rot_dir = Vector((self.rotate_axis[0], self.rotate_axis[1], self.rotate_axis[2])).normalized()
                 elif self.direction_vector == 'MiddleCrossed':
                     middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
+                    middle_nor = ut_base.get_normal_world(middle_nor, obj_matrix, obj_matrix_inv)
                     rot_dir = middle_nor.cross(sidevec).normalized()
+
+                    # fix only for MiddleCrossed
+                    if self.reverse_direction:
+                        rot_dir.negate()
+
                 else:
                     middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
+                    middle_nor = ut_base.get_normal_world(middle_nor, obj_matrix, obj_matrix_inv)
                     middle_nor = middle_nor.cross(sidevec).normalized()
                     rot_dir = middle_nor.cross(sidevec).normalized()
 
-                if self.reverse_direction and (self.direction_vector == 'MiddleCrossed' or self.direction_vector == 'Middle'):
-                    rot_dir.negate()
-
                 upvec = rot_dir.cross(sidevec).normalized()
                 loop_centr = ( self.upvec_offset * upvec * relative_dist ) + loop_centr_orig
+                print(rot_dir)
 
                 loop_angle = (first_vert_pos - loop_centr).normalized().angle((last_vert_pos - loop_centr).normalized())
                 if self.upvec_offset > 0:
