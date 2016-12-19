@@ -154,7 +154,9 @@ class MI_Make_Arc(bpy.types.Operator):
                     middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
                     rot_dir = middle_nor.cross(sidevec).normalized()
                 else:
-                    rot_dir = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
+                    middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
+                    middle_nor = middle_nor.cross(sidevec).normalized()
+                    rot_dir = middle_nor.cross(sidevec).normalized()
 
                 if self.reverse_direction and (self.direction_vector == 'MiddleCrossed' or self.direction_vector == 'Middle'):
                     rot_dir.negate()
