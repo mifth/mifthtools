@@ -159,7 +159,7 @@ class MI_Make_Arc(bpy.types.Operator):
                     rot_dir = middle_nor.cross(sidevec).normalized()
 
                     # fix only for MiddleCrossed
-                    if self.reverse_direction:
+                    if not self.reverse_direction:
                         rot_dir.negate()
 
                 else:
@@ -167,6 +167,7 @@ class MI_Make_Arc(bpy.types.Operator):
                     middle_nor = ut_base.get_normal_world(middle_nor, obj_matrix, obj_matrix_inv)
                     middle_nor = middle_nor.cross(sidevec).normalized()
                     rot_dir = middle_nor.cross(sidevec).normalized()
+                    rot_dir.negate()
 
                 upvec = rot_dir.cross(sidevec).normalized()
                 loop_centr = ( self.upvec_offset * upvec * relative_dist ) + loop_centr_orig
