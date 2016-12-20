@@ -251,9 +251,12 @@ class MI_Wrap_Master(bpy.types.Operator):
                             new_vert_pos += (wrap_normal * normal_dist)
 
                             if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
-                                new_vert_pos = new_vert_pos.to_4d()
-
-                            vert.co = final_obj.matrix_world.inverted() * new_vert_pos
+                                new_vert_pos_world = final_obj.matrix_world.inverted() * new_vert_pos
+                                vert.co[0] = new_vert_pos_world[0]
+                                vert.co[1] = new_vert_pos_world[1]
+                                vert.co[2] = new_vert_pos_world[2]
+                            else:
+                                vert.co = final_obj.matrix_world.inverted() * new_vert_pos
 
                     if final_obj.type == 'MESH':
                         final_obj.data.update()
