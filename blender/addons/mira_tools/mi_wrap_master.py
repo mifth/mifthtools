@@ -169,7 +169,7 @@ class MI_Wrap_Master(bpy.types.Operator):
                                     all_verts.append(point)
 
                     for vert in all_verts:
-                        if final_obj.type == 'CURVE':
+                        if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
                             #vert_pos = vert.co
                             vert_pos = final_obj.matrix_world * vert.co.copy().to_3d()
                         else:
@@ -179,7 +179,6 @@ class MI_Wrap_Master(bpy.types.Operator):
                         vert_pos_zero = vert_pos.copy()
                         vert_pos_zero[1] = uv_obj.location[1]
                         vert_pos_zero = uv_obj.matrix_world.inverted() * vert_pos_zero
-                        print(vert_pos_zero)
                         nearest = bvh.find_nearest(vert_pos_zero)
 
                         if nearest and nearest[2] is not None:
@@ -251,7 +250,7 @@ class MI_Wrap_Master(bpy.types.Operator):
                             # Add normal direction to position
                             new_vert_pos += (wrap_normal * normal_dist)
 
-                            if final_obj.type == 'CURVE':
+                            if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
                                 new_vert_pos = new_vert_pos.to_4d()
 
                             vert.co = final_obj.matrix_world.inverted() * new_vert_pos
