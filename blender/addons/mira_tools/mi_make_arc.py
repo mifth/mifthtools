@@ -84,6 +84,7 @@ class MI_Make_Arc(bpy.types.Operator):
 
     upvec_offset = FloatProperty(name="Offset", description="Offset Arc", default=0.0)
     scale_arc = FloatProperty(name="Scale", description="Scale Arc", default=0.0)
+    rotate_arc_axis = bpy.props.FloatProperty(name="Rotate", description="Rotate Arc Axis", default=0)
 
     rotate_axis = bpy.props.FloatVectorProperty(name="Rotate Axis", description="Rotate Axis", default=(0.0, 0.0, 1.0), size=3)
 
@@ -200,7 +201,6 @@ class MI_Make_Arc(bpy.types.Operator):
                             rot_angle = loop_angle * (line_data[i] / line_data[len(loop_verts)-1])
 
                         rot_mat = Matrix.Rotation(rot_angle, 3, rot_dir)
-
                         vert_pos = (rot_mat * (first_vert_pos - loop_centr)) + loop_centr
 
                         if self.scale_arc != 0:
@@ -210,6 +210,11 @@ class MI_Make_Arc(bpy.types.Operator):
                             if vert_rel_dist != 0 and vert_rel_dist_max != 0:
                                 vert_pos_offset = vert_rel_dist / vert_rel_dist_max
                                 vert_pos += (self.scale_arc * upvec * vert_pos_offset * vert_rel_dist_max) 
+
+                        # rotate arc
+                        if self.rotate_arc_axis != 0:
+                            rot_mat_2 = Matrix.Rotation(math.radians(self.rotate_arc_axis), 3, sidevec)
+                            vert_pos = (rot_mat_2 * (vert_pos - loop_centr_orig)) + loop_centr_orig                            
 
                         vert.co = active_obj.matrix_world.inverted() * vert_pos
 
