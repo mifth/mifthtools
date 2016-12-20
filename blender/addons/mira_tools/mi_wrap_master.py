@@ -120,6 +120,7 @@ class MI_Wrap_Master(bpy.types.Operator):
 
     normal_offset = FloatProperty(name="NormalOffset", description="Custom Normal Offset", default=0.0)
     copy_objects = BoolProperty(name="CopyObjects", description="Copy objects with modifiers", default=True)
+    transform_objects = BoolProperty(name="TransformObjects", description="Transform instead of meshes", default=False)
 
 
     def execute(self, context):
@@ -153,8 +154,16 @@ class MI_Wrap_Master(bpy.types.Operator):
                     else:
                         final_obj = the_obj
 
-                    for vert in final_obj.data.vertices:
-                        vert_pos = final_obj.matrix_world * vert.co.copy()
+                    if self.transform_objects:
+                        all_verts = [final_obj.location]
+                    else:
+                        all_verts = final_obj.data.vertices
+
+                    for vert in all_verts:
+                        if self.transform_objects:
+                            vert_pos = vert
+                        else:
+                            vert_pos = final_obj.matrix_world * vert.co.copy()
 
                         # near
                         vert_pos_zero = vert_pos.copy()
@@ -193,7 +202,6 @@ class MI_Wrap_Master(bpy.types.Operator):
                             # move to face
                             relative_scale = (wrap_v1 - wrap_center).length / (near_v1 - near_center).length
                             new_vert_pos = wrap_center + (wrap_axis2 * dist_2 * relative_scale) + (wrap_axis3 * dist_3 * relative_scale)
-                            #new_vert_pos_loc = wrap_obj.matrix_world.inverted() * new_vert_pos
 
                             if self.deform_normal == 'FaceAndVert':
                                 vert2_min = None
@@ -224,15 +232,48 @@ class MI_Wrap_Master(bpy.types.Operator):
                             else:
                                 wrap_normal = wrap_axis1
 
-                            # move from normal
                             if self.normal_offset == 0:
                                 normal_dist = dist_1 * relative_scale
                             else:
                                 normal_dist = dist_1 * self.normal_offset
 
-                            new_vert_pos += (wrap_normal * normal_dist)
+                            # Mesh Vertex Transform!
+                            if not self.transform_objects:
+                                new_vert_pos += (wrap_normal * normal_dist)
+                                vert.co = final_obj.matrix_world.inverted() * new_vert_pos
 
-                            vert.co = final_obj.matrix_world.inverted() * new_vert_pos
+                            # Object Transform!
+                            else:
+                                #final_obj.location = new_vert_pos
+                                final_obj.scale *= relative_scale
+
+                                #final_matrix = final_obj.matrix_world
+                                #final_obj_axis1 = Vector((final_matrix[0][1], final_matrix[1][1], final_matrix[2][1])).normalized()
+                                #final_obj_axis1.negate()
+
+                                #final_obj_axis1 = (final_matrix[0][1], final_matrix[1][1], final_matrix[2][1]).normalized()
+                                #final_obj_axis2 = Vector((final_matrix[0][0], final_matrix[1][0], final_matrix[2][0])).normalized()
+                                #final_obj_axis2.negate()
+                                #print(final_obj.rotation)
+
+                                #final_rot_1 = final_obj_axis1.angle(wrap_normal)
+                                #ax1 = final_obj_axis1.cross(wrap_normal).normalized()
+                                #final_obj.matrix_world *= mathu.Matrix.Rotation(final_rot_1, 4, ax1)
+
+                                #final_matrix = final_obj.matrix_world
+                                #final_obj_axis2 = Vector((final_matrix[0][2], final_matrix[1][2], final_matrix[2][2])).normalized()
+                                #final_rot_2 = final_obj_axis2.angle(wrap_axis2)
+                                #ax2 = final_obj_axis2.cross(wrap_axis2).normalized()
+                                #final_obj.rotation_euler *= mathu.Matrix.Rotation(final_rot_2, 4, ax2)
+
+                                final_obj.location = new_vert_pos
+
+                                #final_matrix = final_obj.matrix_world
+                                #final_obj_axis2 = Vector((final_matrix[0][0], final_matrix[1][0], final_matrix[2][0])).normalized()
+                                ##final_obj_axis2.negate()
+                                #final_rot_2 = final_obj_axis2.rotation_difference(wrap_axis3).to_euler()
+                                #final_obj.rotation_euler.rotate(final_rot_2)
+                                #print(final_obj_axis2, final_rot_2)
 
                     final_obj.data.update()
 
