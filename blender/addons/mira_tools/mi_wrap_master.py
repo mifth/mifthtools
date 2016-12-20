@@ -237,9 +237,11 @@ class MI_Wrap_Master(bpy.types.Operator):
                             else:
                                 normal_dist = dist_1 * self.normal_offset
 
+                            # Add normal direction to position
+                            new_vert_pos += (wrap_normal * normal_dist)
+
                             # Mesh Vertex Transform!
                             if not self.transform_objects:
-                                new_vert_pos += (wrap_normal * normal_dist)
                                 vert.co = final_obj.matrix_world.inverted() * new_vert_pos
 
                             # Object Transform!
@@ -247,21 +249,25 @@ class MI_Wrap_Master(bpy.types.Operator):
                                 #final_obj.location = new_vert_pos
                                 final_obj.scale *= relative_scale
 
-                                #final_matrix = final_obj.matrix_world
-                                #final_obj_axis1 = Vector((final_matrix[0][1], final_matrix[1][1], final_matrix[2][1])).normalized()
-                                #final_obj_axis1.negate()
+                                final_matrix = final_obj.matrix_world
+                                final_obj_axis1 = Vector((final_matrix[0][1], final_matrix[1][1], final_matrix[2][1])).normalized()
+                                final_obj_axis1.negate()
 
                                 #final_obj_axis1 = (final_matrix[0][1], final_matrix[1][1], final_matrix[2][1]).normalized()
                                 #final_obj_axis2 = Vector((final_matrix[0][0], final_matrix[1][0], final_matrix[2][0])).normalized()
                                 #final_obj_axis2.negate()
                                 #print(final_obj.rotation)
 
-                                #final_rot_1 = final_obj_axis1.angle(wrap_normal)
-                                #ax1 = final_obj_axis1.cross(wrap_normal).normalized()
-                                #final_obj.matrix_world *= mathu.Matrix.Rotation(final_rot_1, 4, ax1)
+                                final_rot_1 = final_obj_axis1.angle(wrap_normal)
+                                ax1 = final_obj_axis1.cross(wrap_normal).normalized()
+                                mat1 = mathu.Matrix.Rotation(final_rot_1, 4, ax1).to_euler()
+                                final_obj.rotation_euler[0] = mat1[0]
+                                final_obj.rotation_euler[1] = mat1[1]
+                                final_obj.rotation_euler[2] = mat1[2]
+                                #print(mat1[0])
 
-                                #final_matrix = final_obj.matrix_world
-                                #final_obj_axis2 = Vector((final_matrix[0][2], final_matrix[1][2], final_matrix[2][2])).normalized()
+                                ##final_matrix = final_obj.matrix_world
+                                ##final_obj_axis2 = Vector((final_matrix[0][2], final_matrix[1][2], final_matrix[2][2])).normalized()
                                 #final_rot_2 = final_obj_axis2.angle(wrap_axis2)
                                 #ax2 = final_obj_axis2.cross(wrap_axis2).normalized()
                                 #final_obj.rotation_euler *= mathu.Matrix.Rotation(final_rot_2, 4, ax2)
