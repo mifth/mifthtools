@@ -60,7 +60,7 @@ class MI_Wrap_Object(bpy.types.Operator):
                 for vert, loop in zip(face.vertices, face.loop_indices):
                     coord = wrap_obj.data.vertices[vert].normal
                     normal = wrap_obj.data.vertices[vert].co
-                    uv = wrap_obj.data.uv_layers.active.data[loop].uv 
+                    uv = wrap_obj.data.uv_layers.active.data[loop].uv
                     out_verts.append((uv.x, 0, uv.y))
                     oface.append(loop)
 
@@ -120,7 +120,7 @@ class MI_Wrap_Master(bpy.types.Operator):
 
     normal_offset = FloatProperty(name="NormalOffset", description="Custom Normal Offset", default=0.0)
     copy_objects = BoolProperty(name="CopyObjects", description="Copy objects with modifiers", default=True)
-    transform_objects = BoolProperty(name="TransformObjects", description="Transform instead of meshes", default=False)
+    #transform_objects = BoolProperty(name="TransformObjects", description="Transform instead of meshes", default=False)
 
 
     def execute(self, context):
@@ -154,14 +154,24 @@ class MI_Wrap_Master(bpy.types.Operator):
                     else:
                         final_obj = the_obj
 
-                    if self.transform_objects:
-                        all_verts = [final_obj.location]
-                    else:
+                    all_verts = []
+
+                    if final_obj.type == 'MESH':
                         all_verts = final_obj.data.vertices
 
+                    elif final_obj.type == 'CURVE':
+                        for spline in final_obj.data.splines:
+                            if spline.type == 'BEZIER':
+                                for point in spline.bezier_points:
+                                    all_verts.append(point)
+                            else:
+                                for point in spline.points:
+                                    all_verts.append(point)
+
                     for vert in all_verts:
-                        if self.transform_objects:
-                            vert_pos = vert
+                        if final_obj.type == 'CURVE':
+                            #vert_pos = vert.co
+                            vert_pos = final_obj.matrix_world * vert.co.copy().to_3d()
                         else:
                             vert_pos = final_obj.matrix_world * vert.co.copy()
 
@@ -169,6 +179,7 @@ class MI_Wrap_Master(bpy.types.Operator):
                         vert_pos_zero = vert_pos.copy()
                         vert_pos_zero[1] = uv_obj.location[1]
                         vert_pos_zero = uv_obj.matrix_world.inverted() * vert_pos_zero
+                        print(vert_pos_zero)
                         nearest = bvh.find_nearest(vert_pos_zero)
 
                         if nearest and nearest[2] is not None:
@@ -240,47 +251,12 @@ class MI_Wrap_Master(bpy.types.Operator):
                             # Add normal direction to position
                             new_vert_pos += (wrap_normal * normal_dist)
 
-                            # Mesh Vertex Transform!
-                            if not self.transform_objects:
-                                vert.co = final_obj.matrix_world.inverted() * new_vert_pos
+                            if final_obj.type == 'CURVE':
+                                new_vert_pos = new_vert_pos.to_4d()
 
-                            # Object Transform!
-                            else:
-                                #final_obj.location = new_vert_pos
-                                final_obj.scale *= relative_scale
+                            vert.co = final_obj.matrix_world.inverted() * new_vert_pos
 
-                                final_matrix = final_obj.matrix_world
-                                final_obj_axis1 = Vector((final_matrix[0][1], final_matrix[1][1], final_matrix[2][1])).normalized()
-                                final_obj_axis1.negate()
-
-                                #final_obj_axis1 = (final_matrix[0][1], final_matrix[1][1], final_matrix[2][1]).normalized()
-                                #final_obj_axis2 = Vector((final_matrix[0][0], final_matrix[1][0], final_matrix[2][0])).normalized()
-                                #final_obj_axis2.negate()
-                                #print(final_obj.rotation)
-
-                                final_rot_1 = final_obj_axis1.angle(wrap_normal)
-                                ax1 = final_obj_axis1.cross(wrap_normal).normalized()
-                                mat1 = mathu.Matrix.Rotation(final_rot_1, 4, ax1).to_euler()
-                                final_obj.rotation_euler[0] = mat1[0]
-                                final_obj.rotation_euler[1] = mat1[1]
-                                final_obj.rotation_euler[2] = mat1[2]
-                                #print(mat1[0])
-
-                                ##final_matrix = final_obj.matrix_world
-                                ##final_obj_axis2 = Vector((final_matrix[0][2], final_matrix[1][2], final_matrix[2][2])).normalized()
-                                #final_rot_2 = final_obj_axis2.angle(wrap_axis2)
-                                #ax2 = final_obj_axis2.cross(wrap_axis2).normalized()
-                                #final_obj.rotation_euler *= mathu.Matrix.Rotation(final_rot_2, 4, ax2)
-
-                                final_obj.location = new_vert_pos
-
-                                #final_matrix = final_obj.matrix_world
-                                #final_obj_axis2 = Vector((final_matrix[0][0], final_matrix[1][0], final_matrix[2][0])).normalized()
-                                ##final_obj_axis2.negate()
-                                #final_rot_2 = final_obj_axis2.rotation_difference(wrap_axis3).to_euler()
-                                #final_obj.rotation_euler.rotate(final_rot_2)
-                                #print(final_obj_axis2, final_rot_2)
-
-                    final_obj.data.update()
+                    if final_obj.type == 'MESH':
+                        final_obj.data.update()
 
         return {'FINISHED'}

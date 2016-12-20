@@ -38,7 +38,7 @@ class MFTPanelAnimation(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mifthTools = bpy.context.scene.mifthTools
+        mifthTools = context.scene.mifthTools
 
         layout.operator("mft.curveanimator", text="Curve Animator")
         layout.prop(mifthTools, "doUseSceneFrames", text='UseSceneFrames')
@@ -67,7 +67,7 @@ class MFTPanelPlaykot(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mifthTools = bpy.context.scene.mifthTools
+        mifthTools = context.scene.mifthTools
 
         layout.operator("mft.render_scene_2x", text="ScaleCrop")
         layout.operator("mft.cropnoderegion", text="CropNodeRegion")
@@ -97,9 +97,9 @@ class MFTSceneRender2X(bpy.types.Operator):
 
     def execute(self, context):
 
-        scene = bpy.context.scene
+        scene = context.scene
         nodes = scene.node_tree.nodes
-        mifthTools = bpy.context.scene.mifthTools
+        mifthTools = context.scene.mifthTools
 
         crop_nodes_2x(nodes, self.scale_value)
 
@@ -125,7 +125,7 @@ class MFTCropNodeRegion(bpy.types.Operator):
 
     def execute(self, context):
 
-        scene = bpy.context.scene
+        scene = context.scene
         nodes = scene.node_tree.nodes
         cropNode = nodes.active
         crop_percentage = context.scene.render.resolution_percentage / 100.0
@@ -159,7 +159,7 @@ class MFTCropToViewport(bpy.types.Operator):
 
     def execute(self, context):
 
-        scene = bpy.context.scene
+        scene = context.scene
         nodes = scene.node_tree.nodes
         cropNode = nodes.active
 
@@ -192,9 +192,9 @@ class MFTOutputCreator(bpy.types.Operator):
 
     def execute(self, context):
 
-        scene = bpy.context.scene
+        scene = context.scene
         nodes = scene.node_tree.nodes
-        mifthTools = bpy.context.scene.mifthTools
+        mifthTools = context.scene.mifthTools
 
         output_file = nodes.new("CompositorNodeOutputFile")
         output_file.base_path = "//" + mifthTools.outputFolder + "/"
@@ -223,27 +223,27 @@ class MFTCurveAnimator(bpy.types.Operator):
 
     def execute(self, context):
 
-        mifthTools = bpy.context.scene.mifthTools
+        mifthTools = context.scene.mifthTools
 
-        startFrame = bpy.context.scene.frame_start
+        startFrame = context.scene.frame_start
         if mifthTools.doUseSceneFrames is False:
             startFrame = mifthTools.curveAniStartFrame
 
-        endFrame = bpy.context.scene.frame_end
+        endFrame = context.scene.frame_end
         if mifthTools.doUseSceneFrames is False:
             endFrame = mifthTools.curveAniEndFrame
 
         totalFrames = endFrame - startFrame
         frameSteps = mifthTools.curveAniStepFrame - 1
 
-        for curve in bpy.context.selected_objects:
+        for curve in context.selected_objects:
             if curve.type == 'CURVE':
 
                 for frStep in range(frameSteps + 1):
                     aniPos = 1.0 - (float(frStep) / float(frameSteps))
                     goToFrame = int(aniPos * float(totalFrames))
                     goToFrame += startFrame
-                    bpy.context.scene.frame_current = goToFrame
+                    context.scene.frame_current = goToFrame
                     print(goToFrame)
 
                     for spline in curve.data.splines:
@@ -295,7 +295,7 @@ class MFTMorfCreator(bpy.types.Operator):
         scene = bpy.context.scene
         mifthTools = scene.mifthTools
 
-        if len(bpy.context.selected_objects):
+        if len(context.selected_objects):
             objAct = scene.objects.active
             morfIndex = 1
 
@@ -304,8 +304,8 @@ class MFTMorfCreator(bpy.types.Operator):
                 basisKey = objAct.shape_key_add(from_mix=False)
                 basisKey.name = 'Basis'
 
-            for obj in bpy.context.selected_objects:
-                if len(bpy.context.selected_objects) > 1 and obj == objAct:
+            for obj in context.selected_objects:
+                if len(context.selected_objects) > 1 and obj == objAct:
                     pass
                 else:
                     if len(obj.data.vertices) == len(objAct.data.vertices):
@@ -314,7 +314,7 @@ class MFTMorfCreator(bpy.types.Operator):
                         if mifthTools.morfCreatorNames != '':
                             shapeKey.name = mifthTools.morfCreatorNames
 
-                            if len(bpy.context.selected_objects) > 2:
+                            if len(context.selected_objects) > 2:
                                 shapeKey.name += "_" + str(morfIndex)
 
                             morfIndex += 1
@@ -324,7 +324,7 @@ class MFTMorfCreator(bpy.types.Operator):
                         modifiedMesh = obj.data
                         if mifthTools.morfApplyModifiers is True:
                             modifiedMesh = obj.to_mesh(
-                                scene=bpy.context.scene, apply_modifiers=True, settings='PREVIEW')
+                                scene=context.scene, apply_modifiers=True, settings='PREVIEW')
 
                         for vert in modifiedMesh.vertices:
                             if mifthTools.morfUseWorldMatrix:
