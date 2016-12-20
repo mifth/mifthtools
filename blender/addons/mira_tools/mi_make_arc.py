@@ -85,13 +85,16 @@ class MI_Make_Arc(bpy.types.Operator):
     upvec_offset = FloatProperty(name="Offset", description="Offset Arc", default=0.0)
     scale_arc = FloatProperty(name="Scale", description="Scale Arc", default=0.0)
     rotate_arc_axis = bpy.props.FloatProperty(name="Rotate", description="Rotate Arc Axis", default=0)
-
     rotate_axis = bpy.props.FloatVectorProperty(name="Rotate Axis", description="Rotate Axis", default=(0.0, 0.0, 1.0), size=3)
+
 
     def reset_all_values(self):
         self.reverse_direction = False
+        self.spread_mode = 'Normal'
+        self.direction_vector = 'Custom'
         self.upvec_offset = 0.0
         self.scale_arc = 0.0
+        self.rotate_arc_axis = 0.0
         self.reset_values = False
 
 
