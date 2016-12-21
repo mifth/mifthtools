@@ -134,6 +134,9 @@ class MI_Make_Arc(bpy.types.Operator):
                 first_indexes.append(el_verts[1].index)
 
         for loop in loops:
+            if loop[1] is True:
+                continue
+
             loop_verts = []
 
             for ind in loop[0]:
@@ -178,7 +181,6 @@ class MI_Make_Arc(bpy.types.Operator):
 
             upvec = rot_dir.cross(sidevec).normalized()
             loop_centr = ( self.upvec_offset * upvec * relative_dist ) + loop_centr_orig
-            print(rot_dir)
 
             loop_angle = (first_vert_pos - loop_centr).normalized().angle((last_vert_pos - loop_centr).normalized())
             if self.upvec_offset > 0:
