@@ -105,6 +105,13 @@ class MI_Wrap_Scale(bpy.types.Operator):
         uv_obj.update_from_editmode()
         selected_polygons = [p for p in uv_obj.data.polygons if p.select]
 
+        if not selected_polygons:
+            self.report({'WARNING'}, "Select a face!")
+            return {'CANCELLED'}
+
+        if len(selected_polygons) > 1:
+            self.report({'WARNING'}, "Select only one face!")
+
         poly_uv = selected_polygons[0]
         len1 = ( (uv_obj.matrix_world * poly_uv.center) - (uv_obj.matrix_world * uv_obj.data.vertices[poly_uv.vertices[0]].co) ).length
 
@@ -114,7 +121,7 @@ class MI_Wrap_Scale(bpy.types.Operator):
         scale = 0
         if len1 != 0:
             scale = len2/len1
-        uv_obj.scale *= scale
+        uv_obj.scale = Vector((scale, scale, scale))
 
         return {'FINISHED'}
 
