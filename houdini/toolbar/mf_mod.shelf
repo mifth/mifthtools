@@ -365,4 +365,44 @@ else:
     node.parm('set_pos_axis').pressButton()
 ]]></script>
   </tool>
+
+  <tool name="select_even" label="Select Even" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+viewer_state = viewer.currentState()
+
+geos = viewer.selectGeometry()
+
+node = geos.nodes()[0]
+geo = node.geometry()
+
+prims = geo.selection().prims(geo)
+#prims = geo.globPrims(geos.selectionStrings()[0])
+
+loop_1 = geo.primLoop([prims[-2], prims[-1]], hou.componentLoopType.Partial)
+loop_2 = geo.primLoop([prims[-2], prims[-1]], hou.componentLoopType.Extended)
+
+offset = (len(loop_1) * 2) - 2
+
+if offset <= len(loop_2)-1:
+
+    loop_3 = geo.primLoop([prims[-1], loop_2[offset]], hou.componentLoopType.Partial)
+
+    if len(loop_1) == len(loop_3):
+        new_sel = list(prims)
+        new_prim = loop_2[offset]
+
+        numz = []
+        for prim in new_sel:
+            numz.append(prim.number())
+
+        if new_prim.number() not in numz:
+            nes_sel_str = geos.selectionStrings()[0] + " " + str(new_prim.number())
+
+            node.setSelection(hou.Selection(geo, hou.geometryType.Primitives, nes_sel_str )) 
+
+viewer.setCurrentState(viewer_state)]]></script>
+  </tool>
 </shelfDocument>
