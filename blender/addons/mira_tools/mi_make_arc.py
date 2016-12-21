@@ -119,110 +119,113 @@ class MI_Make_Arc(bpy.types.Operator):
         loops = loop_t.get_connected_input(bm)
         loops = loop_t.check_loops(loops, bm)
 
-        if loops:
-            first_indexes = []
-            if isinstance(bm.select_history[0], bmesh.types.BMVert):
-                for element in bm.select_history:
-                    first_indexes.append(element.index)
-            elif isinstance(bm.select_history[0], bmesh.types.BMEdge):
-                for element in bm.select_history:
-                    el_verts = element.verts
-                    first_indexes.append(el_verts[0].index)
-                    first_indexes.append(el_verts[1].index)
+        if not loops:
+            self.report({'WARNING'}, "No Loops!")
+            return {'CANCELLED'}
 
-            for loop in loops:
-                loop_verts = []
+        first_indexes = []
+        if isinstance(bm.select_history[0], bmesh.types.BMVert):
+            for element in bm.select_history:
+                first_indexes.append(element.index)
+        elif isinstance(bm.select_history[0], bmesh.types.BMEdge):
+            for element in bm.select_history:
+                el_verts = element.verts
+                first_indexes.append(el_verts[0].index)
+                first_indexes.append(el_verts[1].index)
 
-                for ind in loop[0]:
-                    loop_verts.append(bm.verts[ind])
+        for loop in loops:
+            loop_verts = []
 
-                #  for the case if we need to reverse it
-                if loop[0][-1] in first_indexes:
-                    loop_verts = list(reversed(loop_verts))
+            for ind in loop[0]:
+                loop_verts.append(bm.verts[ind])
 
-                # reverse again for the direction
-                if self.reverse_direction is True:
-                    loop_verts = list(reversed(loop_verts))
+            #  for the case if we need to reverse it
+            if loop[0][-1] in first_indexes:
+                loop_verts = list(reversed(loop_verts))
 
-                # positions
-                first_vert_pos = active_obj.matrix_world * loop_verts[0].co
-                last_vert_pos = active_obj.matrix_world * loop_verts[-1].co
+            # reverse again for the direction
+            if self.reverse_direction is True:
+                loop_verts = list(reversed(loop_verts))
 
-                loop_centr_orig = first_vert_pos.lerp(last_vert_pos, 0.5)
-                relative_dist = (first_vert_pos - loop_centr_orig).length
-                sidevec = (first_vert_pos - last_vert_pos).normalized()
+            # positions
+            first_vert_pos = active_obj.matrix_world * loop_verts[0].co
+            last_vert_pos = active_obj.matrix_world * loop_verts[-1].co
 
-                obj_matrix = active_obj.matrix_world
-                obj_matrix_inv = obj_matrix.inverted()
+            loop_centr_orig = first_vert_pos.lerp(last_vert_pos, 0.5)
+            relative_dist = (first_vert_pos - loop_centr_orig).length
+            sidevec = (first_vert_pos - last_vert_pos).normalized()
 
-                if self.direction_vector == 'Custom':
-                    rot_dir = Vector((self.rotate_axis[0], self.rotate_axis[1], self.rotate_axis[2])).normalized()
-                elif self.direction_vector == 'MiddleCrossed':
-                    middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
-                    middle_nor = ut_base.get_normal_world(middle_nor, obj_matrix, obj_matrix_inv)
-                    rot_dir = middle_nor.cross(sidevec).normalized()
+            obj_matrix = active_obj.matrix_world
+            obj_matrix_inv = obj_matrix.inverted()
 
-                    # fix only for MiddleCrossed
-                    if not self.reverse_direction:
-                        rot_dir.negate()
+            if self.direction_vector == 'Custom':
+                rot_dir = Vector((self.rotate_axis[0], self.rotate_axis[1], self.rotate_axis[2])).normalized()
+            elif self.direction_vector == 'MiddleCrossed':
+                middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
+                middle_nor = ut_base.get_normal_world(middle_nor, obj_matrix, obj_matrix_inv)
+                rot_dir = middle_nor.cross(sidevec).normalized()
 
-                else:
-                    middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
-                    middle_nor = ut_base.get_normal_world(middle_nor, obj_matrix, obj_matrix_inv)
-                    middle_nor = middle_nor.cross(sidevec).normalized()
-                    rot_dir = middle_nor.cross(sidevec).normalized()
+                # fix only for MiddleCrossed
+                if not self.reverse_direction:
                     rot_dir.negate()
 
-                upvec = rot_dir.cross(sidevec).normalized()
-                loop_centr = ( self.upvec_offset * upvec * relative_dist ) + loop_centr_orig
-                print(rot_dir)
+            else:
+                middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
+                middle_nor = ut_base.get_normal_world(middle_nor, obj_matrix, obj_matrix_inv)
+                middle_nor = middle_nor.cross(sidevec).normalized()
+                rot_dir = middle_nor.cross(sidevec).normalized()
+                rot_dir.negate()
 
-                loop_angle = (first_vert_pos - loop_centr).normalized().angle((last_vert_pos - loop_centr).normalized())
-                if self.upvec_offset > 0:
-                    loop_angle = math.radians( (360 - math.degrees(loop_angle)) )
+            upvec = rot_dir.cross(sidevec).normalized()
+            loop_centr = ( self.upvec_offset * upvec * relative_dist ) + loop_centr_orig
+            print(rot_dir)
 
-                # even spread
-                line_data = None
-                if self.spread_mode == 'Even':
-                    world_verts = [active_obj.matrix_world * vert.co for vert in loop_verts]
+            loop_angle = (first_vert_pos - loop_centr).normalized().angle((last_vert_pos - loop_centr).normalized())
+            if self.upvec_offset > 0:
+                loop_angle = math.radians( (360 - math.degrees(loop_angle)) )
 
-                    line_data = []
-                    line_length = 0.0
-                    for i, vec in enumerate(world_verts):
-                        if i == 0:
-                            line_data.append(0)
-                        else:
-                            line_length += (vec - world_verts[i-1]).length
-                            line_data.append(line_length)
+            # even spread
+            line_data = None
+            if self.spread_mode == 'Even':
+                world_verts = [active_obj.matrix_world * vert.co for vert in loop_verts]
 
-                # make arc!
-                for i, vert in enumerate(loop_verts):
-                    if i != 0 and i != len(loop_verts)-1:
-                        if self.spread_mode == 'Normal':
-                            rot_angle = loop_angle * (i / (len(loop_verts) - 1))
-                        else:
-                            rot_angle = loop_angle * (line_data[i] / line_data[len(loop_verts)-1])
+                line_data = []
+                line_length = 0.0
+                for i, vec in enumerate(world_verts):
+                    if i == 0:
+                        line_data.append(0)
+                    else:
+                        line_length += (vec - world_verts[i-1]).length
+                        line_data.append(line_length)
 
-                        rot_mat = Matrix.Rotation(rot_angle, 3, rot_dir)
-                        vert_pos = (rot_mat * (first_vert_pos - loop_centr)) + loop_centr
+            # make arc!
+            for i, vert in enumerate(loop_verts):
+                if i != 0 and i != len(loop_verts)-1:
+                    if self.spread_mode == 'Normal':
+                        rot_angle = loop_angle * (i / (len(loop_verts) - 1))
+                    else:
+                        rot_angle = loop_angle * (line_data[i] / line_data[len(loop_verts)-1])
 
-                        if self.scale_arc != 0:
-                            vert_rel_dist = mathu.geometry.distance_point_to_plane(vert_pos, loop_centr_orig, upvec)
-                            vert_rel_dist_max = self.upvec_offset + relative_dist
+                    rot_mat = Matrix.Rotation(rot_angle, 3, rot_dir)
+                    vert_pos = (rot_mat * (first_vert_pos - loop_centr)) + loop_centr
 
-                            if vert_rel_dist != 0 and vert_rel_dist_max != 0:
-                                vert_pos_offset = vert_rel_dist / vert_rel_dist_max
-                                vert_pos += (self.scale_arc * upvec * vert_pos_offset * vert_rel_dist_max) 
+                    if self.scale_arc != 0:
+                        vert_rel_dist = mathu.geometry.distance_point_to_plane(vert_pos, loop_centr_orig, upvec)
+                        vert_rel_dist_max = self.upvec_offset + relative_dist
 
-                        # rotate arc
-                        if self.rotate_arc_axis != 0:
-                            rot_mat_2 = Matrix.Rotation(math.radians(self.rotate_arc_axis), 3, sidevec)
-                            vert_pos = (rot_mat_2 * (vert_pos - loop_centr_orig)) + loop_centr_orig                            
+                        if vert_rel_dist != 0 and vert_rel_dist_max != 0:
+                            vert_pos_offset = vert_rel_dist / vert_rel_dist_max
+                            vert_pos += (self.scale_arc * upvec * vert_pos_offset * vert_rel_dist_max) 
 
-                        vert.co = active_obj.matrix_world.inverted() * vert_pos
+                    # rotate arc
+                    if self.rotate_arc_axis != 0:
+                        rot_mat_2 = Matrix.Rotation(math.radians(self.rotate_arc_axis), 3, sidevec)
+                        vert_pos = (rot_mat_2 * (vert_pos - loop_centr_orig)) + loop_centr_orig                            
 
-            bm.normal_update()
-            bmesh.update_edit_mesh(active_obj.data)
+                    vert.co = active_obj.matrix_world.inverted() * vert_pos
+
+        bm.normal_update()
+        bmesh.update_edit_mesh(active_obj.data)
 
         return {'FINISHED'}
 
