@@ -182,13 +182,6 @@ class MIRA_Panel(bpy.types.Panel):
             row.operator("mira.linear_deformer", text="LinearDeformer", icon="OUTLINER_OB_MESH")
             row.prop(context.scene.mi_ldeformer_settings, "manual_update", text='ManualUpdate')
 
-            row.separator()
-            row = box.row(align=True)
-            row.operator("mira.make_arc", text="MakeArc")
-            row.operator("mira.make_arc_get_axis", text="GetAxis")
-            row = box.column()
-            row.prop(context.scene.mi_makearc_settings, "arc_axis", text="ArcAxis")
-            
             box.separator()
             
             
@@ -224,8 +217,8 @@ class MIRA_Panel(bpy.types.Panel):
             box.separator() 
 
             row = box.row(align=True)                             
-            row.operator("mira.make_arc_get_axis", text="GetAxis")
             row.operator("mira.make_arc", text="MakeArc")
+            row.operator("mira.make_arc_get_axis", text="GetAxis")
             
             box.separator()
             
