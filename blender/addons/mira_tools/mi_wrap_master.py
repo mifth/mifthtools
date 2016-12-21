@@ -170,8 +170,8 @@ class MI_Wrap_Master(bpy.types.Operator):
 
                     for vert in all_verts:
                         if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
-                            #vert_pos = vert.co
-                            vert_pos = final_obj.matrix_world * vert.co.copy().to_3d()
+                            vert_pos = Vector((vert.co[0], vert.co[1], vert.co[2]))
+                            vert_pos = final_obj.matrix_world * vert_pos
                         else:
                             vert_pos = final_obj.matrix_world * vert.co.copy()
 
