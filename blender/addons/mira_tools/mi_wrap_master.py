@@ -141,7 +141,7 @@ class MI_Wrap_Master(bpy.types.Operator):
 
     normal_offset = FloatProperty(name="NormalOffset", description="Custom Normal Offset", default=0.0)
     copy_objects = BoolProperty(name="CopyObjects", description="Copy objects with modifiers", default=True)
-    #transform_objects = BoolProperty(name="TransformObjects", description="Transform instead of meshes", default=False)
+    transform_objects = BoolProperty(name="TransformObjects", description="Transform instead of meshes", default=True)
 
 
     def execute(self, context):
@@ -190,26 +190,34 @@ class MI_Wrap_Master(bpy.types.Operator):
                 else:
                     final_obj = the_obj
 
-                all_verts = []
+                # all verts
+                if self.transform_objects:
+                    all_verts = [final_obj.location]
+                else:
+                    all_verts = []
 
-                if final_obj.type == 'MESH':
-                    all_verts = final_obj.data.vertices
+                    if final_obj.type == 'MESH':
+                        all_verts = final_obj.data.vertices
 
-                elif final_obj.type == 'CURVE':
-                    for spline in final_obj.data.splines:
-                        if spline.type == 'BEZIER':
-                            for point in spline.bezier_points:
-                                all_verts.append(point)
-                        else:
-                            for point in spline.points:
-                                all_verts.append(point)
+                    elif final_obj.type == 'CURVE':
+                        for spline in final_obj.data.splines:
+                            if spline.type == 'BEZIER':
+                                for point in spline.bezier_points:
+                                    all_verts.append(point)
+                            else:
+                                for point in spline.points:
+                                    all_verts.append(point)
 
+                # wrap main code
                 for vert in all_verts:
-                    if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
-                        vert_pos = Vector((vert.co[0], vert.co[1], vert.co[2]))
-                        vert_pos = final_obj.matrix_world * vert_pos
+                    if self.transform_objects:
+                        vert_pos = vert  # here vert is just object's location
                     else:
-                        vert_pos = final_obj.matrix_world * vert.co.copy()
+                        if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
+                            vert_pos = Vector((vert.co[0], vert.co[1], vert.co[2]))
+                            vert_pos = final_obj.matrix_world * vert_pos
+                        else:
+                            vert_pos = final_obj.matrix_world * vert.co.copy()
 
                     # near
                     vert_pos_zero = vert_pos.copy()
@@ -249,6 +257,7 @@ class MI_Wrap_Master(bpy.types.Operator):
                         relative_scale = (wrap_v1 - wrap_center).length / (near_v1 - near_center).length
                         new_vert_pos = wrap_center + (wrap_axis2 * dist_2 * relative_scale) + (wrap_axis3 * dist_3 * relative_scale)
 
+                        # interpolate between Face Normal and Point Normal
                         if self.deform_normal == 'FaceAndVert':
                             vert2_min = None
                             vert2_min_dist = None
@@ -275,6 +284,7 @@ class MI_Wrap_Master(bpy.types.Operator):
 
                             wrap_normal = wrap_axis1.lerp(vert2_min_nor, mix_val).normalized()
 
+                        # Take just Face Normal
                         else:
                             wrap_normal = wrap_axis1
 
@@ -286,15 +296,106 @@ class MI_Wrap_Master(bpy.types.Operator):
                         # Add normal direction to position
                         new_vert_pos += (wrap_normal * normal_dist)
 
-                        if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
-                            new_vert_pos_world = final_obj.matrix_world.inverted() * new_vert_pos
-                            vert.co[0] = new_vert_pos_world[0]
-                            vert.co[1] = new_vert_pos_world[1]
-                            vert.co[2] = new_vert_pos_world[2]
-                        else:
-                            vert.co = final_obj.matrix_world.inverted() * new_vert_pos
+                        # Mesh Vertex Transform!
+                        if not self.transform_objects:
+                            if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
+                                new_vert_pos_world = final_obj.matrix_world.inverted() * new_vert_pos
+                                vert.co[0] = new_vert_pos_world[0]
+                                vert.co[1] = new_vert_pos_world[1]
+                                vert.co[2] = new_vert_pos_world[2]
+                            else:
+                                vert.co = final_obj.matrix_world.inverted() * new_vert_pos
 
-                if final_obj.type == 'MESH':
+                        # Object Transform
+                        else:
+                            final_obj_scale = final_obj.scale * relative_scale
+
+                            final_matrix = final_obj.matrix_world
+                            final_obj_axis1 = vert_pos + Vector((final_matrix[0][0], final_matrix[1][0], final_matrix[2][0])).normalized()
+                            final_obj_axis2 = vert_pos - Vector((final_matrix[0][1], final_matrix[1][1], final_matrix[2][1])).normalized()
+
+                            ax1_dist_1 = mathu.geometry.distance_point_to_plane(final_obj_axis1, near_center, near_axis1)
+                            ax1_dist_2 = mathu.geometry.distance_point_to_plane(final_obj_axis1, near_center, near_axis2)
+                            ax1_dist_3 = mathu.geometry.distance_point_to_plane(final_obj_axis1, near_center, near_axis3)
+                            
+                            ax2_dist_1 = mathu.geometry.distance_point_to_plane(final_obj_axis2, near_center, near_axis1)
+                            ax2_dist_2 = mathu.geometry.distance_point_to_plane(final_obj_axis2, near_center, near_axis2)
+                            ax2_dist_3 = mathu.geometry.distance_point_to_plane(final_obj_axis2, near_center, near_axis3)
+
+                            if self.normal_offset == 0:
+                                ax1_normal_dist = ax1_dist_1 * relative_scale
+                                ax2_normal_dist = ax2_dist_1 * relative_scale
+                            else:
+                                ax1_normal_dist = ax1_dist_1 * self.normal_offset
+                                ax2_normal_dist = ax2_dist_1 * self.normal_offset
+
+                            ax1_vert_pos = wrap_center + (wrap_axis2 * ax1_dist_2 * relative_scale) + (wrap_axis3 * ax1_dist_3 * relative_scale)
+                            ax1_vert_pos += (wrap_normal * ax1_normal_dist)
+                            ax2_vert_pos = wrap_center + (wrap_axis2 * ax2_dist_2 * relative_scale) + (wrap_axis3 * ax2_dist_3 * relative_scale)
+                            ax2_vert_pos += (wrap_normal * ax2_normal_dist)
+
+                            final_obj_vec1 = (ax1_vert_pos - new_vert_pos).normalized()
+                            final_obj_vec2 = (ax2_vert_pos - new_vert_pos).normalized()
+                            final_obj_vec3 = final_obj_vec1.cross(final_obj_vec2).normalized()
+                            final_obj_vec1 = final_obj_vec3.cross(final_obj_vec2).normalized()
+                            #final_obj_vec1.negate()
+                            #final_obj_vec2.negate()
+                            #final_obj_vec3.negate()
+
+                            final_mat = mathu.Matrix().to_3x3()
+                            final_mat[0][0], final_mat[1][0], final_mat[2][0] = final_obj_vec1[0], final_obj_vec1[1], final_obj_vec1[2]
+                            final_mat[0][1], final_mat[1][1], final_mat[2][1] = final_obj_vec2[0], final_obj_vec2[1], final_obj_vec2[2]
+                            final_mat[0][2], final_mat[1][2], final_mat[2][2] = final_obj_vec3[0], final_obj_vec3[1], final_obj_vec3[2]
+                            #final_mat = final_mat.normalized()
+
+                            final_obj.matrix_world = final_mat.to_4x4()
+
+
+                            ## first rotation
+                            #final_matrix = final_obj.matrix_world
+                            #final_obj_axis1 = Vector((final_matrix[0][1], final_matrix[1][1], final_matrix[2][1])).normalized()
+                            #final_obj_axis1.negate()
+
+                            #final_ang_1 = final_obj_axis1.angle(wrap_normal)
+                            #ax1 = final_obj_axis1.cross(wrap_normal).normalized()
+                            #rot_mat1 = mathu.Matrix.Rotation(final_ang_1, 4, ax1).to_4x4()
+
+                            #final_obj.matrix_world = rot_mat1
+
+                            ## second rotation
+                            #final_obj_axis2 = Vector((final_matrix[0][0], final_matrix[1][0], final_matrix[2][0])).normalized()
+
+                            ## this is like wrap_axis2 but it's crossed from wrap_normal(which can be interpolated)
+                            #wrap_axis2_2 = wrap_axis3.cross(wrap_normal).normalized()
+
+                            #final_ang_2 = wrap_axis2_2.angle(final_obj_axis2)
+                            #ax2 = wrap_axis2_2.cross(wrap_normal).normalized().cross(wrap_axis2_2).normalized()
+
+                            #if math.degrees(ax2.angle(wrap_normal)) > 90:
+                                #ax2_rot = Vector((0.0,-1.0, 0.0))
+                            #else:
+                                #ax2_rot = Vector((0.0,1.0, 0.0))
+
+                            #rot_mat2 = mathu.Matrix.Rotation(final_ang_2, 4, ax2_rot).to_4x4()
+
+                            #final_obj.matrix_world *= rot_mat2
+
+                            ## third rotation
+                            #final_obj_axis3 = Vector((final_matrix[0][0], final_matrix[1][0], final_matrix[2][0])).normalized()
+                            #vec_x = Vector((1.0, 0.0, 0.0))
+                            #final_ang_3 = vec_x.angle(final_obj_axis3)
+
+                            #ax3_rot = Vector((0.0,1.0, 0.0))
+                            #if math.degrees(ax3_rot.angle(vec_x.cross(final_obj_axis3))) < 90:
+                                #ax3_rot.negate()
+                            
+
+                            # position and scale
+                            final_obj.scale = final_obj_scale
+                            final_obj.location = new_vert_pos
+
+
+                if final_obj.type == 'MESH' and not self.transform_objects:
                     final_obj.data.update()
 
         return {'FINISHED'}
