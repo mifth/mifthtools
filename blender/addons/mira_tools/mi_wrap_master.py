@@ -308,7 +308,10 @@ class MI_Wrap_Master(bpy.types.Operator):
 
                         # Object Transform
                         else:
-                            final_obj_scale = final_obj.scale * relative_scale
+                            if self.normal_offset == 0:
+                                final_obj_scale = final_obj.scale * relative_scale
+                            else:
+                                final_obj_scale = final_obj.scale * self.normal_offset
 
                             final_matrix = final_obj.matrix_world
                             final_obj_axis1 = vert_pos + Vector((final_matrix[0][0], final_matrix[1][0], final_matrix[2][0])).normalized()
