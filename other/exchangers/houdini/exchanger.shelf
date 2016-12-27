@@ -87,7 +87,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
     final_merge.moveToGoodPosition()
     attrib_del = final_merge.createOutputNode('attribdelete')
-    attrib_del.parm('vtxdel').set('Cd N')
+    attrib_del.parm('vtxdel').set('Cd')
 
     attrib_del.moveToGoodPosition()
 
