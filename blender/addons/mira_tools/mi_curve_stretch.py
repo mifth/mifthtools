@@ -273,8 +273,11 @@ class MI_CurveStretch(bpy.types.Operator):
                 self.curve_tool_mult_mode = 'CIRCLE'
 
         elif self.curve_tool_mode == 'SELECT_MULTI' and event.value == 'RELEASE':
+            # Switch Selection tool off
             if event.type == 'C':
                 self.curve_tool_mode = 'IDLE'
+                self.mouse_down = False
+                self.mmouse_down = False
                 return {'RUNNING_MODAL'}
 
         # TOOLS WORK
