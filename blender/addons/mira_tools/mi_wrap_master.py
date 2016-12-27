@@ -197,7 +197,10 @@ class MI_Wrap_Master(bpy.types.Operator):
                     all_verts = []
 
                     if final_obj.type == 'MESH':
-                        all_verts = final_obj.data.vertices
+                        if final_obj.data.shape_keys:
+                            all_verts = final_obj.data.shape_keys.key_blocks[final_obj.active_shape_key_index].data
+                        else:
+                            all_verts = final_obj.data.vertices
 
                     elif final_obj.type == 'CURVE':
                         for spline in final_obj.data.splines:
