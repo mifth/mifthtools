@@ -203,20 +203,23 @@ class MI_Wrap_Master(bpy.types.Operator):
                             all_verts = final_obj.data.vertices
 
                     elif final_obj.type == 'CURVE':
-                        for spline in final_obj.data.splines:
-                            if spline.type == 'BEZIER':
-                                for point in spline.bezier_points:
-                                    all_verts.append(point)
-                            else:
-                                for point in spline.points:
-                                    all_verts.append(point)
+                        if final_obj.data.shape_keys:
+                            all_verts = final_obj.data.shape_keys.key_blocks[final_obj.active_shape_key_index].data
+                        else:
+                            for spline in final_obj.data.splines:
+                                if spline.type == 'BEZIER':
+                                    for point in spline.bezier_points:
+                                        all_verts.append(point)
+                                else:
+                                    for point in spline.points:
+                                        all_verts.append(point)
 
                 # wrap main code
                 for vert in all_verts:
                     if self.transform_objects:
                         vert_pos = vert  # here vert is just object's location
                     else:
-                        if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
+                        if final_obj.type == 'CURVE':
                             vert_pos = Vector((vert.co[0], vert.co[1], vert.co[2]))
                             vert_pos = final_obj.matrix_world * vert_pos
                         else:
@@ -301,7 +304,7 @@ class MI_Wrap_Master(bpy.types.Operator):
 
                         # Mesh Vertex Transform!
                         if not self.transform_objects:
-                            if final_obj.type == 'CURVE' and spline.type != 'BEZIER':
+                            if final_obj.type == 'CURVE':
                                 new_vert_pos_world = final_obj.matrix_world.inverted() * new_vert_pos
                                 vert.co[0] = new_vert_pos_world[0]
                                 vert.co[1] = new_vert_pos_world[1]
