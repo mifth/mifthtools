@@ -258,7 +258,6 @@ def pick_curve_point(curve, context, mouse_coords):
 
     return picked_point, the_length
 
-
 def pick_all_curves_point(all_curves, context, mouse_coords):
     best_point = None
     best_length = None
@@ -279,6 +278,41 @@ def pick_all_curves_point(all_curves, context, mouse_coords):
 
     return best_point, best_length, choosen_curve
 
+def pick_curve_point_radius(curve, context, mouse_coords, radius):
+    region = context.region
+    rv3d = context.region_data
+
+    picked_point = None
+    picked_point_length = None
+    mouse_vec = Vector(mouse_coords)
+    for cu_point in curve.curve_points:
+        point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
+        the_length = (point_pos_2d - mouse_vec).length
+        if the_length <= radius:
+            if picked_point is None:
+                picked_point = cu_point
+                picked_point_length = the_length
+            else:
+                if the_length < picked_point_length:
+                    picked_point = cu_point
+                    picked_point_length = the_length
+
+    return picked_point, the_length
+
+def pick_all_curves_points_radius(all_curves, context, mouse_coords, radius):
+    best_points = []
+    best_lengths = []
+    choosen_curves = []
+
+    for curve in all_curves:
+        pick_point, pick_length = pick_curve_point_radius(curve, context, mouse_coords, radius)
+
+        if pick_point is not None:
+            choosen_curves.append(curve)
+            best_points.append(pick_point)
+            best_lengths.append(pick_length)
+
+    return best_points, best_lengths, choosen_curves
 
 def select_point(curve, picked_point, additive_selection):
     if additive_selection is False:
@@ -296,6 +330,23 @@ def select_point(curve, picked_point, additive_selection):
                 picked_point.select = False
         else:
             picked_point.select = True
+
+def select_point_multi(all_curves, points, add = True):
+    if len(points)>0:
+        for point in points:
+            point.select = add
+
+        for curve in all_curves:
+            sel_points = get_selected_points(curve.curve_points)
+            if add:
+                if len(sel_points) > 0:
+                    curve.active_point = sel_points[-1].point_id
+
+            else:
+                if len(sel_points) > 0:
+                    curve.active_point = sel_points[-1].point_id
+                else:
+                    curve.active_point = None
 
 
 def add_point(new_point_pos, curve):

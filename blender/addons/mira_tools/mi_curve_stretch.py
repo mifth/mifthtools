@@ -51,8 +51,16 @@ class MI_CurveStretch(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     # curve tool mode
-    curve_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT')
+    curve_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT', 'SELECT_MULTI')
     curve_tool_mode = 'IDLE'
+
+    select_radius = 16
+    select_coords = None
+    curve_tool_mult_modes = ('CIRCLE', 'BOX')
+    curve_tool_mult_mode = 'CIRCLE'
+
+    mouse_down = False
+    mmouse_down = False
 
     all_curves = None
     active_curve = None
@@ -117,6 +125,7 @@ class MI_CurveStretch(bpy.types.Operator):
 
                 self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
                 self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+                self.gh_circle_select_handle = bpy.types.SpaceView3D.draw_handler_add(gh_circle_draw_2d, args, 'WINDOW', 'POST_PIXEL')
                 context.window_manager.modal_handler_add(self)
 
                 bm.normal_update()
@@ -136,7 +145,7 @@ class MI_CurveStretch(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
-        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L, SpreadMode: M")
+        context.area.header_text_set("NewPoint: Ctrl+Click, SelectAdditive: Shift+Click, DeletePoint: Del, SurfaceSnap: Shift+Tab, SelectLinked: L/Shift+L, SpreadMode: M, CircleSelect:C")
 
         user_preferences = context.user_preferences
         addon_prefs = user_preferences.addons[__package__].preferences
@@ -149,6 +158,7 @@ class MI_CurveStretch(bpy.types.Operator):
         region = context.region
         rv3d = context.region_data
         m_coords = event.mouse_region_x, event.mouse_region_y
+        self.select_coords = m_coords
 
         keys_pass = mi_inputs.get_input_pass(mi_inputs.pass_keys, addon_prefs.key_inputs, event)
 
@@ -257,6 +267,16 @@ class MI_CurveStretch(bpy.types.Operator):
                 bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
 
+            # Set to Select Multy
+            elif event.type == 'C':
+                self.curve_tool_mode = 'SELECT_MULTI'
+                self.curve_tool_mult_mode = 'CIRCLE'
+
+        elif self.curve_tool_mode == 'SELECT_MULTI' and event.value == 'RELEASE':
+            if event.type == 'C':
+                self.curve_tool_mode = 'IDLE'
+                return {'RUNNING_MODAL'}
+
         # TOOLS WORK
         if self.curve_tool_mode == 'SELECT_POINT':
             if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
@@ -317,9 +337,48 @@ class MI_CurveStretch(bpy.types.Operator):
 
                 return {'RUNNING_MODAL'}
 
-        #elif self.curve_tool_mode == 'ADD_POINT':
-            #self.curve_tool_mode = 'MOVE_POINT'
-            #return {'RUNNING_MODAL'}
+        elif self.curve_tool_mode == 'SELECT_MULTI':
+
+            # first check
+            if event.type == 'WHEELDOWNMOUSE':
+                self.select_radius *= 1.2
+
+            elif event.type == 'WHEELUPMOUSE':
+                self.select_radius /= 1.2
+                if self.select_radius < 4:
+                    self.select_radius = 4
+
+            # second check
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'PRESS':
+                self.mouse_down = True
+                pts, lns, crvs = cur_main.pick_all_curves_points_radius(self.all_curves, context, m_coords, self.select_radius)
+                cur_main.select_point_multi(self.all_curves, pts, True)
+
+            if event.type in {'LEFTMOUSE', 'SELECTMOUSE'} and event.value == 'RELEASE':
+                self.mouse_down = False
+
+            if event.type in {'MIDDLEMOUSE'} and event.value == 'PRESS':
+                self.mmouse_down = True
+                pts, lns, crvs = cur_main.pick_all_curves_points_radius(self.all_curves, context, m_coords, self.select_radius)
+                cur_main.select_point_multi(self.all_curves, pts, False)
+
+            if event.type in {'MIDDLEMOUSE'} and event.value == 'RELEASE':
+                self.mmouse_down = False
+
+            if event.type in {'RIGHTMOUSE', 'ESC'} and event.value in {'PRESS'}:
+                self.curve_tool_mode = 'IDLE'
+
+            if event.type in {'MOUSEMOVE'}:
+                if not self.mouse_down and not self.mmouse_down:
+                    return {'PASS_THROUGH'}
+                elif self.mouse_down:
+                    pts, lns, crvs = cur_main.pick_all_curves_points_radius(self.all_curves, context, m_coords, self.select_radius)
+                    cur_main.select_point_multi(self.all_curves,pts, True)
+                elif self.mmouse_down:
+                    pts, lns, crvs = cur_main.pick_all_curves_points_radius(self.all_curves, context, m_coords, self.select_radius)
+                    cur_main.select_point_multi(self.all_curves, pts, False)
+
+            return {'RUNNING_MODAL'}
 
         else:
             if event.value == 'RELEASE' and event.type in {'LEFTMOUSE', 'SELECTMOUSE'}:
@@ -371,6 +430,11 @@ def update_curve_line(active_obj, curve_to_update, loops, all_curves, bm, spread
         cur_main.verts_to_line(loop_verts, line, original_verts_data, curve_to_update.closed)
     else:
         cur_main.verts_to_line(loop_verts, line, None, curve_to_update.closed)
+
+
+def gh_circle_draw_2d(self, context):
+    if self.all_curves:
+        draw_circle_select(self.select_coords, radius = self.select_radius, enabled = (self.curve_tool_mode == 'SELECT_MULTI'))
 
 
 def mi_curve_draw_2d(self, context):
@@ -426,6 +490,35 @@ def draw_curve_2d(curves, active_cur, context):
                         handle_2_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
                         if handle_2_pos_2d:
                             mi_draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, 3, col_man.cur_handle_2_base)
+
+
+# TODO MOVE TO UTILITIES
+def draw_circle_select(m_coords, radius = 16, p_col = (0.7,0.8,1.0,0.6), enabled = False):
+    if(enabled):
+        bgl.glEnable(bgl.GL_BLEND)
+        bgl.glBegin(bgl.GL_POLYGON)
+        bgl.glColor4f(p_col[0], p_col[1], p_col[2], p_col[3]/3)
+
+        point_x = m_coords[0]
+        point_y = m_coords[1]
+
+        radius = int(radius)
+
+        for x in range(0, radius*2):
+            bgl.glVertex2f(point_x + radius * math.cos(x * (360/(radius*2)) / 180 * 3.14159), point_y + radius * math.sin(x * (360/(radius*2)) / 180 * 3.14159))
+        bgl.glEnd()
+
+        bgl.glBegin(bgl.GL_LINES)
+        bgl.glColor4f(p_col[0], p_col[1], p_col[2], p_col[3])
+        for x in range(0, radius*2):
+            bgl.glVertex2f(point_x + radius * math.cos(x * (360 / (radius * 2)) / 180 * 3.14159),
+                           point_y + radius * math.sin(x * (360 / (radius * 2)) / 180 * 3.14159))
+
+        bgl.glEnd()
+        # restore opengl defaults
+        bgl.glLineWidth(1)
+        bgl.glDisable(bgl.GL_BLEND)
+        bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
 
 
 # TODO MOVE TO UTILITIES
