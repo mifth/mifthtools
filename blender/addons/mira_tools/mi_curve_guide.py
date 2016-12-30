@@ -34,11 +34,13 @@ from mathutils import Vector, Matrix
 
 from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
-from . import mi_linear_widget as l_widget
 from . import mi_curve_main as cur_main
 from . import mi_color_manager as col_man
 from . import mi_looptools as loop_t
 from . import mi_inputs
+from . import mi_widget_linear_deform as l_widget
+from . import mi_widget_select as s_widget
+from . import mi_widget_curve as c_widget
 
 # Settings
 class MI_CurGuide_Settings(bpy.types.PropertyGroup):
@@ -767,7 +769,7 @@ def cur_guide_draw_3d(self, context):
             end_pos = self.lw_tool.end_point.position + (self.tool_side_vec * self.tool_side_vec_len)
             #end_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, end_pos)
             #draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.3, 0.6, 0.99, 1.0))
-            mi_curve_draw_3d_polyline([start_pos, end_pos], 1, col_man.cur_line_base, True)
+            c_widget.draw_3d_polyline([start_pos, end_pos], 1, col_man.cur_line_base, True)
 
             # draw points
             for point in self.curve_tool.curve_points:
@@ -777,11 +779,11 @@ def cur_guide_draw_3d(self, context):
                 end_pos = start_pos - (self.tool_side_vec * p_dist)
                 #end_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, end_pos)
                 #draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.7, 0.5, 0.95, 1.0))
-                mi_curve_draw_3d_polyline([start_pos, end_pos], 1, col_man.cur_line_base, True)
+                c_widget.draw_3d_polyline([start_pos, end_pos], 1, col_man.cur_line_base, True)
 
         for cur_point in self.curve_tool.curve_points:
             if cur_point.point_id in self.curve_tool.display_bezier:
-                mi_curve_draw_3d_polyline(self.curve_tool.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
+                c_widget.draw_3d_polyline(self.curve_tool.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
         #draw_curve_lines_2d(self.curve_tool, context)
 
 
@@ -805,7 +807,7 @@ def draw_curve_points_2d(curve, context, curve_settings):
                 p_col = col_man.cur_point_selected
             if cu_point.point_id == curve.active_point:
                 p_col = col_man.cur_point_active
-            draw_point_2d(point_pos_2d, 6, p_col)
+            c_widget.draw_2d_point(point_pos_2d[0], point_pos_2d[1], 6, p_col)
 
             # Handlers
             if curve_settings.draw_handlers:
@@ -813,12 +815,12 @@ def draw_curve_points_2d(curve, context, curve_settings):
                 if cu_point.handle1:
                     handle_1_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
                     if handle_1_pos_2d:
-                        draw_point_2d(handle_1_pos_2d, 3, col_man.cur_handle_1_base)
+                        c_widget.draw_2d_point(handle_1_pos_2d[0], handle_1_pos_2d[1], 3, col_man.cur_handle_1_base)
             #if curve.curve_points.index(cu_point) > 0:
                 if cu_point.handle2:
                     handle_2_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
                     if handle_2_pos_2d:
-                        draw_point_2d(handle_2_pos_2d, 3, col_man.cur_handle_2_base)
+                        c_widget.draw_2d_point(handle_2_pos_2d[0], handle_2_pos_2d[1], 3, col_man.cur_handle_2_base)
 
 
 def draw_curve_lines_2d(curve, context):
@@ -833,75 +835,4 @@ def draw_curve_lines_2d(curve, context):
                 #point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, b_point)
                 #points_2d.append(point_pos_2d)
             #draw_polyline_2d(points_2d, 1, col_man.cur_line_base)
-            mi_curve_draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
-
-
-# TODO MOVE TO UTILITIES
-def draw_point_2d(point, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
-    bgl.glEnable(bgl.GL_BLEND)
-    #bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-    #bgl.glLineWidth(2)
-
-    bgl.glPointSize(p_size)
-#    bgl.glBegin(bgl.GL_LINE_LOOP)
-    bgl.glBegin(bgl.GL_POINTS)
- #   bgl.glBegin(bgl.GL_POLYGON)
-    bgl.glColor4f(p_col[0], p_col[1], p_col[2], p_col[3])
-    bgl.glVertex2f(point[0], point[1])
-    bgl.glEnd()
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
-
-
-# TODO MOVE TO UTILITIES
-def mi_curve_draw_3d_polyline(points, p_size, p_col, x_ray):
-    bgl.glEnable(bgl.GL_BLEND)
-    bgl.glLineWidth(1)
-
-    if x_ray is True:
-        bgl.glDisable(bgl.GL_DEPTH_TEST)
-
-    bgl.glPointSize(p_size)
-#    bgl.glBegin(bgl.GL_LINE_LOOP)
-    bgl.glBegin(bgl.GL_LINE_STRIP)
-    bgl.glColor4f(p_col[0], p_col[1], p_col[2], p_col[3])
- #   bgl.glBegin(bgl.GL_POLYGON)
-
-    for point in points:
-        bgl.glVertex3f(point[0], point[1], point[2])
-
-    if x_ray is True:
-        bgl.glEnable(bgl.GL_DEPTH_TEST)
-
-    bgl.glEnd()
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
-
-
-## TODO MOVE TO UTILITIES
-#def draw_polyline_2d(points, pl_size=1, p_col=(1.0,1.0,1.0,1.0)):
-    #bgl.glEnable(bgl.GL_BLEND)
-    #bgl.glLineWidth(pl_size)
-
-    ##bgl.glPointSize(p_size)
-##    bgl.glBegin(bgl.GL_LINE_LOOP)
-    #bgl.glBegin(bgl.GL_LINE_STRIP)
-    #bgl.glColor4f(p_col[0], p_col[1], p_col[2], p_col[3])
- ##   bgl.glBegin(bgl.GL_POLYGON)
-
-    #for point in points:
-        #bgl.glVertex2f(point[0], point[1])
-        ##bgl.glVertex3f(point[0], point[1], point[2])
-
-    #bgl.glEnd()
-
-    ## restore opengl defaults
-    #bgl.glLineWidth(1)
-    #bgl.glDisable(bgl.GL_BLEND)
-    #bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
+            c_widget.draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)

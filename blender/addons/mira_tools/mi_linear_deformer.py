@@ -34,7 +34,7 @@ from mathutils import Vector, Matrix
 
 from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
-from . import mi_linear_widget as l_widget
+from . import mi_widget_linear_deform as l_widget
 from . import mi_inputs
 
 

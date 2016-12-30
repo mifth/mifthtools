@@ -37,6 +37,8 @@ from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
 from . import mi_looptools as loop_t
 from . import mi_inputs
+from . import mi_widget_select as s_widget
+from . import mi_widget_curve as c_widget
 
 
 class MI_CurveSurfacesSettings(bpy.types.PropertyGroup):
@@ -1019,7 +1021,7 @@ def mi_surf_draw_3d(self, context):
             for curve in surf.all_curves:
                 for cur_point in curve.curve_points:
                     if cur_point.point_id in curve.display_bezier:
-                        mi_draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
+                        c_widget.draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
 
 
 def draw_surf_2d(surfs, active_surf, context):
@@ -1033,9 +1035,9 @@ def draw_surf_2d(surfs, active_surf, context):
             surf_center_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, surf.main_loop_center)
             if surf_center_2d:
                 if surf is active_surf:
-                    mi_draw_2d_point(surf_center_2d.x, surf_center_2d.y, 6, (0.7,0.75,0.95,1.0))
+                    c_widget.draw_2d_point(surf_center_2d.x, surf_center_2d.y, 6, (0.7,0.75,0.95,1.0))
                 else:
-                    mi_draw_2d_point(surf_center_2d.x, surf_center_2d.y, 6, (0.5,0.5,0.8,1.0))
+                    c_widget.draw_2d_point(surf_center_2d.x, surf_center_2d.y, 6, (0.5,0.5,0.8,1.0))
 
         # draw curves points
         for curve in surf.all_curves:
@@ -1054,7 +1056,7 @@ def draw_surf_2d(surfs, active_surf, context):
                         p_col = col_man.cur_point_selected
                     if active_surf and cu_point.point_id == curve.active_point and curve is active_surf.active_curve:
                         p_col = col_man.cur_point_active
-                    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
+                    c_widget.draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
                     # Handlers
                     if curve_settings.draw_handlers:
@@ -1062,58 +1064,9 @@ def draw_surf_2d(surfs, active_surf, context):
                         if cu_point.handle1:
                             handle_1_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
                             if handle_1_pos_2d:
-                                mi_draw_2d_point(handle_1_pos_2d.x, handle_1_pos_2d.y, 3, col_man.cur_handle_1_base)
+                                c_widget.draw_2d_point(handle_1_pos_2d.x, handle_1_pos_2d.y, 3, col_man.cur_handle_1_base)
                     #if curve.curve_points.index(cu_point) > 0:
                         if cu_point.handle2:
                             handle_2_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
                             if handle_2_pos_2d:
-                                mi_draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, 3, col_man.cur_handle_2_base)
-
-
-# TODO MOVE TO UTILITIES
-def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
-    bgl.glEnable(bgl.GL_BLEND)
-    #bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-    #bgl.glLineWidth(2)
-
-    bgl.glPointSize(p_size)
-#    bgl.glBegin(bgl.GL_LINE_LOOP)
-    bgl.glBegin(bgl.GL_POINTS)
- #   bgl.glBegin(bgl.GL_POLYGON)
-    bgl.glColor4f(p_col[0], p_col[1], p_col[2], p_col[3])
-    bgl.glVertex2f(point_x, point_y)
-    bgl.glEnd()
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
-
-
-# TODO MOVE TO UTILITIES
-def mi_draw_3d_polyline(points, p_size, p_col, x_ray):
-    bgl.glEnable(bgl.GL_BLEND)
-    bgl.glLineWidth(1)
-
-    if x_ray is True:
-        bgl.glDisable(bgl.GL_DEPTH_TEST)
-
-    bgl.glPointSize(p_size)
-#    bgl.glBegin(bgl.GL_LINE_LOOP)
-    bgl.glBegin(bgl.GL_LINE_STRIP)
-    bgl.glColor4f(p_col[0], p_col[1], p_col[2], p_col[3])
- #   bgl.glBegin(bgl.GL_POLYGON)
-
-    for point in points:
-        bgl.glVertex3f(point[0], point[1], point[2])
-
-    if x_ray is True:
-        bgl.glEnable(bgl.GL_DEPTH_TEST)
-
-    bgl.glEnd()
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
-
+                                c_widget.draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, 3, col_man.cur_handle_2_base)

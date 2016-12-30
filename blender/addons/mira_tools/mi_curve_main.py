@@ -314,6 +314,43 @@ def pick_all_curves_points_radius(all_curves, context, mouse_coords, radius):
 
     return best_points, best_lengths, choosen_curves
 
+def pick_curve_points_box(curve, context, mouse_coords, anchor):
+    region = context.region
+    rv3d = context.region_data
+
+    picked_points = []
+    picked_point_length = None
+    mouse_vec = Vector(mouse_coords)
+    for cu_point in curve.curve_points:
+        point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
+        minx = min(anchor[0],mouse_coords[0])
+        miny = min(anchor[1],mouse_coords[1])
+        maxx = max(anchor[0], mouse_coords[0])
+        maxy = max(anchor[1], mouse_coords[1])
+
+        if point_pos_2d[0] > minx and point_pos_2d[0] < maxx and point_pos_2d[1] < maxy and point_pos_2d[1] > miny:
+           picked_points.append(cu_point)
+           picked_point_length = 0
+        elif cu_point in picked_points:
+            picked_points.remove(cu_point)
+
+    return picked_points
+
+def pick_all_curves_points_box(all_curves, context, mouse_coords, anchor):
+    best_points = []
+    best_lengths = []
+    choosen_curves = []
+
+    for curve in all_curves:
+        pick_points = pick_curve_points_box(curve, context, mouse_coords, anchor)
+
+        if pick_points is not None:
+            choosen_curves.append(curve)
+            best_points.extend(pick_points)
+            best_lengths.append(0)
+
+    return best_points, choosen_curves
+
 def select_point(curve, picked_point, additive_selection):
     if additive_selection is False:
         if picked_point.select is False:
