@@ -32,6 +32,7 @@ import mathutils as mathu
 import random
 from mathutils import Vector, Matrix
 from . import mi_inputs
+from . import mi_widget_curve as c_widget
 
 from . import mi_utils_base as ut_base
 from . import mi_color_manager as col_man
@@ -557,7 +558,7 @@ def mi_extrude_draw_2d(self, context):
         region, rv3d, self.extrude_points[-1].position)
 
     p_col = col_man.dre_point_base
-    mi_draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
+    c_widget.draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
 
 
 def get_previous_extrude_verts(bm, context, selected_verts):
@@ -571,7 +572,6 @@ def get_previous_extrude_verts(bm, context, selected_verts):
     return new_verts
 
 
-# TODO move to utils
 def mi_pick_extrude_point(point, context, mouse_coords):
     region = context.region
     rv3d = context.region_data
@@ -583,26 +583,6 @@ def mi_pick_extrude_point(point, context, mouse_coords):
         return True
 
     return False
-
-
-# TODO MOVE TO UTILITIES
-def mi_draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0, 1.0, 1.0, 1.0)):
-    bgl.glEnable(bgl.GL_BLEND)
-    # bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-    # bgl.glLineWidth(2)
-
-    bgl.glPointSize(p_size)
-#    bgl.glBegin(bgl.GL_LINE_LOOP)
-    bgl.glBegin(bgl.GL_POINTS)
- #   bgl.glBegin(bgl.GL_POLYGON)
-    bgl.glColor4f(p_col[0], p_col[1], p_col[2], p_col[3])
-    bgl.glVertex2f(point_x, point_y)
-    bgl.glEnd()
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
 
 
 def rotate_verts(verts, rot_angle, axis, rot_origin):
