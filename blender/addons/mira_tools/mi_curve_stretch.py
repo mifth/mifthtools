@@ -288,7 +288,13 @@ class MI_CurveStretch(bpy.types.Operator):
                     self.mmouse_down = False
                     return {'RUNNING_MODAL'}
 
-                if self.curve_tool_mult_mode == 'BOX' and event.type == 'B':
+                elif self.curve_tool_mult_mode == 'BOX' and event.type == 'B':
+                    self.curve_tool_mode = 'IDLE'
+                    self.mouse_down = False
+                    self.mmouse_down = False
+                    return {'RUNNING_MODAL'}
+            elif event.value == 'RELEASE':
+                if event.type in {'RIGHTMOUSE', 'ESC'}:
                     self.curve_tool_mode = 'IDLE'
                     self.mouse_down = False
                     self.mmouse_down = False
@@ -394,10 +400,6 @@ class MI_CurveStretch(bpy.types.Operator):
                 if self.curve_tool_mult_mode == 'BOX':
                     pts, crvs = cur_main.pick_all_curves_points_box(self.all_curves, context, m_coords, self.select_box_anchor)
                     cur_main.select_point_multi(self.all_curves, pts, False)
-
-            if event.type in {'RIGHTMOUSE', 'ESC'} and event.value == 'RELEASE':
-                self.curve_tool_mode = 'IDLE'
-                return {'RUNNING_MODAL'}
 
             if event.type in {'MOUSEMOVE'}:
                 if not self.mouse_down and not self.mmouse_down:
