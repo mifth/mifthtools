@@ -9,11 +9,12 @@
     <memberTool name="symmetry_extrude"/>
     <memberTool name="edges_to_face"/>
     <memberTool name="falloff"/>
+    <memberTool name="arc"/>
     <memberTool name="divide_edges"/>
     <memberTool name="scale_edges"/>
     <memberTool name="transform_primitives"/>
-    <memberTool name="part_mesh"/>
     <memberTool name="merge_verts"/>
+    <memberTool name="part_mesh"/>
     <memberTool name="merge"/>
     <memberTool name="pivot_selected"/>
     <memberTool name="set_plane"/>
@@ -404,5 +405,12 @@ if offset <= len(loop_2)-1:
             node.setSelection(hou.Selection(geo, hou.geometryType.Primitives, nes_sel_str )) 
 
 viewer.setCurrentState(viewer_state)]]></script>
+  </tool>
+
+  <tool name="arc" label="Arc" icon="SOP_circle">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+node = soptoolutils.genericTool(kwargs, 'mifth_make_arc')]]></script>
   </tool>
 </shelfDocument>
