@@ -134,6 +134,7 @@ if len(sel_nodes)%2 == 0:
 #        node_paste.parm('ccrtopcapy').set(node_copy.parm('ccrtopcapy').eval())
 #        node_paste.parm('ccrtopcapz').set(node_copy.parm('ccrtopcapz').eval())
 
+        node_paste.parm('ccrtopheight').set(node_copy.parm('ccrtopheight').eval())
         node_paste.parm('ccrbotheight').set(node_copy.parm('ccrbotheight').eval())
 
         node_paste.parmTuple('ccrbotcap').set(node_copy.parmTuple('ccrbotcap').eval())
@@ -147,6 +148,7 @@ if len(sel_nodes)%2 == 0:
 #        node_paste.parm('crtopcapy').set(node_copy.parm('crtopcapy').eval())
 #        node_paste.parm('crtopcapz').set(node_copy.parm('crtopcapz').eval())
 
+        node_paste.parm('crtopheight').set(node_copy.parm('crtopheight').eval())
         node_paste.parm('crbotheight').set(node_copy.parm('crbotheight').eval())
 
         node_paste.parmTuple('crbotcap').set(node_copy.parmTuple('crbotcap').eval())
