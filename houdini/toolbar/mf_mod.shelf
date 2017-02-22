@@ -92,11 +92,11 @@ import toolutils
 #geo = viewer.selectGeometry()
 #sel_str = geo.mergedSelectionString()
 
-if kwargs['ctrlclick']:
-    node = soptoolutils.genericTool(kwargs, 'mifth_symmetry_extrude_v1')
+#if kwargs['ctrlclick']:
+node = soptoolutils.genericTool(kwargs, 'mifth_symmetry_extrude_v1')
     #node.parm('group').set(sel_str)
-else:
-    soptoolutils.customStateTool(kwargs, 'polyextrude::2.0')]]></script>
+#else:
+#    soptoolutils.customStateTool(kwargs, 'polyextrude::2.0')]]></script>
   </tool>
 
   <tool name="edges_to_face" label="EdgesToFace" icon="SOP_polycap">
