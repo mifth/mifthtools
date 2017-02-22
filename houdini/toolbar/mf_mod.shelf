@@ -351,11 +351,15 @@ if kwargs['ctrlclick']:
 else:
     node = soptoolutils.genericTool(kwargs, 'mifth_edit_falloff')
 
-    c = node.parmTuple('./transform2/p').eval()
-    node.parmTuple('p').set(c)
-
     bou = node.node('./bound1').geometry().boundingBox()
     bou_size = bou.sizevec()
+    bou_min = bou.minvec()
+    bou_max = bou.maxvec()
+    bou_cr = bou.center()
+
+#    c = node.parmTuple('./transform2/p').eval()
+    node.parmTuple('p').set(bou_cr)
+
     if bou_size[0] >= bou_size[1] and bou_size[0] >= bou_size[2]:
         node.parm('set_to_axis').set(0)
     elif bou_size[1] >= bou_size[0] and bou_size[1] >= bou_size[2]:
