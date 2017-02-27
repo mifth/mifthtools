@@ -7,9 +7,9 @@
 		"left",["submenu",
 			"label","Model",
 			"top",["script",
-				"label","PolyExtrude",
-				"icon","SOP_polyextrude",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_polyextrude::2.0')"
+				"label","Faloff",
+				"icon","SOP_edit",
+				"script","radialmenu.runShelfTool(kwargs, 'falloff')"
 			],
 			"top_left",["script",
 				"label","EdgesToFace",
@@ -22,14 +22,14 @@
 				"script","radialmenu.runShelfTool(kwargs, 'sop_polybevel::2.0')"
 			],
 			"bottom_left",["script",
-				"label","Faloff",
-				"icon","SOP_edit",
-				"script","radialmenu.runShelfTool(kwargs, 'falloff')"
-			],
-			"bottom",["script",
 				"label","SymExtrude",
 				"icon","SOP_polyextrude",
 				"script","radialmenu.runShelfTool(kwargs, 'symmetry_extrude')"
+			],
+			"bottom",["script",
+				"label","PolyExtrude",
+				"icon","SOP_polyextrude",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_polyextrude::2.0')"
 			]
 		],
 		"bottom_left",["submenu",
@@ -56,7 +56,7 @@
 			]
 		],
 		"bottom",["submenu",
-			"label","Other",
+			"label","Model2",
 			"left",["script",
 				"label","Reverse",
 				"icon","SOP_reverse",
@@ -117,6 +117,14 @@
 				"label","Hide Non-Selected",
 				"icon","SOP_visibility",
 				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'visibility')  \nnode.parm('applyto').set(1)"
+			]
+		],
+		"top_right",["submenu",
+			"label","Generate",
+			"right",["script",
+				"label","Simple Pipe",
+				"icon","PLASMA_App",
+				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'mifth_simple_pipe')  "
 			]
 		]
 	]
