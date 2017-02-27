@@ -1,0 +1,123 @@
+[
+	"fileversion","16.0.504.20",
+	"name","MfModel",
+	"categories","Modeling",
+	"submenu",["submenu",
+		"label","MfModeling",
+		"left",["submenu",
+			"label","Model",
+			"top",["script",
+				"label","PolyExtrude",
+				"icon","SOP_polyextrude",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_polyextrude::2.0')"
+			],
+			"top_left",["script",
+				"label","EdgesToFace",
+				"icon","SOP_polycap",
+				"script","radialmenu.runShelfTool(kwargs, 'edges_to_face')"
+			],
+			"left",["script",
+				"label","PolyBevel",
+				"icon","SOP_polybevel",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_polybevel::2.0')"
+			],
+			"bottom_left",["script",
+				"label","Faloff",
+				"icon","SOP_edit",
+				"script","radialmenu.runShelfTool(kwargs, 'falloff')"
+			],
+			"bottom",["script",
+				"label","SymExtrude",
+				"icon","SOP_polyextrude",
+				"script","radialmenu.runShelfTool(kwargs, 'symmetry_extrude')"
+			]
+		],
+		"bottom_left",["submenu",
+			"label","Split",
+			"top",["script",
+				"label","Knife",
+				"icon","SHELF_knife",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_knife')"
+			],
+			"left",["script",
+				"label","PolySplit",
+				"icon","SOP_polysplit",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_polysplit::2.0')"
+			],
+			"bottom",["script",
+				"label","Divide Edges",
+				"icon","SOP_edgedivide",
+				"script","radialmenu.runShelfTool(kwargs, 'divide_edges')"
+			],
+			"right",["script",
+				"label","Edge Loop",
+				"icon","SHELF_edgeloop",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_edgeloop')"
+			]
+		],
+		"bottom",["submenu",
+			"label","Other",
+			"left",["script",
+				"label","Reverse",
+				"icon","SOP_reverse",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_reverse')"
+			],
+			"bottom_left",["script",
+				"label","Group",
+				"icon","SOP_group",
+				"script","radialmenu.runShelfTool(kwargs, 'geo_group')"
+			],
+			"bottom",["script",
+				"label","Edge Collapse",
+				"icon","SOP_edgecollapse",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_edgecollapse')"
+			],
+			"bottom_right",["script",
+				"label","Normal",
+				"icon","SOP_normal",
+				"script","import soptoolutils\nimport toolutils\n\nnode = soptoolutils.genericTool(kwargs, 'normal')"
+			],
+			"right",["script",
+				"label","Scale Edges",
+				"icon","SOP_edgeflip",
+				"script","radialmenu.runShelfTool(kwargs, 'scale_edges')"
+			],
+			"top_right",["script",
+				"label","TransformPrims",
+				"icon","SOP_primitive",
+				"script","radialmenu.runShelfTool(kwargs, 'transform_primitives')"
+			]
+		],
+		"bottom_right",["submenu",
+			"label","Copy",
+			"left",["script",
+				"label","Mirror",
+				"icon","SOP_mirror",
+				"script","radialmenu.runShelfTool(kwargs, 'geometry_mirror')"
+			],
+			"right",["script",
+				"label","Duplicate",
+				"icon","SOP_duplicate",
+				"script","radialmenu.runShelfTool(kwargs, 'geometry_duplicate')"
+			]
+		],
+		"right",["submenu",
+			"label","Visibility",
+			"top",["script",
+				"label","Hide",
+				"icon","SOP_visibility",
+				"script","import soptoolutils\n\nsoptoolutils.genericTool(kwargs, 'visibility')"
+			],
+			"bottom",["script",
+				"label","Unhide",
+				"icon","SOP_visibility",
+				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'visibility')  \nnode.parm('action').set(1)\nnode.parm('group').set('')"
+			],
+			"right",["script",
+				"label","Hide Non-Selected",
+				"icon","SOP_visibility",
+				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'visibility')  \nnode.parm('applyto').set(1)"
+			]
+		]
+	]
+]
