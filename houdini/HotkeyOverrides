@@ -1,0 +1,8 @@
+h.pane.gview.repeat_current_branch	"Repeat Current Operation Branched"	"Quick-repeat current operation branched"	 Ctrl+Shift+Q
+h.pane.gview.repeat_current	"Repeat Current Operation"	"Quick-repeat current operation"	 Shift+Q
+h.pane.gview.state.new_select	"Select Tool"	"Invoke the select tool"	 Q
+h.pane.gview.toggle_wireshaded	"Toggle Wireframe/Shaded"	"Toggle wireframe/shaded"	 Ctrl+W
+h.pane.closetab	"Close Tab"	"Close tab"	
+h.pane.gview.state.select.move	"Move Tool"	"Invoke the move tool"	 W
+h.pane.gview.state.select.scale	"Scale Tool"	"Invoke the scale tool"	 R
+h.pane.gview.state.select.rotate	"Rotate Tool"	"Invoke the rotate tool"	 E

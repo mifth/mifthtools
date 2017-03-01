@@ -4,6 +4,14 @@
 	"categories","Modeling",
 	"submenu",["submenu",
 		"label","MfModeling",
+		"top",["submenu",
+			"label","Misc",
+			"left",["script",
+				"label","Merge",
+				"icon","SOP_merge",
+				"script","radialmenu.runShelfTool(kwargs, 'merge')"
+			]
+		],
 		"left",["submenu",
 			"label","Model",
 			"top",["script",
@@ -17,9 +25,9 @@
 				"script","radialmenu.runShelfTool(kwargs, 'edges_to_face')"
 			],
 			"left",["script",
-				"label","PolyBevel",
-				"icon","SOP_polybevel",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_polybevel::2.0')"
+				"label","PolyExtrude",
+				"icon","SOP_polyextrude",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_polyextrude::2.0')"
 			],
 			"bottom_left",["script",
 				"label","SymExtrude",
@@ -27,9 +35,9 @@
 				"script","radialmenu.runShelfTool(kwargs, 'symmetry_extrude')"
 			],
 			"bottom",["script",
-				"label","PolyExtrude",
-				"icon","SOP_polyextrude",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_polyextrude::2.0')"
+				"label","PolyBevel",
+				"icon","SOP_polybevel",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_polybevel::2.0')"
 			]
 		],
 		"bottom_left",["submenu",
@@ -57,6 +65,11 @@
 		],
 		"bottom",["submenu",
 			"label","Model2",
+			"top_left",["script",
+				"label","Merge Verts",
+				"icon","SOP_fuse",
+				"script","radialmenu.runShelfTool(kwargs, 'merge_verts')"
+			],
 			"left",["script",
 				"label","Reverse",
 				"icon","SOP_reverse",
