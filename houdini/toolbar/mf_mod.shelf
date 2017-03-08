@@ -259,6 +259,7 @@ if sel_nodes and len(sel_nodes) > 1:
         merge_node.setNextInput(node)
         merge_node.setDisplayFlag(True)
         merge_node.setRenderFlag(True)
+        merge_node.setCurrent(True, clear_all_selected=True)
 
     merge_node.moveToGoodPosition()]]></script>
   </tool>
