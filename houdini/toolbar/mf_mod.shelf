@@ -257,6 +257,8 @@ if sel_nodes and len(sel_nodes) > 1:
 
     for node in sel_nodes:
         merge_node.setNextInput(node)
+        merge_node.setDisplayFlag(True)
+        merge_node.setRenderFlag(True)
 
     merge_node.moveToGoodPosition()]]></script>
   </tool>
@@ -383,7 +385,7 @@ geos = viewer.selectGeometry()
 node = geos.nodes()[0]
 geo = node.geometry()
 
-prims = geo.selection().prims(geo)
+prims = geos.selections()[0].prims(geo)
 #prims = geo.globPrims(geos.selectionStrings()[0])
 
 loop_1 = geo.primLoop([prims[-2], prims[-1]], hou.componentLoopType.Partial)
@@ -406,9 +408,10 @@ if offset <= len(loop_2)-1:
         if new_prim.number() not in numz:
             nes_sel_str = geos.selectionStrings()[0] + " " + str(new_prim.number())
 
-            node.setSelection(hou.Selection(geo, hou.geometryType.Primitives, nes_sel_str )) 
+            #node.setSelection(hou.Selection(geo, hou.geometryType.Primitives, nes_sel_str ))
+            viewer.selectGeometry(use_existing_selection=False, initial_selection=nes_sel_str, initial_selection_type=hou.geometryType.Primitives, consume_selections=False)
 
-viewer.setCurrentState(viewer_state)]]></script>
+#viewer.setCurrentState(viewer_state)]]></script>
   </tool>
 
   <tool name="arc" label="Arc" icon="SOP_circle">
