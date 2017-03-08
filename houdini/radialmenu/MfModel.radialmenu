@@ -102,11 +102,21 @@
 			]
 		],
 		"bottom_right",["submenu",
-			"label","Copy",
+			"label","Model3",
 			"left",["script",
 				"label","Mirror",
 				"icon","SOP_mirror",
 				"script","radialmenu.runShelfTool(kwargs, 'geometry_mirror')"
+			],
+			"bottom",["script",
+				"label","Boolean",
+				"icon","SOP_boolean",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_boolean::2.0')"
+			],
+			"bottom_right",["script",
+				"label","Boolean Merged",
+				"icon","SOP_boolean",
+				"script","radialmenu.runShelfTool(kwargs, 'tool_1')"
 			],
 			"right",["script",
 				"label","Duplicate",

@@ -16,6 +16,7 @@
     <memberTool name="merge_verts"/>
     <memberTool name="part_mesh"/>
     <memberTool name="merge"/>
+    <memberTool name="tool_1"/>
     <memberTool name="pivot_selected"/>
     <memberTool name="set_plane"/>
     <memberTool name="subdive"/>
@@ -420,5 +421,45 @@ if offset <= len(loop_2)-1:
 import toolutils
 
 node = soptoolutils.genericTool(kwargs, 'mifth_make_arc')]]></script>
+  </tool>
+
+  <tool name="tool_1" label="Boolean Merged" icon="SOP_boolean">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+print viewer
+sel_nodes = hou.selectedNodes()
+
+if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
+
+    main_node = sel_nodes[-1]
+
+    blast_2 = main_node.parent().createNode('blast', node_name='blast_base')
+    blast_2.parm('negate').set(False)
+    blast_2.parm('group').set(sel_str)
+    blast_2.setNextInput(main_node)
+    blast_2.parm('negate').set(True)
+    blast_2.moveToGoodPosition()
+
+    blast_1 = main_node.parent().createNode('blast', node_name='blast_part')
+    blast_1.parm('group').set(sel_str)
+    blast_1.setNextInput(main_node)
+    blast_1.moveToGoodPosition()
+
+    final_node = main_node.parent().createNode("boolean")
+    final_node.setDisplayFlag(True)
+    final_node.setRenderFlag(True)
+    final_node.setCurrent(True, clear_all_selected=True)
+
+    final_node.setInput(0, blast_2)
+    final_node.setInput(1, blast_1)
+    final_node.moveToGoodPosition()
+]]></script>
   </tool>
 </shelfDocument>
