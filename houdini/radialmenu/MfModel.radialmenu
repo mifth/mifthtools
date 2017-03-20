@@ -1,5 +1,5 @@
 [
-	"fileversion","16.0.504.20",
+	"fileversion","16.0.548",
 	"name","MfModel",
 	"categories","Modeling",
 	"submenu",["submenu",
@@ -41,29 +41,6 @@
 			]
 		],
 		"bottom_left",["submenu",
-			"label","Split",
-			"top",["script",
-				"label","Knife",
-				"icon","SHELF_knife",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_knife')"
-			],
-			"left",["script",
-				"label","PolySplit",
-				"icon","SOP_polysplit",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_polysplit::2.0')"
-			],
-			"bottom",["script",
-				"label","Divide Edges",
-				"icon","SOP_edgedivide",
-				"script","radialmenu.runShelfTool(kwargs, 'divide_edges')"
-			],
-			"right",["script",
-				"label","Edge Loop",
-				"icon","SHELF_edgeloop",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_edgeloop')"
-			]
-		],
-		"bottom",["submenu",
 			"label","Model2",
 			"top_left",["script",
 				"label","Merge Verts",
@@ -99,6 +76,29 @@
 				"label","TransformPrims",
 				"icon","SOP_primitive",
 				"script","radialmenu.runShelfTool(kwargs, 'transform_primitives')"
+			]
+		],
+		"bottom",["submenu",
+			"label","Split",
+			"top",["script",
+				"label","Knife",
+				"icon","SHELF_knife",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_knife')"
+			],
+			"left",["script",
+				"label","PolySplit",
+				"icon","SOP_polysplit",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_polysplit::2.0')"
+			],
+			"bottom",["script",
+				"label","Divide Edges",
+				"icon","SOP_edgedivide",
+				"script","radialmenu.runShelfTool(kwargs, 'divide_edges')"
+			],
+			"right",["script",
+				"label","Edge Loop",
+				"icon","SHELF_edgeloop",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_edgeloop')"
 			]
 		],
 		"bottom_right",["submenu",
