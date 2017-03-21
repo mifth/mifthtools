@@ -42,6 +42,11 @@
 		],
 		"bottom_left",["submenu",
 			"label","Model2",
+			"top",["script",
+				"label","TransformPrims",
+				"icon","SOP_primitive",
+				"script","radialmenu.runShelfTool(kwargs, 'transform_primitives')"
+			],
 			"top_left",["script",
 				"label","Merge Verts",
 				"icon","SOP_fuse",
@@ -71,34 +76,29 @@
 				"label","Scale Edges",
 				"icon","SOP_edgeflip",
 				"script","radialmenu.runShelfTool(kwargs, 'scale_edges')"
-			],
-			"top_right",["script",
-				"label","TransformPrims",
-				"icon","SOP_primitive",
-				"script","radialmenu.runShelfTool(kwargs, 'transform_primitives')"
 			]
 		],
 		"bottom",["submenu",
 			"label","Split",
-			"top",["script",
-				"label","Knife",
-				"icon","SHELF_knife",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_knife')"
-			],
 			"left",["script",
 				"label","PolySplit",
 				"icon","SOP_polysplit",
 				"script","radialmenu.runShelfTool(kwargs, 'sop_polysplit::2.0')"
 			],
-			"bottom",["script",
-				"label","Divide Edges",
-				"icon","SOP_edgedivide",
-				"script","radialmenu.runShelfTool(kwargs, 'divide_edges')"
+			"bottom_left",["script",
+				"label","Knife",
+				"icon","SHELF_knife",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_knife')"
 			],
-			"right",["script",
+			"bottom",["script",
 				"label","Edge Loop",
 				"icon","SHELF_edgeloop",
 				"script","radialmenu.runShelfTool(kwargs, 'sop_edgeloop')"
+			],
+			"right",["script",
+				"label","Divide Edges",
+				"icon","SOP_edgedivide",
+				"script","radialmenu.runShelfTool(kwargs, 'divide_edges')"
 			]
 		],
 		"bottom_right",["submenu",
