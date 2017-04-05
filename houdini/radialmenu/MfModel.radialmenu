@@ -6,6 +6,11 @@
 		"label","MfModeling",
 		"top",["submenu",
 			"label","Misc",
+			"top",["script",
+				"label","Transform",
+				"icon","SOP_xform",
+				"script","import soptoolutils\nimport toolutils\n\nnode = soptoolutils.genericTool(kwargs, 'xform')"
+			],
 			"left",["script",
 				"label","Merge",
 				"icon","SOP_merge",

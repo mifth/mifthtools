@@ -16,7 +16,6 @@
     <memberTool name="merge_verts"/>
     <memberTool name="part_mesh"/>
     <memberTool name="merge"/>
-    <memberTool name="tool_1"/>
     <memberTool name="extract_to_object"/>
     <memberTool name="pivot_selected"/>
     <memberTool name="set_plane"/>

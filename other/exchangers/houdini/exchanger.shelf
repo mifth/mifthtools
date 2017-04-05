@@ -8,7 +8,6 @@
   <toolshelf name="exchanger" label="Ex">
     <memberTool name="ex_exporter"/>
     <memberTool name="ex_importer"/>
-    <memberTool name="geom_converter"/>
   </toolshelf>
 
   <tool name="ex_importer" label="Import" icon="PLASMA_App">
@@ -38,61 +37,6 @@ for obj in main_obj.children():
 
 temp_names = None
 ex_path = None]]></script>
-  </tool>
-
-  <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
-    <script scriptType="python"><![CDATA[import exchanger
-import os
-
-def make_merge(final_merge, new_node, node_to_merge):
-    merge_node = new_node.createNode("object_merge")
-
-    merge_path = node_to_merge.path()
-    if node_to_merge.type().name() == "subnet":
-        merge_path += "/*"
-
-    if kwargs['ctrlclick']:
-        merge_node.parm('pack').set(True)
-
-    merge_node.parm('objpath1').set(merge_path)
-    merge_node.parm('xformtype').set(1)
-    merge_node.setName(node_to_merge.name())
-    merge_node.moveToGoodPosition()
-
-    final_merge.setNextInput(merge_node)
-
-    if node_to_merge.type().name() == "subnet":
-        for node in node_to_merge.children():
-            if node.type().name() == "subnet":
-                make_merge(final_merge, new_node, node)
-
-
-exchange_dir = exchanger.get_exchange_path().replace("\\", os.sep)
-if exchange_dir.endswith(os.sep) is False:
-    exchange_dir += os.sep
-
-ex_path = exchange_dir + "exchange.fbx"
-main_obj = hou.node('/obj')
-cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
-sel_nodes = hou.selectedNodes()
-
-if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
-    new_node = cur_obj.createNode('geo', 'mereged_objects', run_init_scripts=False)
-    new_node.moveToGoodPosition()
-    new_node.parm('use_dcolor').set(False)
-    final_merge = new_node.createNode("merge")
-
-    for node in sel_nodes:
-        make_merge(final_merge, new_node, node)
-
-    final_merge.moveToGoodPosition()
-    attrib_del = final_merge.createOutputNode('attribdelete')
-    attrib_del.parm('vtxdel').set('Cd')
-
-    attrib_del.moveToGoodPosition()
-
-    attrib_del.setDisplayFlag(True)
-    attrib_del.setRenderFlag(True)]]></script>
   </tool>
 
   <tool name="ex_exporter" label="Export" icon="PLASMA_App">
