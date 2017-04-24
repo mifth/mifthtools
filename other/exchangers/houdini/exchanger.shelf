@@ -29,7 +29,6 @@ for obj in main_obj.children():
     temp_names.append(obj.name())
 
 node = hou.hscript("fbximport %s" % ex_path)
-node.moveToGoodPosition()
 
 for obj in main_obj.children():
     if obj.name() not in temp_names:
