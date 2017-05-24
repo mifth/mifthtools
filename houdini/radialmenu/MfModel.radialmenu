@@ -1,5 +1,5 @@
 [
-	"fileversion","16.0.548",
+	"fileversion","16.0.542",
 	"name","MfModel",
 	"categories","Modeling",
 	"submenu",["submenu",
@@ -15,6 +15,11 @@
 				"label","Merge",
 				"icon","SOP_merge",
 				"script","radialmenu.runShelfTool(kwargs, 'merge')"
+			],
+			"right",["script",
+				"label","Crease",
+				"icon","SOP_crease",
+				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'crease')\nnode.parm('op').set(1)\n\n"
 			]
 		],
 		"left",["submenu",
