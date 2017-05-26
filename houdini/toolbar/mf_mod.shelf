@@ -76,6 +76,7 @@ import toolutils
 #sel_str = geo.mergedSelectionString()
 
 node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
+kwargs['ordered'] = True
 
 if not kwargs['ctrlclick']:
     node.parm('merge_type').set('last')
