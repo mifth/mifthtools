@@ -75,8 +75,8 @@ import toolutils
 #geo = viewer.selectGeometry()
 #sel_str = geo.mergedSelectionString()
 
-node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
 kwargs['ordered'] = True
+node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
 
 if not kwargs['ctrlclick']:
     node.parm('merge_type').set('last')
