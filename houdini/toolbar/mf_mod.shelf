@@ -400,14 +400,15 @@ if offset <= len(loop_2)-1:
 
     new_sel = list(prims)
     new_prim = loop_2[offset]
+    new_numbr = new_prim.number()
 
     numz = []
     for prim in new_sel:
         numz.append(prim.number())
 
     # Add another polygon to selection
-    if new_prim.number() not in numz:
-        nes_sel_str = nes_sel_str + " " + str(new_prim.number())
+    if new_numbr not in numz:
+        nes_sel_str = nes_sel_str + " " + str(new_numbr)
 
 # modify selection
 viewer.selectGeometry(use_existing_selection=False, initial_selection=nes_sel_str, initial_selection_type=hou.geometryType.Primitives, consume_selections=False, ordered=True)
