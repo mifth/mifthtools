@@ -382,7 +382,7 @@ import toolutils
 viewer = toolutils.sceneViewer()
 viewer_state = viewer.currentState()
 
-geos = viewer.selectGeometry()
+geos = viewer.selectGeometry(ordered=True)
 
 node = geos.nodes()[0]
 geo = node.geometry()
@@ -393,26 +393,25 @@ prims = geos.selections()[0].prims(geo)
 loop_1 = geo.primLoop([prims[-2], prims[-1]], hou.componentLoopType.Partial)
 loop_2 = geo.primLoop([prims[-2], prims[-1]], hou.componentLoopType.Extended)
 
-offset = (len(loop_1) * 2) - 2
+offset = loop_2.index(prims[-1]) + (len(loop_1) - 1)
+nes_sel_str = geos.selectionStrings()[0]
 
 if offset <= len(loop_2)-1:
 
-    loop_3 = geo.primLoop([prims[-1], loop_2[offset]], hou.componentLoopType.Partial)
+    new_sel = list(prims)
+    new_prim = loop_2[offset]
 
-    if len(loop_1) == len(loop_3):
-        new_sel = list(prims)
-        new_prim = loop_2[offset]
+    numz = []
+    for prim in new_sel:
+        numz.append(prim.number())
 
-        numz = []
-        for prim in new_sel:
-            numz.append(prim.number())
+    # Add another polygon to selection
+    if new_prim.number() not in numz:
+        nes_sel_str = nes_sel_str + " " + str(new_prim.number())
 
-        if new_prim.number() not in numz:
-            nes_sel_str = geos.selectionStrings()[0] + " " + str(new_prim.number())
-
-            #node.setSelection(hou.Selection(geo, hou.geometryType.Primitives, nes_sel_str ))
-            viewer.selectGeometry(use_existing_selection=False, initial_selection=nes_sel_str, initial_selection_type=hou.geometryType.Primitives, consume_selections=False)
-
+# modify selection
+viewer.selectGeometry(use_existing_selection=False, initial_selection=nes_sel_str, initial_selection_type=hou.geometryType.Primitives, consume_selections=False, ordered=True)
+    
 #viewer.setCurrentState(viewer_state)]]></script>
   </tool>
 
