@@ -26,8 +26,6 @@ kmi = km.keymap_items.new('wm.open_mainfile', 'F1', 'PRESS')
 kmi = km.keymap_items.new('wm.link', 'O', 'PRESS', ctrl=True, alt=True)
 kmi = km.keymap_items.new('wm.append', 'F1', 'PRESS', shift=True)
 kmi = km.keymap_items.new('wm.save_mainfile', 'S', 'PRESS', ctrl=True)
-kmi = km.keymap_items.new('wm.save_mainfile', 'W', 'PRESS', ctrl=True)
-kmi.active = False
 kmi = km.keymap_items.new('wm.save_as_mainfile', 'S', 'PRESS', shift=True, ctrl=True)
 kmi = km.keymap_items.new('wm.save_as_mainfile', 'F2', 'PRESS')
 kmi = km.keymap_items.new('wm.save_as_mainfile', 'S', 'PRESS', ctrl=True, alt=True)
@@ -130,6 +128,8 @@ kmi = km.keymap_items.new('view3d.select_circle', 'C', 'PRESS', shift=True, alt=
 # Map Object Mode
 km = kc.keymaps.new('Object Mode', space_type='EMPTY', region_type='WINDOW', modal=False)
 
+kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
+kmi_props_setattr(kmi.properties, 'name', 'VIEW3D_MT_copypopup')
 kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
 kmi_props_setattr(kmi.properties, 'name', 'VIEW3D_MT_copypopup')
 kmi = km.keymap_items.new('wm.context_cycle_enum', 'O', 'PRESS', shift=True)
@@ -237,6 +237,8 @@ kmi_props_setattr(kmi.properties, 'level', 5)
 # Map Mesh
 km = kc.keymaps.new('Mesh', space_type='EMPTY', region_type='WINDOW', modal=False)
 
+kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
+kmi_props_setattr(kmi.properties, 'name', 'MESH_MT_CopyFaceSettings')
 kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
 kmi_props_setattr(kmi.properties, 'name', 'MESH_MT_CopyFaceSettings')
 kmi = km.keymap_items.new('mesh.loopcut_slide', 'R', 'PRESS', ctrl=True)
@@ -387,6 +389,10 @@ kmi_props_setattr(kmi.properties, 'type', 'FACE')
 # Map 3D View
 km = kc.keymaps.new('3D View', space_type='VIEW_3D', region_type='WINDOW', modal=False)
 
+kmi = km.keymap_items.new('wm.call_menu', 'V', 'PRESS', shift=True, ctrl=True)
+kmi_props_setattr(kmi.properties, 'name', 'object.retopology_menu')
+kmi = km.keymap_items.new('wm.call_menu', 'Q', 'PRESS', shift=True)
+kmi_props_setattr(kmi.properties, 'name', 'VIEW3D_MT_master_material')
 kmi = km.keymap_items.new('wm.call_menu', 'V', 'PRESS', shift=True, ctrl=True)
 kmi_props_setattr(kmi.properties, 'name', 'object.retopology_menu')
 kmi = km.keymap_items.new('wm.call_menu', 'Q', 'PRESS', shift=True)
@@ -723,6 +729,9 @@ kmi = km.keymap_items.new('view3d.enable_manipulator', 'Q', 'PRESS')
 # Map UV Editor
 km = kc.keymaps.new('UV Editor', space_type='EMPTY', region_type='WINDOW', modal=False)
 
+kmi = km.keymap_items.new('uv.uv_face_join', 'V', 'PRESS', shift=True, alt=True)
+kmi = km.keymap_items.new('uv.uv_face_rip', 'V', 'PRESS', alt=True)
+kmi = km.keymap_items.new('uv.uv_squares_by_shape', 'E', 'PRESS', alt=True)
 kmi = km.keymap_items.new('uv.uv_face_join', 'V', 'PRESS', shift=True, alt=True)
 kmi = km.keymap_items.new('uv.uv_face_rip', 'V', 'PRESS', alt=True)
 kmi = km.keymap_items.new('uv.uv_squares_by_shape', 'E', 'PRESS', alt=True)
@@ -1555,6 +1564,8 @@ kmi = km.keymap_items.new('clip.paste_tracks', 'V', 'PRESS', ctrl=True)
 # Map Grease Pencil Stroke Edit Mode
 km = kc.keymaps.new('Grease Pencil Stroke Edit Mode', space_type='EMPTY', region_type='WINDOW', modal=False)
 
+kmi = km.keymap_items.new('wm.call_menu_pie', 'TAB', 'PRESS')
+kmi_props_setattr(kmi.properties, 'name', 'pie.object_mode_of')
 kmi = km.keymap_items.new('wm.call_menu_pie', 'TAB', 'PRESS')
 kmi_props_setattr(kmi.properties, 'name', 'pie.object_mode_of')
 kmi = km.keymap_items.new('wm.call_menu_pie', 'TAB', 'PRESS')
