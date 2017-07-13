@@ -13,6 +13,48 @@ def kmi_props_setattr(kmi_props, attr, value):
 wm = bpy.context.window_manager
 kc = wm.keyconfigs.new(os.path.splitext(os.path.basename(__file__))[0])
 
+# Map Screen
+km = kc.keymaps.new('Screen', space_type='EMPTY', region_type='WINDOW', modal=False)
+
+kmi = km.keymap_items.new('screen.animation_step', 'TIMER0', 'ANY', any=True)
+kmi = km.keymap_items.new('screen.region_blend', 'TIMERREGION', 'ANY', any=True)
+kmi = km.keymap_items.new('screen.screen_set', 'RIGHT_ARROW', 'PRESS', ctrl=True)
+kmi_props_setattr(kmi.properties, 'delta', 1)
+kmi = km.keymap_items.new('screen.screen_set', 'LEFT_ARROW', 'PRESS', ctrl=True)
+kmi_props_setattr(kmi.properties, 'delta', -1)
+kmi = km.keymap_items.new('screen.screen_full_area', 'UP_ARROW', 'PRESS', ctrl=True)
+kmi = km.keymap_items.new('screen.screen_full_area', 'DOWN_ARROW', 'PRESS', ctrl=True)
+kmi = km.keymap_items.new('screen.screen_full_area', 'SPACE', 'PRESS', shift=True)
+kmi = km.keymap_items.new('screen.screen_full_area', 'F10', 'PRESS', alt=True)
+kmi_props_setattr(kmi.properties, 'use_hide_panels', True)
+kmi = km.keymap_items.new('screen.screenshot', 'F3', 'PRESS', ctrl=True)
+kmi = km.keymap_items.new('screen.screencast', 'F3', 'PRESS', alt=True)
+kmi = km.keymap_items.new('screen.space_context_cycle', 'TAB', 'PRESS', ctrl=True)
+kmi_props_setattr(kmi.properties, 'direction', 'NEXT')
+kmi = km.keymap_items.new('screen.space_context_cycle', 'TAB', 'PRESS', shift=True, ctrl=True)
+kmi_props_setattr(kmi.properties, 'direction', 'PREV')
+kmi = km.keymap_items.new('screen.region_quadview', 'Q', 'PRESS', ctrl=True, alt=True)
+kmi = km.keymap_items.new('screen.repeat_history', 'F3', 'PRESS')
+kmi = km.keymap_items.new('screen.repeat_last', 'R', 'PRESS', shift=True)
+kmi = km.keymap_items.new('screen.region_flip', 'F5', 'PRESS')
+kmi = km.keymap_items.new('screen.redo_last', 'W', 'PRESS', alt=True)
+kmi = km.keymap_items.new('script.reload', 'F8', 'PRESS')
+kmi = km.keymap_items.new('file.execute', 'RET', 'PRESS')
+kmi = km.keymap_items.new('file.execute', 'NUMPAD_ENTER', 'PRESS')
+kmi = km.keymap_items.new('file.cancel', 'ESC', 'PRESS')
+kmi = km.keymap_items.new('ed.undo', 'Z', 'PRESS', ctrl=True)
+kmi = km.keymap_items.new('ed.redo', 'Z', 'PRESS', shift=True, ctrl=True)
+kmi = km.keymap_items.new('ed.undo_history', 'Z', 'PRESS', ctrl=True, alt=True)
+kmi = km.keymap_items.new('render.render', 'F12', 'PRESS')
+kmi_props_setattr(kmi.properties, 'use_viewport', True)
+kmi = km.keymap_items.new('render.render', 'F12', 'PRESS', ctrl=True)
+kmi_props_setattr(kmi.properties, 'animation', True)
+kmi_props_setattr(kmi.properties, 'use_viewport', True)
+kmi = km.keymap_items.new('render.view_cancel', 'ESC', 'PRESS')
+kmi = km.keymap_items.new('render.view_show', 'F11', 'PRESS')
+kmi = km.keymap_items.new('render.play_rendered_anim', 'F11', 'PRESS', ctrl=True)
+kmi = km.keymap_items.new('screen.userpref_show', 'U', 'PRESS', ctrl=True, alt=True)
+
 # Map Weight Paint Vertex Selection
 km = kc.keymaps.new('Weight Paint Vertex Selection', space_type='EMPTY', region_type='WINDOW', modal=False)
 
@@ -30,6 +72,8 @@ kmi = km.keymap_items.new('view3d.select_circle', 'C', 'PRESS', shift=True, alt=
 # Map Object Mode
 km = kc.keymaps.new('Object Mode', space_type='EMPTY', region_type='WINDOW', modal=False)
 
+kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
+kmi_props_setattr(kmi.properties, 'name', 'VIEW3D_MT_copypopup')
 kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
 kmi_props_setattr(kmi.properties, 'name', 'VIEW3D_MT_copypopup')
 kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
@@ -217,6 +261,8 @@ kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
 kmi_props_setattr(kmi.properties, 'name', 'MESH_MT_CopyFaceSettings')
 kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
 kmi_props_setattr(kmi.properties, 'name', 'MESH_MT_CopyFaceSettings')
+kmi = km.keymap_items.new('wm.call_menu', 'C', 'PRESS', ctrl=True)
+kmi_props_setattr(kmi.properties, 'name', 'MESH_MT_CopyFaceSettings')
 kmi = km.keymap_items.new('mesh.loopcut_slide', 'R', 'PRESS', ctrl=True)
 kmi = km.keymap_items.new('mesh.offset_edge_loops_slide', 'R', 'PRESS', shift=True, ctrl=True)
 kmi = km.keymap_items.new('mesh.inset', 'I', 'PRESS')
@@ -364,6 +410,10 @@ kmi_props_setattr(kmi.properties, 'type', 'FACE')
 # Map 3D View
 km = kc.keymaps.new('3D View', space_type='VIEW_3D', region_type='WINDOW', modal=False)
 
+kmi = km.keymap_items.new('wm.call_menu', 'V', 'PRESS', shift=True, ctrl=True)
+kmi_props_setattr(kmi.properties, 'name', 'object.retopology_menu')
+kmi = km.keymap_items.new('wm.call_menu', 'Q', 'PRESS', shift=True)
+kmi_props_setattr(kmi.properties, 'name', 'VIEW3D_MT_master_material')
 kmi = km.keymap_items.new('view3d.enable_manipulator', 'W', 'PRESS')
 kmi_props_setattr(kmi.properties, 'translate', True)
 kmi = km.keymap_items.new('view3d.enable_manipulator', 'E', 'PRESS')
@@ -719,10 +769,12 @@ kmi = km.keymap_items.new('transform.resize', 'T', 'PRESS', shift=True, alt=True
 kmi_props_setattr(kmi.properties, 'texture_space', True)
 kmi = km.keymap_items.new('transform.skin_resize', 'A', 'PRESS', ctrl=True)
 
-
 # Map UV Editor
 km = kc.keymaps.new('UV Editor', space_type='EMPTY', region_type='WINDOW', modal=False)
 
+kmi = km.keymap_items.new('uv.uv_face_join', 'V', 'PRESS', shift=True, alt=True)
+kmi = km.keymap_items.new('uv.uv_face_rip', 'V', 'PRESS', alt=True)
+kmi = km.keymap_items.new('uv.uv_squares_by_shape', 'E', 'PRESS', alt=True)
 kmi = km.keymap_items.new('uv.uv_face_join', 'V', 'PRESS', shift=True, alt=True)
 kmi = km.keymap_items.new('uv.uv_face_rip', 'V', 'PRESS', alt=True)
 kmi = km.keymap_items.new('uv.uv_squares_by_shape', 'E', 'PRESS', alt=True)
@@ -1665,6 +1717,8 @@ kmi = km.keymap_items.new('marker.rename', 'M', 'PRESS', ctrl=True)
 # Map Grease Pencil Stroke Edit Mode
 km = kc.keymaps.new('Grease Pencil Stroke Edit Mode', space_type='EMPTY', region_type='WINDOW', modal=False)
 
+kmi = km.keymap_items.new('wm.call_menu_pie', 'TAB', 'PRESS')
+kmi_props_setattr(kmi.properties, 'name', 'pie.object_mode_of')
 kmi = km.keymap_items.new('wm.call_menu_pie', 'TAB', 'PRESS')
 kmi_props_setattr(kmi.properties, 'name', 'pie.object_mode_of')
 kmi = km.keymap_items.new('wm.call_menu_pie', 'TAB', 'PRESS')
