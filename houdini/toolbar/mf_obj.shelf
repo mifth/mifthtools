@@ -9,6 +9,7 @@
     <memberTool name="instance"/>
     <memberTool name="geom_converter"/>
     <memberTool name="scale_100"/>
+    <memberTool name="lock_selected"/>
   </toolshelf>
 
   <tool name="instance" label="Instance" icon="OBJ_instance">
@@ -120,7 +121,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     for obj_node in sel_nodes:
 #        for sop_node in obj_node.children():
         sop_node = obj_node.displayNode()
-        print sop_node.name()
+
         trans_node = sop_node.createOutputNode("xform")
         if kwargs['ctrlclick']:
             trans_node.parm('scale').set(0.01)
@@ -130,6 +131,29 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
         trans_node.moveToGoodPosition()
         trans_node.setDisplayFlag(True)
         trans_node.setRenderFlag(True)
+else:
+    msg = 'Select Object Nodes!'
+    hou.ui.displayMessage(msg)]]></script>
+  </tool>
+
+  <tool name="lock_selected" label="LockSelected" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    for obj_node in sel_nodes:
+        if obj_node.type().name() == "geo":
+            sop_node = obj_node.displayNode()
+            if kwargs['ctrlclick']:
+                sop_node.setHardLocked(False)
+            else:
+                sop_node.setHardLocked(True)
+
+
+#    msg = 'All Done!'
+#    hou.ui.displayMessage(msg)
+
 else:
     msg = 'Select Object Nodes!'
     hou.ui.displayMessage(msg)]]></script>
