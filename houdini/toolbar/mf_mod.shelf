@@ -105,6 +105,9 @@ node = soptoolutils.genericTool(kwargs, 'mifth_symmetry_extrude_v1')
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
     </toolMenuContext>
+    <toolMenuContext name="network">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
