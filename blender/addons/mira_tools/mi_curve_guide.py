@@ -648,7 +648,7 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                             best_bezier_len = (final_pos - vert_front_pos).length  # the length!
 
                             if deform_type in {'Shear', 'Twist'}:
-                                if self.tool_side_vec_len != 0.0 and (final_pos - vert_front_pos).normalized().angle(self.tool_side_vec) > math.radians(90):
+                                if (final_pos - vert_front_pos).normalized().angle(self.tool_side_vec) > math.radians(90):
                                     best_bezier_len = -best_bezier_len
                             break
 
