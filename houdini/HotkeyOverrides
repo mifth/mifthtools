@@ -1,4 +1,4 @@
-h.pane.gview.tool:edges_to_face	EdgesToFace	"Shelf Tool: EdgesToFace"	 Ctrl+Shift+F
+h.pane.gview.tool:edges_to_face	EdgesToFace	"Shelf Tool: EdgesToFace"	 Ctrl+F
 h.pane.gview.repeat_current_branch	"Repeat Current Operation Branched"	"Quick-repeat current operation branched"	 Ctrl+Shift+Q
 h.pane.gview.repeat_current	"Repeat Current Operation"	"Quick-repeat current operation"	 Shift+Q
 h.pane.gview.toggle_wireshaded	"Toggle Wireframe/Shaded"	"Toggle wireframe/shaded"	 Ctrl+W
@@ -12,6 +12,7 @@ h.pane.gview.tool:subdive	Subdive	"Shelf Tool: Subdive"	 Ctrl+`
 h.pane.gview.state.new_select	"Select Tool"	"Invoke the select tool"	 Q
 h.pane.gview.tool:object_pose	"Pose Tool"	"Invoke the pose tool"	 Ctrl+Shift+R
 h.pane.copytab	"Copy Tab"	"Copy tab"	
+h.find	"Find Operator"	"Find operator"	 Alt+F
 h.pane.maximize_full	Maximize	"Toggle pane full screen"	 Alt+\\'
 h.pane.gview.state.select.scale	"Scale Tool"	"Invoke the scale tool"	 R
 h.pane.gview.state.select.rotate	"Rotate Tool"	"Invoke the rotate tool"	 E
