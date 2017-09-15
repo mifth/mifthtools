@@ -22,16 +22,34 @@ class jmPipeTool(bpy.types.Operator):
     bl_label = "Quick Pipe"
     bl_options = {'REGISTER', 'UNDO'}
 
-    #bevel_depth = FloatProperty(default=0.1)
+    first_mouse_x = IntProperty()
+    first_value = FloatProperty()
 
-    def execute(self, context):
+    def modal(self, context, event):
+        if event.type == 'MOUSEMOVE':
+            delta = self.first_mouse_x - event.mouse_x
+            context.object.data.bevel_depth = abs(self.first_value + delta * 0.01)
+        elif event.type == 'WHEELUPMOUSE':
+            bpy.context.object.data.bevel_resolution += 1
+        elif event.type == 'WHEELDOWNMOUSE':
+            if bpy.context.object.data.bevel_resolution > 0:
+                bpy.context.object.data.bevel_resolution -= 1
+
+        elif event.type == {'RIGHTMOUSE', 'ESC', 'LEFTMOUSE'}:
+            return {'FINISHED'}
+
+        return {'RUNNING_MODAL'}
+
+    def invoke(self, context, event):
         if context.object:
 
             if( context.object.type == 'MESH' ):
+                self.first_mouse_x = event.mouse_x
+
                 bpy.ops.mesh.separate(type='SELECTED')
                 bpy.ops.object.editmode_toggle()
                 bpy.ops.object.select_all(action='DESELECT')
-                
+
                 pipe = bpy.context.scene.objects[0]
                 pipe.select = True
                 bpy.context.scene.objects.active = pipe
@@ -39,13 +57,17 @@ class jmPipeTool(bpy.types.Operator):
 
                 pipe.data.fill_mode = 'FULL'
                 #pipe.data.splines[0].use_smooth = True
-                pipe.data.bevel_resolution = 2
+                pipe.data.bevel_resolution = 1
                 pipe.data.bevel_depth = 0.1
 
-            #elif( context.object.type == 'CURVE' ):
-                #pipe = context.object
+            elif( context.object.type == 'CURVE' ):
+                self.report({'WARNING'}, "Need Edit Mode!")
+                return {'CANCELLED'}
 
-            return {'FINISHED'}
+            self.first_value = pipe.data.bevel_depth
+
+            context.window_manager.modal_handler_add(self)
+            return {'RUNNING_MODAL'}
         else:
             self.report({'WARNING'}, "No active object, could not finish")
             return {'CANCELLED'}
