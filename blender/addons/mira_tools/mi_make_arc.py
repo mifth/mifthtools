@@ -51,7 +51,9 @@ class MI_Make_Arc_Axis(bpy.types.Operator):
 
         sel_polys = [f for f in bm.faces if f.select]
         if sel_polys:
-            context.scene.mi_makearc_settings.arc_axis = sel_polys[0].normal.copy().normalized()
+            nor = sel_polys[0].normal.copy()
+            world_nor = ut_base.get_normal_world(nor, active_obj.matrix_world, active_obj.matrix_world.inverted())
+            context.scene.mi_makearc_settings.arc_axis = world_nor
 
         return {'FINISHED'}
 
