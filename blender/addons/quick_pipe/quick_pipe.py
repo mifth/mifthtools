@@ -26,6 +26,9 @@ class jmPipeTool(bpy.types.Operator):
     first_value = FloatProperty()
 
     def modal(self, context, event):
+        if event.type in {'RIGHTMOUSE', 'ESC', 'LEFTMOUSE'}:
+            return {'FINISHED'}
+
         if event.type == 'MOUSEMOVE':
             delta = self.first_mouse_x - event.mouse_x
             context.object.data.bevel_depth = abs(self.first_value + delta * 0.01)
@@ -34,9 +37,6 @@ class jmPipeTool(bpy.types.Operator):
         elif event.type == 'WHEELDOWNMOUSE':
             if bpy.context.object.data.bevel_resolution > 0:
                 bpy.context.object.data.bevel_resolution -= 1
-
-        elif event.type == {'RIGHTMOUSE', 'ESC', 'LEFTMOUSE'}:
-            return {'FINISHED'}
 
         return {'RUNNING_MODAL'}
 
