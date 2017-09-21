@@ -30,8 +30,15 @@ class jmPipeTool(bpy.types.Operator):
             return {'FINISHED'}
 
         if event.type == 'MOUSEMOVE':
-            delta = self.first_mouse_x - event.mouse_x
-            context.object.data.bevel_depth = abs(self.first_value + delta * 0.01)
+            delta = (self.first_mouse_x - event.mouse_x)
+
+            if event.ctrl:
+                delta *= 0.1
+
+                if event.shift:
+                    delta *= 0.1
+
+            context.object.data.bevel_depth = abs( (self.first_value + delta) * 0.01 )
         elif event.type == 'WHEELUPMOUSE':
             bpy.context.object.data.bevel_resolution += 1
         elif event.type == 'WHEELDOWNMOUSE':
@@ -46,6 +53,7 @@ class jmPipeTool(bpy.types.Operator):
             if( context.object.type == 'MESH' ):
                 self.first_mouse_x = event.mouse_x
 
+                bpy.ops.mesh.duplicate_move()
                 bpy.ops.mesh.separate(type='SELECTED')
                 bpy.ops.object.editmode_toggle()
                 bpy.ops.object.select_all(action='DESELECT')
