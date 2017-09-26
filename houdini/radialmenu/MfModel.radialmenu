@@ -121,8 +121,8 @@
 			"bottom",["script",
 				"label","Boolean",
 				"icon","SOP_boolean",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_boolean::2.0')"
-			],
+				"script","import soptoolutils\nnew_node = soptoolutils.addBooleanTool(kwargs)\nnew_node.parm('booleanop').set(2)\nnew_node.parm('useaonlypieces').set(True)\nnew_node.parm('useabpieces').set(True)\n\n#radialmenu.runShelfTool(kwargs, 'sop_boolean::2.0')"],
+			
 			"bottom_right",["script",
 				"label","Boolean Merged",
 				"icon","SOP_boolean",
