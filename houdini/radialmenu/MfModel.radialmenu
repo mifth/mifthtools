@@ -1,5 +1,5 @@
 [
-	"fileversion","16.0.542",
+	"fileversion","16.0.736",
 	"name","MfModel",
 	"categories","Modeling",
 	"submenu",["submenu",
@@ -7,9 +7,14 @@
 		"top",["submenu",
 			"label","Misc",
 			"top",["script",
-				"label","Transform",
-				"icon","SOP_xform",
-				"script","import soptoolutils\nimport toolutils\n\nnode = soptoolutils.genericTool(kwargs, 'xform')"
+				"label","Extract To Object",
+				"icon","SHELF_extract_object",
+				"script","radialmenu.runShelfTool(kwargs, 'extract_to_object')"
+			],
+			"top_left",["script",
+				"label","PartMesh",
+				"icon","SOP_blast",
+				"script","radialmenu.runShelfTool(kwargs, 'part_mesh')"
 			],
 			"left",["script",
 				"label","Merge",
@@ -154,6 +159,39 @@
 		],
 		"top_right",["submenu",
 			"label","Generate",
+			"top",["submenu",
+				"label","Create",
+				"top",["script",
+					"label","Box",
+					"icon","SOP_box",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_box')"
+				],
+				"top_left",["script",
+					"label","Grid",
+					"icon","SOP_grid",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_grid')"
+				],
+				"left",["script",
+					"label","Circle",
+					"icon","SOP_circle",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_circle')"
+				],
+				"bottom_left",["script",
+					"label","Curve",
+					"icon","SOP_curve",
+					"script","radialmenu.runShelfTool(kwargs, 'sop_curve')"
+				],
+				"right",["script",
+					"label","Tube",
+					"icon","SOP_tube",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_tube')"
+				],
+				"top_right",["script",
+					"label","Sphere",
+					"icon","SOP_sphere",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_sphere')"
+				]
+			],
 			"right",["script",
 				"label","Simple Pipe",
 				"icon","PLASMA_App",
