@@ -53,10 +53,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
   </tool>
 
   <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
-    <script scriptType="python"><![CDATA[import exchanger
-import os
-
-def make_merge(final_merge, new_node, node_to_merge):
+    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge):
     merge_node = new_node.createNode("object_merge", node_name=node_to_merge.name())
 
     merge_path = node_to_merge.path()
@@ -82,11 +79,6 @@ def make_merge(final_merge, new_node, node_to_merge):
                 make_merge(final_merge, new_node, node)
 
 
-exchange_dir = exchanger.get_exchange_path().replace("\\", os.sep)
-if exchange_dir.endswith(os.sep) is False:
-    exchange_dir += os.sep
-
-ex_path = exchange_dir + "exchange.fbx"
 main_obj = hou.node('/obj')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 sel_nodes = hou.selectedNodes()
