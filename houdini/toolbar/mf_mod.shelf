@@ -491,11 +491,11 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
     if the_obj:
         parent_obj = the_obj.parent()
     
-        blast_1 = main_node.parent().createNode('blast')
+        blast_1 = main_node.createOutputNode('blast')
         blast_1.parm('group').set(sel_str)
-        blast_1.setNextInput(main_node)
-        blast_1.moveToGoodPosition()
-    
+        #blast_1.setNextInput(main_node)
+        #blast_1.moveToGoodPosition()
+
         blast_1.setDisplayFlag(True)
         blast_1.setRenderFlag(True)
         blast_1.setCurrent(True, clear_all_selected=True)
@@ -514,7 +514,8 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
         blast_2.setNextInput(obj_merge)
         blast_2.parm('negate').set(True)
         blast_2.moveToGoodPosition()
-    
+
+        blast_2.setHardLocked(True)
         blast_2.setDisplayFlag(True)
         blast_2.setRenderFlag(True)
         blast_2.setCurrent(True, clear_all_selected=True)]]></script>
