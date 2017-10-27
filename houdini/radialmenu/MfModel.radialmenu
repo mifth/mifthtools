@@ -5,7 +5,7 @@
 	"submenu",["submenu",
 		"label","MfModeling",
 		"top",["submenu",
-			"label","Misc",
+			"label","Utils",
 			"top",["script",
 				"label","Extract To Object",
 				"icon","SHELF_extract_object",
@@ -21,10 +21,23 @@
 				"icon","SOP_merge",
 				"script","radialmenu.runShelfTool(kwargs, 'merge')"
 			],
-			"right",["script",
-				"label","Crease",
-				"icon","SOP_crease",
-				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'crease')\nnode.parm('op').set(1)\n\n"
+			"top_right",["submenu",
+				"label","Transform",
+				"top",["script",
+					"label","Zero_X",
+					"icon","SOP_attribexpression",
+					"script","import soptoolutils\nimport toolutils\n\n#viewer = toolutils.sceneViewer()\n#geos = viewer.selectGeometry()\n#sel_str = geos.mergedSelectionString()\n\n#kwargs['bindgroup'] = sel_str\nnode = soptoolutils.genericTool(kwargs, 'attribexpression')\n\n#node.parm('bindgroup').set(sel_str)\nnode.parm('snippet1').set('set(0, self.y, self.z)')\n#print geos.geometryType()"],
+				
+				"right",["script",
+					"label","Zero_Z",
+					"icon","SOP_attribexpression",
+					"script","import soptoolutils\nimport toolutils\n\nnode = soptoolutils.genericTool(kwargs, 'attribexpression')\n\nnode.parm('snippet1').set('set(self.x, self.y, 0)')\n"
+				],
+				"top_right",["script",
+					"label","Zero_Y",
+					"icon","SOP_attribexpression",
+					"script","import soptoolutils\nimport toolutils\n\nnode = soptoolutils.genericTool(kwargs, 'attribexpression')\n\nnode.parm('snippet1').set('set(self.x, 0, self.z)')\n"
+				]
 			]
 		],
 		"left",["submenu",
@@ -128,11 +141,6 @@
 				"icon","SOP_boolean",
 				"script","import soptoolutils\nnew_node = soptoolutils.addBooleanTool(kwargs)\nnew_node.parm('booleanop').set(2)\nnew_node.parm('useaonlypieces').set(True)\nnew_node.parm('useabpieces').set(True)\n\n#radialmenu.runShelfTool(kwargs, 'sop_boolean::2.0')"],
 			
-			"bottom_right",["script",
-				"label","Boolean Merged",
-				"icon","SOP_boolean",
-				"script","radialmenu.runShelfTool(kwargs, 'tool_1')"
-			],
 			"right",["script",
 				"label","Duplicate",
 				"icon","SOP_duplicate",
