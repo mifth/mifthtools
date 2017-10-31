@@ -141,6 +141,11 @@
 				"icon","SOP_boolean",
 				"script","import soptoolutils\nnew_node = soptoolutils.addBooleanTool(kwargs)\nnew_node.parm('booleanop').set(2)\nnew_node.parm('useaonlypieces').set(True)\nnew_node.parm('useabpieces').set(True)\n\n#radialmenu.runShelfTool(kwargs, 'sop_boolean::2.0')"],
 			
+			"bottom_right",["script",
+				"label","Flux",
+				"icon","SOP_solid",
+				"script","#radialmenu.runShelfTool(kwargs, 'sop_flux')\n#soptoolutils.genericTool(kwargs, 'flux')\n\nsel_nodes = hou.selectedNodes()\n\nif sel_nodes:\n\n    flux_node = sel_nodes[-1].createOutputNode(\"flux\", node_name='flux')\n    flux_node.moveToGoodPosition()\n"],
+			
 			"right",["script",
 				"label","Duplicate",
 				"icon","SOP_duplicate",
