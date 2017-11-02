@@ -135,7 +135,10 @@ class PaintClonesProperties(PropertyGroup):
            ('X_AXIS', 'Absolute X', 'Absolute X axis, up follow stroke'),
            ('Y_AXIS', 'Absolute Y', 'Absolute Y axis, up follow stroke'),
            ('Z_AXIS', 'Absolute Z', 'Absolute Z axis, up follow stroke'),
-           ('STROKE', 'Follow stroke', 'Follow stroke, up follow normal')
+           ('STROKE', 'Follow stroke', 'Follow stroke, up follow normal'),
+	   ('X_NORMAL', 'Normal X', 'Absolute X axis, up follow normal'),
+           ('Y_NORMAL', 'Normal Y', 'Absolute Y axis, up follow normal'),
+           ('Z_NORMAL', 'Normal Z', 'Absolute Z axis, up follow normal')
            ),
         default = 'NORMAL'
     )
@@ -696,7 +699,22 @@ def pick_and_clone(self, context, event, ray_max=10000.0):
         if pct.align_mode == 'Z_AXIS':
             track_vec = zAxis
             up_vec = stroke_axis
-            
+        
+	# Rotation To X_NORMAL
+        if pct.align_mode == 'X_NORMAL':
+            track_vec = xAxis
+            up_vec = best_obj_nor
+        
+        # Rotation To Y_NORMAL
+        if pct.align_mode == 'Y_NORMAL':
+            track_vec = yAxis
+            up_vec = best_obj_nor
+        
+        # Rotation To Z_NORMAL
+        if pct.align_mode == 'Z_NORMAL':
+            track_vec = zAxis
+            up_vec = best_obj_nor
+		
         q = get_rot_quat(newDup, track_vec, up_vec, pct.track_axis, pct.up_axis)
         
         bpy.ops.transform.rotate(value=q.angle, axis=(q.axis), proportional='DISABLED')
