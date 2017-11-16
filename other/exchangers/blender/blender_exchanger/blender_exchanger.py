@@ -144,10 +144,10 @@ class EX_ImportScene(bpy.types.Operator):
 
         if os.path.isdir(exchange_dir):
 
-            # fix for animation removement for Modo
-            scene_objects = []
-            for obj in bpy.context.scene.objects:
-                scene_objects.append(obj.name)
+            ## fix for animation removement for Modo
+            #scene_objects = []
+            #for obj in bpy.context.scene.objects:
+                #scene_objects.append(obj.name)
 
             # Import setings
             model_path = exchange_dir + "exchange.fbx"
@@ -156,13 +156,13 @@ class EX_ImportScene(bpy.types.Operator):
             # IMPORT
             bpy.ops.import_scene.fbx(filepath=model_path, axis_forward='-Z', axis_up='Y', global_scale=1.0, bake_space_transform=True, use_custom_normals=importNormals, force_connect_children=False, primary_bone_axis='Y', secondary_bone_axis='X', use_prepost_rot=True)
 
-            # remove animatrins. Fix for Modo
-            for obj in scene.objects:
-                if obj.name not in scene_objects:
-                    obj.animation_data.action.use_fake_user = False
-                    obj.animation_data.action = None
+            ## remove animatrins. Fix for Modo
+            #for obj in scene.objects:
+                #if obj.name not in scene_objects:
+                    #obj.animation_data.action.use_fake_user = False
+                    #obj.animation_data.action = None
 
-            scene_objects = None  # clear
+            #scene_objects = None  # clear
 
         else:
             self.report({'INFO'}, "Bad Exchange Folder!!!")
