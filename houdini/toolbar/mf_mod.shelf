@@ -21,6 +21,7 @@
     <memberTool name="set_plane"/>
     <memberTool name="subdive"/>
     <memberTool name="select_even"/>
+    <memberTool name="cur_bool"/>
   </toolshelf>
 
   <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
@@ -519,5 +520,41 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
         blast_2.setDisplayFlag(True)
         blast_2.setRenderFlag(True)
         blast_2.setCurrent(True, clear_all_selected=True)]]></script>
+  </tool>
+
+  <tool name="cur_bool" label="CurveBool" icon="SOP_boolean-2.0">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+
+if sel_nodes and len(sel_nodes) == 2:
+
+    if sel_nodes[0].type().name() == 'curve':
+        n_cur = sel_nodes[0]
+        n_mesh = sel_nodes[1]
+    else:
+        n_cur = sel_nodes[1]
+        n_mesh = sel_nodes[0]
+
+    n_cur.parm('close').set(True)
+    n_mesh.setSelectableTemplateFlag(False)
+    n_mesh.setTemplateFlag(False)
+
+    peak_node = n_cur.createOutputNode("peak")
+    peak_node.parm('dist').set(-20)
+
+    extr_node = peak_node.createOutputNode("polyextrude::2.0")
+    extr_node.parm('outputback').set(True)
+    extr_node.parm('dist').setExpression("-ch('../" + peak_node.name() + "/dist') * 2")
+
+    bool_node = n_mesh.createOutputNode("boolean::2.0")
+    bool_node.parm('resolvea').set(False)
+    bool_node.parm('resolveb').set(False)
+    bool_node.parm('booleanop').set(2)
+    bool_node.setNextInput(extr_node)
+
+    bool_node.setDisplayFlag(True)
+    bool_node.setRenderFlag(True)
+    bool_node.setSelected(True, clear_all_selected=True)
+    bool_node.moveToGoodPosition()
+]]></script>
   </tool>
 </shelfDocument>
