@@ -1,5 +1,5 @@
 [
-	"fileversion","16.0.736",
+	"fileversion","16.5.268",
 	"name","MfModel",
 	"categories","Modeling",
 	"submenu",["submenu",
@@ -62,10 +62,18 @@
 				"icon","SOP_polyextrude",
 				"script","radialmenu.runShelfTool(kwargs, 'symmetry_extrude')"
 			],
-			"bottom",["script",
-				"label","PolyBevel",
-				"icon","SOP_polybevel",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_polybevel::2.0')"
+			"bottom",["submenu",
+				"label","Bevel",
+				"bottom_left",["script",
+					"label","Bevel 1",
+					"icon","SOP_polybevel-2.0",
+					"script","import soptoolutils\n\nnd = soptoolutils.genericTool(kwargs, 'polybevel')\nnd.parm('beveltype').set(1)"
+				],
+				"bottom",["script",
+					"label","Bevel 2",
+					"icon","SOP_polybevel-2.0",
+					"script","radialmenu.runShelfTool(kwargs, 'sop_polybevel::2.0')"
+				]
 			]
 		],
 		"bottom_left",["submenu",
