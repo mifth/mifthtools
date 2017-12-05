@@ -53,14 +53,14 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
   </tool>
 
   <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
-    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge):
+    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice):
     merge_node = new_node.createNode("object_merge", node_name=node_to_merge.name())
 
     merge_path = node_to_merge.path()
     if node_to_merge.type().name() == "subnet":
         merge_path += "/*"
 
-    if kwargs['ctrlclick']:
+    if choice == 1:
         merge_node.parm('pack').set(True)
 
     merge_node.parm('objpath1').set(merge_path)
@@ -89,8 +89,10 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     new_node.parm('use_dcolor').set(False)
     final_merge = new_node.createNode("merge")
 
+    choice = hou.ui.displayMessage("Pack?", buttons=("Don't Pack", "Pack"))
+    
     for node in sel_nodes:
-        make_merge(final_merge, new_node, node)
+        make_merge(final_merge, new_node, node, choice)
 
     final_merge.moveToGoodPosition()
     attrib_del = final_merge.createOutputNode('attribdelete')
@@ -110,12 +112,15 @@ out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Save the current hip file?", buttons=("100", "0.01"))
+
     for obj_node in sel_nodes:
 #        for sop_node in obj_node.children():
         sop_node = obj_node.displayNode()
 
         trans_node = sop_node.createOutputNode("xform")
-        if kwargs['ctrlclick']:
+        
+        if choice == 1:
             trans_node.parm('scale').set(0.01)
         else:
             trans_node.parm('scale').set(100)
@@ -134,10 +139,12 @@ out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Save the current hip file?", buttons=("Lock", "Unlock"))
+
     for obj_node in sel_nodes:
         if obj_node.type().name() == "geo":
             sop_node = obj_node.displayNode()
-            if kwargs['ctrlclick']:
+            if choice == 1:
                 sop_node.setHardLocked(False)
             else:
                 sop_node.setHardLocked(True)
