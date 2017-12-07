@@ -5,6 +5,47 @@
 	"submenu",["submenu",
 		"label","MfModeling",
 		"top",["submenu",
+			"label","Generate",
+			"top",["submenu",
+				"label","Create",
+				"top",["script",
+					"label","Box",
+					"icon","SOP_box",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_box')"
+				],
+				"top_left",["script",
+					"label","Grid",
+					"icon","SOP_grid",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_grid')"
+				],
+				"left",["script",
+					"label","Circle",
+					"icon","SOP_circle",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_circle')"
+				],
+				"bottom_left",["script",
+					"label","Curve",
+					"icon","SOP_curve",
+					"script","radialmenu.runShelfTool(kwargs, 'sop_curve')"
+				],
+				"right",["script",
+					"label","Tube",
+					"icon","SOP_tube",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_tube')"
+				],
+				"top_right",["script",
+					"label","Sphere",
+					"icon","SOP_sphere",
+					"script","radialmenu.runShelfTool(kwargs, 'geometry_sphere')"
+				]
+			],
+			"right",["script",
+				"label","Simple Pipe",
+				"icon","PLASMA_App",
+				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'mifth_simple_pipe')  "
+			]
+		],
+		"top_left",["submenu",
 			"label","Utils",
 			"top",["script",
 				"label","Extract To Object",
@@ -183,47 +224,6 @@
 				"label","Hide Non-Selected",
 				"icon","SOP_visibility",
 				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'visibility')  \nnode.parm('applyto').set(1)"
-			]
-		],
-		"top_right",["submenu",
-			"label","Generate",
-			"top",["submenu",
-				"label","Create",
-				"top",["script",
-					"label","Box",
-					"icon","SOP_box",
-					"script","radialmenu.runShelfTool(kwargs, 'geometry_box')"
-				],
-				"top_left",["script",
-					"label","Grid",
-					"icon","SOP_grid",
-					"script","radialmenu.runShelfTool(kwargs, 'geometry_grid')"
-				],
-				"left",["script",
-					"label","Circle",
-					"icon","SOP_circle",
-					"script","radialmenu.runShelfTool(kwargs, 'geometry_circle')"
-				],
-				"bottom_left",["script",
-					"label","Curve",
-					"icon","SOP_curve",
-					"script","radialmenu.runShelfTool(kwargs, 'sop_curve')"
-				],
-				"right",["script",
-					"label","Tube",
-					"icon","SOP_tube",
-					"script","radialmenu.runShelfTool(kwargs, 'geometry_tube')"
-				],
-				"top_right",["script",
-					"label","Sphere",
-					"icon","SOP_sphere",
-					"script","radialmenu.runShelfTool(kwargs, 'geometry_sphere')"
-				]
-			],
-			"right",["script",
-				"label","Simple Pipe",
-				"icon","PLASMA_App",
-				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'mifth_simple_pipe')  "
 			]
 		]
 	]
