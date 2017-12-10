@@ -28,7 +28,11 @@ temp_names = []
 for obj in main_obj.children():
     temp_names.append(obj.name())
 
-node = hou.hscript("fbximport %s" % ex_path)
+#node = hou.hscript("fbximport %s" % ex_path)
+nodez = hou.hipFile.importFBX(file_name=ex_path)
+node = nodez[0]
+node.setName("exchange", unique_name=True)
+node.moveToGoodPosition()
 
 for obj in main_obj.children():
     if obj.name() not in temp_names:
