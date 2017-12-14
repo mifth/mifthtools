@@ -73,7 +73,7 @@ node = soptoolutils.genericTool(kwargs, 'mifth_transform_primitives')
 import toolutils
 
 #viewer = toolutils.sceneViewer()
-#geo = viewer.selectGeometry()
+#geo = viewer.selectGeometry(ordered=True)
 #sel_str = geo.mergedSelectionString()
 
 kwargs['ordered'] = True
@@ -112,13 +112,16 @@ node = soptoolutils.genericTool(kwargs, 'mifth_symmetry_extrude_v1')
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-#viewer = toolutils.sceneViewer()
-#geo = viewer.selectGeometry()
+viewer = toolutils.sceneViewer()
+#geo = viewer.selectGeometry(ordered=True)
 #sel_str = geo.mergedSelectionString()
 
-node = soptoolutils.genericTool(kwargs, 'mifth_edgestoface')
-#node.parm('group').set(sel_str)
-]]></script>
+
+if viewer.currentGeometrySelection().selections()[0].numSelected() == 2:
+    node = soptoolutils.genericTool(kwargs, 'mifth_edgestoface')
+else:
+    node = soptoolutils.genericTool(kwargs, 'polyfill')
+    node.parm('fillmode').set(0)]]></script>
   </tool>
 
   <tool name="part_mesh" label="PartMesh" icon="SOP_blast">
