@@ -18,38 +18,87 @@ out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Instance", buttons=("Instance", "Geo", "Replace"))
 
     for node in sel_nodes:
+        if choice == 2 and node is sel_nodes[-1]:
+            node.setSelected(False, clear_all_selected=False)
+            continue
 
         obj_source = node
-        obj_inst = cur_obj.createNode("instance")
-    
-        if obj_source.type().name() == 'instance':
-            obj_inst.parm('instancepath').set(obj_source.parm('instancepath').eval())
-        else:
-            #obj_inst.parm('instancepath').set(obj_source.path())
-    
+#        if choice >= 1:
+#            obj_source = sel_nodes[-1]
+
+        if choice == 0:
+            obj_inst = cur_obj.createNode("instance")
+
             obj_inst.parmTuple('i_t').set(obj_source.parmTuple('t').eval())
             obj_inst.parmTuple('i_r').set(obj_source.parmTuple('r').eval())
             obj_inst.parmTuple('i_s').set(obj_source.parmTuple('s').eval())
-            #obj_inst.parmTuple('i_p').set(obj_source.parmTuple('p').eval())
+            obj_inst.parmTuple('i_p').set(obj_source.parmTuple('p').eval())
+            obj_inst.parmTuple('i_pr').set(obj_source.parmTuple('pr').eval())
             obj_inst.parm('i_scale').set(obj_source.parm('scale').eval())
-        
+
+        else:
+            obj_inst = cur_obj.createNode('geo', run_init_scripts=False)
+
+            obj_inst.parmTuple('t').set(obj_source.parmTuple('t').eval())
+            obj_inst.parmTuple('r').set(obj_source.parmTuple('r').eval())
+            obj_inst.parmTuple('s').set(obj_source.parmTuple('s').eval())
+            obj_inst.parmTuple('p').set(obj_source.parmTuple('p').eval())
+            obj_inst.parmTuple('pr').set(obj_source.parmTuple('pr').eval())
+            obj_inst.parm('scale').set(obj_source.parm('scale').eval())
+
+        if choice == 2:
+            obj_inst.setName(sel_nodes[-1].name(), unique_name=True)
+        else:
             obj_inst.setName(obj_source.name(), unique_name=True)
-        
-            attr_cr = obj_inst.children()[0].createOutputNode('attribcreate')
-            attr_cr.parm('type1').set(3)
-            attr_cr.parm('name1').set('instancepath')
-            attr_cr.parm('string1').set('op:../../../' + obj_source.name())
-        
-            instance = attr_cr.createOutputNode('instance')
-            instance.setDisplayFlag(True)
-            instance.setRenderFlag(True)
-        
+
+        if choice == 0:
+            if obj_source.type().name() == 'instance':
+                obj_inst.parm('instancepath').set(obj_source.parm('instancepath').eval())
+            else:
+                #obj_inst.parm('instancepath').set(obj_source.path())
+
+                attr_cr = obj_inst.children()[0].createOutputNode('attribcreate')
+                attr_cr.parm('type1').set(3)
+                attr_cr.parm('name1').set('instancepath')
+                attr_cr.parm('string1').set('op:../../../' + obj_source.name())
+
+                instance = attr_cr.createOutputNode('instance')
+                instance.setDisplayFlag(True)
+                instance.setRenderFlag(True)
+
+        else:
+            merge_node = obj_inst.createNode("object_merge")
+            merge_node.parm('pack').set(True)
+
+            if choice == 1:
+                merge_node.parm('objpath1').set('../../' + obj_source.name())
+            else:
+                merge_node.parm('objpath1').set('../../' + sel_nodes[-1].name())
+
+            #merge_node.parm('xformtype').set(1)
+            merge_node.moveToGoodPosition()
+
         obj_inst.moveToGoodPosition()
+        if choice == 2:
+            obj_inst.setPosition(obj_source.position())
+
+        obj_inst.setColor( hou.Color((1.0, 0.85, 0.5)) )
         obj_inst.setSelected(True, clear_all_selected=False)
         obj_source.setSelected(False, clear_all_selected=False)
-]]></script>
+
+    # remove nodes
+    if choice == 2:
+        sel_nodes2 = list(sel_nodes)
+        sel_nodes2.remove(sel_nodes[-1])
+        sel_nodes3 = []
+        for node in sel_nodes2:
+            sel_nodes3.append(node.path())
+
+        for node_path in sel_nodes3:
+            hou.node(node_path).destroy()]]></script>
   </tool>
 
   <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
