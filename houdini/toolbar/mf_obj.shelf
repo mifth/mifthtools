@@ -18,49 +18,107 @@ out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Instance", buttons=("Instance", "Geo", "Replace"))
 
     for node in sel_nodes:
+        if choice == 2 and node is sel_nodes[-1]:
+            node.setSelected(False, clear_all_selected=False)
+            continue
 
         obj_source = node
-        obj_inst = cur_obj.createNode("instance")
-    
-        if obj_source.type().name() == 'instance':
-            obj_inst.parm('instancepath').set(obj_source.parm('instancepath').eval())
-        else:
-            #obj_inst.parm('instancepath').set(obj_source.path())
-    
+#        if choice >= 1:
+#            obj_source = sel_nodes[-1]
+
+        if choice == 0:
+            obj_inst = cur_obj.createNode("instance")
+
             obj_inst.parmTuple('i_t').set(obj_source.parmTuple('t').eval())
             obj_inst.parmTuple('i_r').set(obj_source.parmTuple('r').eval())
             obj_inst.parmTuple('i_s').set(obj_source.parmTuple('s').eval())
-            #obj_inst.parmTuple('i_p').set(obj_source.parmTuple('p').eval())
+            obj_inst.parmTuple('i_p').set(obj_source.parmTuple('p').eval())
+            obj_inst.parmTuple('i_pr').set(obj_source.parmTuple('pr').eval())
             obj_inst.parm('i_scale').set(obj_source.parm('scale').eval())
-        
+
+        else:
+            obj_inst = cur_obj.createNode('geo', run_init_scripts=False)
+
+            obj_inst.parmTuple('t').set(obj_source.parmTuple('t').eval())
+            obj_inst.parmTuple('r').set(obj_source.parmTuple('r').eval())
+            obj_inst.parmTuple('s').set(obj_source.parmTuple('s').eval())
+            obj_inst.parmTuple('p').set(obj_source.parmTuple('p').eval())
+            obj_inst.parmTuple('pr').set(obj_source.parmTuple('pr').eval())
+            obj_inst.parm('scale').set(obj_source.parm('scale').eval())
+
+        if choice == 2:
+            obj_inst.setName(sel_nodes[-1].name(), unique_name=True)
+        else:
             obj_inst.setName(obj_source.name(), unique_name=True)
-        
-            attr_cr = obj_inst.children()[0].createOutputNode('attribcreate')
-            attr_cr.parm('type1').set(3)
-            attr_cr.parm('name1').set('instancepath')
-            attr_cr.parm('string1').set('op:../../../' + obj_source.name())
-        
-            instance = attr_cr.createOutputNode('instance')
-            instance.setDisplayFlag(True)
-            instance.setRenderFlag(True)
-        
+
+        if choice == 0:
+            if obj_source.type().name() == 'instance':
+                obj_inst.parm('instancepath').set(obj_source.parm('instancepath').eval())
+            else:
+                #obj_inst.parm('instancepath').set(obj_source.path())
+
+                attr_cr = obj_inst.children()[0].createOutputNode('attribcreate')
+                attr_cr.parm('type1').set(3)
+                attr_cr.parm('name1').set('instancepath')
+                attr_cr.parm('string1').set('op:../../../' + obj_source.name())
+
+                instance = attr_cr.createOutputNode('instance')
+                instance.setDisplayFlag(True)
+                instance.setRenderFlag(True)
+
+        else:
+            merge_node = obj_inst.createNode("object_merge")
+            merge_node.parm('pack').set(True)
+
+            if choice == 1:
+                merge_node.parm('objpath1').set('../../' + obj_source.name())
+            else:
+                merge_node.parm('objpath1').set('../../' + sel_nodes[-1].name())
+
+            #merge_node.parm('xformtype').set(1)
+            merge_node.moveToGoodPosition()
+
         obj_inst.moveToGoodPosition()
+        if choice == 2:
+            obj_inst.setPosition(obj_source.position())
+
+        obj_inst.setColor( hou.Color((1.0, 0.85, 0.5)) )
         obj_inst.setSelected(True, clear_all_selected=False)
         obj_source.setSelected(False, clear_all_selected=False)
-]]></script>
+
+    # remove nodes
+    if choice == 2:
+        sel_nodes2 = list(sel_nodes)
+        sel_nodes2.remove(sel_nodes[-1])
+        sel_nodes3 = []
+        for node in sel_nodes2:
+            sel_nodes3.append(node.path())
+
+        for node_path in sel_nodes3:
+            hou.node(node_path).destroy()]]></script>
   </tool>
 
   <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
-    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge):
+    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice):
     merge_node = new_node.createNode("object_merge", node_name=node_to_merge.name())
 
-    merge_path = node_to_merge.path()
+#    merge_path = node_to_merge.path()
+    merge_path = "../../" + node_to_merge.name()
+
     if node_to_merge.type().name() == "subnet":
         merge_path += "/*"
+    else:
+        sop_node = node_to_merge.displayNode()
+        null_out = sop_node.createOutputNode("null", node_name="SupaM")
+        null_out.setColor(hou.Color((1.0, 0.5, 0)))
+        null_out.moveToGoodPosition()
 
-    if kwargs['ctrlclick']:
+        merge_path += '/' + null_out.name()
+
+    if choice == 1:
         merge_node.parm('pack').set(True)
 
     merge_node.parm('objpath1').set(merge_path)
@@ -69,7 +127,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     merge_node.moveToGoodPosition()
 
     group_node = merge_node.createOutputNode("group", node_name=node_to_merge.name())
-    group_node.parm('crname').set(node_to_merge.name())
+    group_node.parm('crname').set("SupaM_" + node_to_merge.name())
 
     final_merge.setNextInput(group_node)
 
@@ -89,8 +147,10 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     new_node.parm('use_dcolor').set(False)
     final_merge = new_node.createNode("merge")
 
+    choice = hou.ui.displayMessage("Pack?", buttons=("Don't Pack", "Pack"))
+    
     for node in sel_nodes:
-        make_merge(final_merge, new_node, node)
+        make_merge(final_merge, new_node, node, choice)
 
     final_merge.moveToGoodPosition()
     attrib_del = final_merge.createOutputNode('attribdelete')
@@ -110,12 +170,15 @@ out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Save the current hip file?", buttons=("100", "0.01"))
+
     for obj_node in sel_nodes:
 #        for sop_node in obj_node.children():
         sop_node = obj_node.displayNode()
 
         trans_node = sop_node.createOutputNode("xform")
-        if kwargs['ctrlclick']:
+        
+        if choice == 1:
             trans_node.parm('scale').set(0.01)
         else:
             trans_node.parm('scale').set(100)
@@ -134,10 +197,12 @@ out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Save the current hip file?", buttons=("Lock", "Unlock"))
+
     for obj_node in sel_nodes:
         if obj_node.type().name() == "geo":
             sop_node = obj_node.displayNode()
-            if kwargs['ctrlclick']:
+            if choice == 1:
                 sop_node.setHardLocked(False)
             else:
                 sop_node.setHardLocked(True)

@@ -73,7 +73,7 @@ node = soptoolutils.genericTool(kwargs, 'mifth_transform_primitives')
 import toolutils
 
 #viewer = toolutils.sceneViewer()
-#geo = viewer.selectGeometry()
+#geo = viewer.selectGeometry(ordered=True)
 #sel_str = geo.mergedSelectionString()
 
 kwargs['ordered'] = True
@@ -112,13 +112,16 @@ node = soptoolutils.genericTool(kwargs, 'mifth_symmetry_extrude_v1')
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-#viewer = toolutils.sceneViewer()
-#geo = viewer.selectGeometry()
+viewer = toolutils.sceneViewer()
+#geo = viewer.selectGeometry(ordered=True)
 #sel_str = geo.mergedSelectionString()
 
-node = soptoolutils.genericTool(kwargs, 'mifth_edgestoface')
-#node.parm('group').set(sel_str)
-]]></script>
+
+if viewer.currentGeometrySelection().selections()[0].numSelected() == 2:
+    node = soptoolutils.genericTool(kwargs, 'mifth_edgestoface')
+else:
+    node = soptoolutils.genericTool(kwargs, 'polyfill')
+    node.parm('fillmode').set(0)]]></script>
   </tool>
 
   <tool name="part_mesh" label="PartMesh" icon="SOP_blast">
@@ -137,7 +140,9 @@ if sel_str and sel_nodes:
 
     main_node = sel_nodes[-1]
 
-    if kwargs['ctrlclick'] and geo.geometryType() == hou.geometryType.Primitives:
+    choice = hou.ui.displayMessage("Save the current hip file?", buttons=("Add", "Substruct"))
+
+    if choice == 1 and geo.geometryType() == hou.geometryType.Primitives:
         blast_2 = main_node.parent().createNode('blast', node_name='blast_base')
         blast_2.parm('negate').set(False)
         blast_2.parm('group').set(sel_str)
@@ -160,7 +165,7 @@ if sel_str and sel_nodes:
     final_merge.setDisplayFlag(True)
     final_merge.setRenderFlag(True)
 
-    if kwargs['ctrlclick']:
+    if choice == 1:
         if geo.geometryType() == hou.geometryType.Primitives:
             final_merge.setNextInput(blast_2)
     else:
@@ -201,8 +206,10 @@ if sel_nodes:
 
     if last_node.parmTuple('p'):
 
-        if kwargs['shiftclick']:
-    
+        choice = hou.ui.displayMessage("Save the current hip file?", buttons=("Cenetr", "Group", "Pivot"))
+
+        if choice == 2:
+
             geo = viewer.selectGeometry()
             sel_str = geo.mergedSelectionString()
     
@@ -235,7 +242,7 @@ if sel_nodes:
                 blast_node.destroy()
     
         else:
-            if kwargs['ctrlclick']:
+            if choice == 1:
                 last_node.parm('px').setExpression('$GCX')
                 last_node.parm('py').setExpression('$GCY')
                 last_node.parm('pz').setExpression('$GCZ')
@@ -302,11 +309,13 @@ sv = toolutils.sceneViewer()
 cp = sv.constructionPlane()
 #sel_nodes = hou.selectedNodes()
 
-if kwargs['ctrlclick']:
+choice = hou.ui.displayMessage("Save the current hip file?", buttons=("1", "2", "3"))
+
+if choice == 1:
     cp.setTransform(sv.curViewport().viewTransform())
     set_origin(cp, sv.curViewport().viewPivot() )
 
-elif kwargs['shiftclick']:
+elif choice == 2:
     cp.setTransform(hou.Vector3(0, 0, 1).matrixToRotateTo(hou.Vector3(0, 1, 0)))
 
 else:
