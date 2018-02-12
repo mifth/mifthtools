@@ -170,7 +170,7 @@ out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
-    choice = hou.ui.displayMessage("Save the current hip file?", buttons=("100", "0.01"))
+    choice = hou.ui.displayMessage("Scale?", buttons=("100", "0.01"))
 
     for obj_node in sel_nodes:
 #        for sop_node in obj_node.children():
@@ -180,8 +180,19 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
         
         if choice == 1:
             trans_node.parm('scale').set(0.01)
+            poses = obj_node.parmTuple('t').eval()
+
+            obj_node.parm('tx').set(poses[0] * 0.01)
+            obj_node.parm('ty').set(poses[1] * 0.01)
+            obj_node.parm('tz').set(poses[2] * 0.01)
         else:
             trans_node.parm('scale').set(100)
+
+            poses = obj_node.parmTuple('t').eval()
+
+            obj_node.parm('tx').set(poses[0] * 100)
+            obj_node.parm('ty').set(poses[1] * 100)
+            obj_node.parm('tz').set(poses[2] * 100)
 
         trans_node.moveToGoodPosition()
         trans_node.setDisplayFlag(True)
