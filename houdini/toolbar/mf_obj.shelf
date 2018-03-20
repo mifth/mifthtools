@@ -10,6 +10,7 @@
     <memberTool name="geom_converter"/>
     <memberTool name="scale_100"/>
     <memberTool name="lock_selected"/>
+    <memberTool name="PolyReducer"/>
   </toolshelf>
 
   <tool name="instance" label="Instance" icon="OBJ_instance">
@@ -221,6 +222,43 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
 #    msg = 'All Done!'
 #    hou.ui.displayMessage(msg)
+
+else:
+    msg = 'Select Object Nodes!'
+    hou.ui.displayMessage(msg)]]></script>
+  </tool>
+
+  <tool name="PolyReducer" label="PolyReducer" icon="SOP_polyreduce-2.0">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Reduce Percent?", buttons=("1", "5", "10", "20", "30", "50"))
+
+    for obj_node in sel_nodes:
+        sop_node = obj_node.displayNode()
+        reduce_node = obj_node.createNode("polyreduce::2.0")
+
+        percent = 1
+        if choice == 1:
+            percent = 5
+        elif choice == 2:
+            percent = 10
+        elif choice == 3:
+            percent = 20
+        elif choice == 4:
+            percent = 30
+        elif choice == 5:
+            percent = 50
+
+        reduce_node.setDisplayFlag(True)
+        reduce_node.setRenderFlag(True)
+        reduce_node.parm('percentage').set(percent)
+
+        reduce_node.insertInput(0, sop_node)
+
+        reduce_node.moveToGoodPosition()
 
 else:
     msg = 'Select Object Nodes!'
