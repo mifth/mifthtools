@@ -43,7 +43,17 @@ class EX_MainPanel(bpy.types.Panel):
         col = row.column()
 
         col.operator("ex_export.exchanger", text="Export")
+        #op.world_scale = 1.0
         col.operator("ex_import.exchanger", text="Import")
+        #op.world_scale = 1.0
+
+        layout.separator()
+
+        row = layout.row()
+        op = col.operator("ex_export.exchanger", text="ExportHoudini")
+        op.world_scale = 0.01
+        op = col.operator("ex_import.exchanger", text="ImportHoudini")
+        op.world_scale = 100.0
 
         row = layout.row()
         row.prop(b_exchanger, "doApplyModifiers", text="Apply Modifiers")
@@ -79,6 +89,8 @@ class EX_ExportScene(bpy.types.Operator):
     bl_description = "Export your custom property"
     bl_options = {'UNDO'}
 
+    world_scale = FloatProperty( default=1.0 )
+
     def invoke(self, context, event):
         # Addon Preferences
         user_preferences = context.user_preferences
@@ -110,7 +122,7 @@ class EX_ExportScene(bpy.types.Operator):
             apply_modifiers = b_exchanger.doApplyModifiers
 
             # Export Model
-            bpy.ops.export_scene.fbx(filepath=model_path, check_existing=True, axis_forward='-Z', axis_up='Y', use_selection=True, global_scale=1.0, apply_unit_scale=True, bake_space_transform=True, use_mesh_modifiers=apply_modifiers, use_custom_props=True, primary_bone_axis='Y', secondary_bone_axis='X', bake_anim=False, use_anim=False)
+            bpy.ops.export_scene.fbx(filepath=model_path, check_existing=True, axis_forward='-Z', axis_up='Y', use_selection=True, global_scale=self.world_scale, apply_unit_scale=True, bake_space_transform=True, use_mesh_modifiers=apply_modifiers, use_custom_props=True, primary_bone_axis='Y', secondary_bone_axis='X', bake_anim=False, use_anim=False)
 
             # revert render level of modifiers back
             for mod_stuff in fix_modidiers:
@@ -129,6 +141,8 @@ class EX_ImportScene(bpy.types.Operator):
     bl_label = "import your custom property"
     bl_description = "import your custom property"
     bl_options = {'UNDO'}
+
+    world_scale = FloatProperty( default=1.0 )
 
     def invoke(self, context, event):
         # Addon Preferences
@@ -154,7 +168,7 @@ class EX_ImportScene(bpy.types.Operator):
             importNormals = b_exchanger.importNormals
 
             # IMPORT
-            bpy.ops.import_scene.fbx(filepath=model_path, axis_forward='-Z', axis_up='Y', global_scale=1.0, bake_space_transform=True, use_custom_normals=importNormals, force_connect_children=False, primary_bone_axis='Y', secondary_bone_axis='X', use_prepost_rot=True)
+            bpy.ops.import_scene.fbx(filepath=model_path, axis_forward='-Z', axis_up='Y', global_scale=self.world_scale, bake_space_transform=True, use_custom_normals=importNormals, force_connect_children=False, primary_bone_axis='Y', secondary_bone_axis='X', use_prepost_rot=True)
 
             ## remove animatrins. Fix for Modo
             #for obj in scene.objects:
