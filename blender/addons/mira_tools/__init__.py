@@ -44,6 +44,7 @@ if "bpy" in locals():
     imp.reload(mi_poly_loop)
     imp.reload(mi_make_arc)
     imp.reload(mi_wrap_master)
+    imp.reload(mi_primitives)
 else:
     from . import mi_curve_test
     from . import mi_curve_stretch
@@ -58,6 +59,7 @@ else:
     from . import mi_poly_loop
     from . import mi_make_arc
     from . import mi_wrap_master
+    from . import mi_primitives
 
 
 import bpy
@@ -67,18 +69,6 @@ from bpy.props import *
 def register():
 
     bpy.utils.register_module(__name__)
-
-    # bpy.types.Scene.mira_curve_points = PointerProperty(
-    #     name="Mira Tool Variables",
-    #     type=mi_curve_test.MR_CurvePoint,
-    #     description="Mira Curve"
-    # )
-
-    #bpy.types.Object.mi_curves = CollectionProperty(
-        #name="Mira Tool Variables",
-        #type=mi_curve_test.MI_CurveObject,
-        #description="Mira Curve"
-    #)
 
     bpy.types.Scene.mi_settings = PointerProperty(
         name="Global Settings",
@@ -124,6 +114,8 @@ def register():
 
     # alternative gui
     bpy.types.WindowManager.mirawindow = bpy.props.PointerProperty(type = mi_gui.DropdownMiraToolProps)
+    bpy.types.INFO_MT_mesh_add.prepend(mi_gui.mifth_prim_menu)
+
 
 def unregister():
     import bpy
@@ -139,6 +131,7 @@ def unregister():
     del bpy.types.Scene.mi_makearc_settings
 
     del bpy.types.WindowManager.mirawindow
+    bpy.types.INFO_MT_mesh_add.remove(mi_gui.mifth_prim_menu)
 
     bpy.utils.unregister_module(__name__)
 

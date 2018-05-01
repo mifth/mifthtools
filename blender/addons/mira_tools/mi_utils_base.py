@@ -15,7 +15,7 @@ import random
 from mathutils import Vector
 
 
-def get_obj_dup_meshes(obj_snap_mode, convert_instances, context):
+def get_obj_dup_meshes(obj_snap_mode, convert_instances, context, add_active_obj=False):
     """Get all meshes"""
 
     objects_array = None
@@ -25,7 +25,12 @@ def get_obj_dup_meshes(obj_snap_mode, convert_instances, context):
     else:
         objects_array = [obj for obj in context.visible_objects if obj != active_obj]
 
+    # add active obj
+    if add_active_obj is True and active_obj:
+        objects_array.append(active_obj)
+
     listObjMatrix = []
+
     for obj in objects_array:
         if obj.type == 'MESH':
             listObjMatrix.append((obj, obj.matrix_world.copy()))

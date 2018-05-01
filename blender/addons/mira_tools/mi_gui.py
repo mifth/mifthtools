@@ -382,7 +382,7 @@ class MIRA_Object_Panel(bpy.types.Panel):
         row.operator("mira.wrap_master", text="", icon ="MOD_SHRINKWRAP")
 
         ###space###    
-        if mt.display_mira_wrap:          
+        if mt.display_mira_wrap:
             ###space###
 
             box = layout.box().column(align=True)
@@ -393,3 +393,35 @@ class MIRA_Object_Panel(bpy.types.Panel):
             row.operator("mira.wrap_object", text="WrapObject")
             row.operator("mira.wrap_scale", text="WrapScale")
             row.operator("mira.wrap_master", text="WrapMaster")
+
+
+# PRIMITIVES MENU
+def mifth_prim_menu(self, context):
+    #self.layout.operator_context = 'INVOKE_REGION_WIN'
+
+    self.layout.menu("MI_Prims_Menu",
+                     text="MiraPrimitives", icon="PLUGIN")
+
+    self.layout.separator()
+
+
+class MI_PrimsMenu(bpy.types.Menu):
+    # Define the "Torus Objects" menu
+    bl_idname = "MI_Prims_Menu"
+    bl_label = "Primitives Menu"
+
+    def draw(self, context):
+        #op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraPlane", icon='MESH_PLANE')
+        #op.prim_type = 'Plane'
+        op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCube", icon='MESH_CUBE')
+        op.prim_type = 'Cube'
+        #op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCircle", icon='MESH_CIRCLE')
+        #op.prim_type = 'Circle'
+        op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraSphere", icon='MESH_UVSPHERE')
+        op.prim_type = 'Sphere'
+        op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCylinder", icon='MESH_CYLINDER')
+        op.prim_type = 'Cylinder'
+        op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCone", icon='MESH_CONE')
+        op.prim_type = 'Cone'
+        #op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCapsule", icon='MESH_CAPSULE')
+        #op.prim_type = 'Capsule'
