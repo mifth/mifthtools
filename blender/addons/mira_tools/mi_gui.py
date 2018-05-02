@@ -411,12 +411,12 @@ class MI_PrimsMenu(bpy.types.Menu):
     bl_label = "Primitives Menu"
 
     def draw(self, context):
-        #op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraPlane", icon='MESH_PLANE')
-        #op.prim_type = 'Plane'
+        op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraPlane", icon='MESH_PLANE')
+        op.prim_type = 'Plane'
         op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCube", icon='MESH_CUBE')
         op.prim_type = 'Cube'
-        #op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCircle", icon='MESH_CIRCLE')
-        #op.prim_type = 'Circle'
+        op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCircle", icon='MESH_CIRCLE')
+        op.prim_type = 'Circle'
         op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraSphere", icon='MESH_UVSPHERE')
         op.prim_type = 'Sphere'
         op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCylinder", icon='MESH_CYLINDER')

@@ -29,7 +29,6 @@ from bpy.props import EnumProperty, BoolProperty, IntProperty, CollectionPropert
 
 from . import mi_utils_base as ut_base
 #from . import mi_color_manager as col_man
-#from . import mi_looptools as loop_t
 from . import mi_inputs
 
 
@@ -58,6 +57,7 @@ class MI_MakePrimitive(bpy.types.Operator):
     prim_side_vec = None
     prim_front_vec = None
 
+    edit_obj = None
     history_objects = []
 
     orient_on_surface = BoolProperty(default=False)
@@ -74,8 +74,14 @@ class MI_MakePrimitive(bpy.types.Operator):
         clean(context, self)  # clean old stuff
 
         if context.space_data.type == 'VIEW_3D':
-            # get all matrices of visible objects
             mi_settings = context.scene.mi_settings
+
+            # get all matrices of visible objects
+            # Check if it's EDIT MODE
+            print(context.mode)
+            if context.mode == 'EDIT_MESH':
+                self.edit_obj = context.scene.objects.active
+
             self.obj_matrices = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, mi_settings.convert_instances, context, add_active_obj=True)
 
             context.window_manager.modal_handler_add(self)
@@ -88,7 +94,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
     def modal(self, context, event):
         # Tooltip
-        tooltip_text = "Ctrl+MouseWheel: Change Segments, Shift+LeftClick: Uniform Scale, C: CenterCursor, O:OrientOnSurface"
+        tooltip_text = "Ctrl+MouseWheel, Ctrl+Shift+MouseWheel, +-, Ctrl++, ctrl+-: Change Segments; Shift+LeftClick: Uniform Scale; C: CenterCursor; O: OrientOnSurface"
         context.area.header_text_set(tooltip_text)
 
         m_coords = event.mouse_region_x, event.mouse_region_y
@@ -124,7 +130,7 @@ class MI_MakePrimitive(bpy.types.Operator):
         elif event.type == 'Z' and event.value == 'PRESS' and event.ctrl:
             # delete object with Ctrl+Z
             if self.history_objects:
-                del_obj = self.history_objects[-1]
+                del_obj = self.history_objects[-1][0]
                 del self.history_objects[-1]
 
                 # remove old primitive
@@ -184,6 +190,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                     else:
                         self.circle_segments += 1
+
                 elif event.type in {'NUMPAD_MINUS', 'MINUS'} and event.value == 'PRESS':
                     if self.prim_type == 'Sphere':
                         if event.ctrl:
@@ -199,16 +206,35 @@ class MI_MakePrimitive(bpy.types.Operator):
                 if self.prim_type == 'Sphere':
                     del self.history_objects[-1]
 
+                    # If Edit Mode
+                    if self.edit_obj:
+                        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
+                    # Replace Object Primitive
                     if self.tool_mode == 'IDLE':
                         self.new_prim = replace_prim(self.new_prim, self.sphere_segments, self.prim_type)
                     else:
                         self.new_prim = replace_prim(self.new_prim, self.sphere_segments, 'Circle')
 
-                    self.history_objects.append(self.new_prim)
+                    self.history_objects.append([self.new_prim, self.hit_pos])
+
+                    # If Edit Mode
+                    if self.edit_obj:
+                        bpy.ops.object.select_all(action='DESELECT')
+                        self.new_prim.show_wire = True
+                        self.new_prim.show_all_edges = True
+                        self.edit_obj.select = True
+                        context.scene.objects.active = self.edit_obj
+                        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
                 else:
                     del self.history_objects[-1]
 
+                    # If Edit Mode
+                    if self.edit_obj:
+                        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
+                    # Replace Object Primitive
                     if self.tool_mode == 'IDLE':
                         self.new_prim = replace_prim(self.new_prim, [self.circle_segments], self.prim_type)
                     else:
@@ -217,7 +243,16 @@ class MI_MakePrimitive(bpy.types.Operator):
                         else:
                             self.new_prim = replace_prim(self.new_prim, [self.circle_segments], 'Circle')
 
-                    self.history_objects.append(self.new_prim)
+                    self.history_objects.append([self.new_prim, self.hit_pos])
+
+                    # If Edit Mode
+                    if self.edit_obj:
+                        bpy.ops.object.select_all(action='DESELECT')
+                        self.new_prim.show_wire = True
+                        self.new_prim.show_all_edges = True
+                        self.edit_obj.select = True
+                        context.scene.objects.active = self.edit_obj
+                        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
             else:
                 # allow navigation
@@ -225,17 +260,44 @@ class MI_MakePrimitive(bpy.types.Operator):
 
         # FINISH THE TOOL!
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            bpy.ops.object.select_all(action='DESELECT')
+            # If Edit Mode. Join Primitives
+            if self.edit_obj:
+                bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+                bpy.ops.object.select_all(action='DESELECT')
 
-            for obj in self.history_objects:
-                obj.select = True
-            context.scene.objects.active = self.history_objects[-1]
+                for his_obj in self.history_objects:
+                    his_obj[0].select = True
 
-            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-            bpy.ops.object.select_all(action='DESELECT')
+                self.edit_obj.select = True
+                context.scene.objects.active = self.edit_obj
+
+                bpy.ops.object.join()
+                bpy.ops.object.mode_set(mode='EDIT', toggle=False)            
+
+            # For non Edit Mode
+            else:
+                #bpy.ops.object.select_all(action='DESELECT')
+                cursor_origin = context.scene.cursor_location.copy()
+
+                for his_obj in self.history_objects:
+                    bpy.ops.object.select_all(action='DESELECT')
+                    his_obj[0].select = True
+
+                    # apply scale
+                    context.scene.objects.active = his_obj[0]
+                    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+                    # set object position to hit
+                    if his_obj[0].location != his_obj[1]:
+                        context.scene.cursor_location = his_obj[1].copy()
+                        bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+
+                context.scene.cursor_location = cursor_origin
+                bpy.ops.object.select_all(action='DESELECT')
 
             # clean
             clean(context, self)
+            context.area.header_text_set()
             self.tool_mode == 'IDLE'
 
             return {'FINISHED'}
@@ -245,8 +307,16 @@ class MI_MakePrimitive(bpy.types.Operator):
                 do_create_prim = False  # check if we found hit
                 is_autoaxis = False
 
+                # If Edit Mode
+                if self.edit_obj:
+                    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
                 # make raycast only one time!
                 ray_result = ut_base.get_mouse_raycast(context, self.obj_matrices, m_coords)
+
+                # If Edit Mode
+                if self.edit_obj:
+                    bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
                 if ray_result[0] and self.orient_on_surface and not self.center_is_cursor:
                     self.hit_pos = ray_result[2].copy()
@@ -271,6 +341,12 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                 # CREATE PRIMITIVE!
                 if do_create_prim:
+
+                    # If Edit Mode
+                    if self.edit_obj:
+                        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
+                    # Do Create Primitive
                     if self.prim_type == 'Sphere':
                         new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, self.sphere_segments, is_autoaxis, 'Circle')
                     elif self.prim_type == 'Cube' or self.prim_type == 'Plane':
@@ -279,22 +355,44 @@ class MI_MakePrimitive(bpy.types.Operator):
                         new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, [self.circle_segments], is_autoaxis, 'Circle')
 
                     self.new_prim = new_prim[0]
-                    self.history_objects.append(self.new_prim)
+                    self.history_objects.append([self.new_prim, self.hit_pos])
                     self.prim_side_vec = new_prim[1].copy()
                     self.prim_front_vec = new_prim[2].copy()
                     self.tool_mode = 'DRAW_1'
 
+                    # If Edit Mode
+                    if self.edit_obj:
+                        bpy.ops.object.select_all(action='DESELECT')
+                        self.new_prim.show_wire = True
+                        self.new_prim.show_all_edges = True
+                        self.edit_obj.select = True
+                        context.scene.objects.active = self.edit_obj
+                        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+
             # Change tool state to Draw_2. Create depth
             elif self.tool_mode == 'IDLE_2' and event.value == 'PRESS':
+                # If Edit Mode
+                if self.edit_obj:
+                    bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
                 # Replace Plane and Circle
                 if self.prim_type == 'Sphere':
                     del self.history_objects[-1]
                     self.new_prim = replace_prim(self.new_prim, self.sphere_segments, self.prim_type)
-                    self.history_objects.append(self.new_prim)
+                    self.history_objects.append([self.new_prim, self.hit_pos])
                 else:
                     del self.history_objects[-1]
                     self.new_prim = replace_prim(self.new_prim, [self.circle_segments], self.prim_type)
-                    self.history_objects.append(self.new_prim)
+                    self.history_objects.append([self.new_prim, self.hit_pos])
+
+                # If Edit Mode
+                if self.edit_obj:
+                    bpy.ops.object.select_all(action='DESELECT')
+                    self.new_prim.show_wire = True
+                    self.new_prim.show_all_edges = True
+                    self.edit_obj.select = True
+                    context.scene.objects.active = self.edit_obj
+                    bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
                 self.tool_mode = 'DRAW_2'
 
@@ -394,6 +492,7 @@ def clean(context, self):
     self.prim_side_vec = None
     self.prim_front_vec = None
     self.history_objects = []
+    self.edit_obj = None
 
 
 def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_type):
@@ -417,7 +516,28 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
         new_prim = bpy.context.object
 
         # get rotation vectors
-        view_upvec = rv3d.view_rotation * Vector((0.0, -1.0, 0.0)).normalized()
+        z_neg_vec = Vector((0.0, 0.0, -1.0))
+        z_world_angle = z_neg_vec.angle(normal)
+
+        if z_world_angle == math.radians(180) or z_world_angle == math.radians(-180):
+            view_cam_upvec = rv3d.view_rotation * Vector((0.0, -1.0, 0.0)).normalized()
+            view_upvec = view_cam_upvec.copy()
+            view_upvec[2] = 0.0
+
+            if view_upvec[0] == 0 and view_upvec[1] == 0:
+                view_upvec = view_cam_upvec
+            if view_upvec[0] > view_upvec[1]:
+                view_upvec[0] = 1.0
+                view_upvec[1] = 0.0
+            else:
+                view_upvec[0] = 0.0
+                view_upvec[1] = 1.0
+
+            view_upvec = view_upvec.normalized()
+
+        else:
+            view_upvec = z_neg_vec
+
         prim_side_vec = None
 
         # side vector

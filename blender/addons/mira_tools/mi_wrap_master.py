@@ -352,6 +352,7 @@ class MI_Wrap_Master(bpy.types.Operator):
                             #final_mat = final_mat.normalized()
 
                             final_obj.matrix_world = final_mat.to_4x4()
+                            #final_obj.rotation_euler = final_mat.to_euler()
 
                             # position and scale
                             final_obj.scale = final_obj_scale
