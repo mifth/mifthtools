@@ -30,6 +30,7 @@ from bpy.props import EnumProperty, BoolProperty, IntProperty, CollectionPropert
 from . import mi_utils_base as ut_base
 #from . import mi_color_manager as col_man
 from . import mi_inputs
+from . import add_mesh_capsule
 
 
 class MI_MakePrimitive(bpy.types.Operator):
@@ -66,6 +67,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
     circle_segments = IntProperty(default=16)
     sphere_segments = [16, 8]
+    capsule_segments = [16, 8]
 
     tool_mode = 'IDLE'  # IDLE, IDLE_2, DRAW_1, DRAW_2
 
@@ -78,7 +80,6 @@ class MI_MakePrimitive(bpy.types.Operator):
 
             # get all matrices of visible objects
             # Check if it's EDIT MODE
-            print(context.mode)
             if context.mode == 'EDIT_MESH':
                 self.edit_obj = context.scene.objects.active
 
@@ -164,6 +165,13 @@ class MI_MakePrimitive(bpy.types.Operator):
                                     self.sphere_segments[1] = self.sphere_segments[1] + 1
                                 else:
                                     self.sphere_segments[0] = self.sphere_segments[0] + 1
+
+                            elif self.prim_type == 'Capsule':
+                                if event.shift:
+                                    self.capsule_segments[1] = self.capsule_segments[1] + 1
+                                else:
+                                    self.capsule_segments[0] = self.capsule_segments[0] + 1
+
                             else:
                                 self.circle_segments += 1
                         else:
@@ -174,6 +182,15 @@ class MI_MakePrimitive(bpy.types.Operator):
                                 else:
                                     self.sphere_segments[0] = self.sphere_segments[0] - 1
                                     self.sphere_segments[0] = max(self.sphere_segments[0], 3)
+
+                            elif self.prim_type == 'Capsule':
+                                if event.shift:
+                                    self.capsule_segments[1] = self.capsule_segments[1] - 1
+                                    self.capsule_segments[1] = max(self.capsule_segments[1], 1)
+                                else:
+                                    self.capsule_segments[0] = self.capsule_segments[0] - 1
+                                    self.capsule_segments[0] = max(self.capsule_segments[0], 3)
+
                             else:
                                 self.circle_segments -= 1
                                 self.circle_segments = max(self.circle_segments, 3)
@@ -188,6 +205,12 @@ class MI_MakePrimitive(bpy.types.Operator):
                         else:
                             self.sphere_segments[0] = self.sphere_segments[0] + 1
 
+                    elif self.prim_type == 'Capsule':
+                        if event.ctrl:
+                            self.capsule_segments[1] = self.capsule_segments[1] + 1
+                        else:
+                            self.capsule_segments[0] = self.capsule_segments[0] + 1
+
                     else:
                         self.circle_segments += 1
 
@@ -199,22 +222,35 @@ class MI_MakePrimitive(bpy.types.Operator):
                         else:
                             self.sphere_segments[0] = self.sphere_segments[0] - 1
                             self.sphere_segments[0] = max(self.sphere_segments[0], 3)
+
+                    elif self.prim_type == 'Capsule':
+                        if event.ctrl:
+                            self.capsule_segments[1] = self.capsule_segments[1] - 1
+                            self.capsule_segments[1] = max(self.capsule_segments[1], 1)
+                        else:
+                            self.capsule_segments[0] = self.capsule_segments[0] - 1
+                            self.capsule_segments[0] = max(self.capsule_segments[0], 3)
+
                     else:
                         self.circle_segments -= 1
                         self.circle_segments = max(self.circle_segments, 3)
 
-                if self.prim_type == 'Sphere':
+                if self.prim_type in {'Sphere','Capsule'}:
                     del self.history_objects[-1]
 
                     # If Edit Mode
                     if self.edit_obj:
                         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
+                    segments = self.sphere_segments
+                    if self.prim_type == 'Capsule':
+                        segments = self.capsule_segments
+
                     # Replace Object Primitive
                     if self.tool_mode == 'IDLE':
-                        self.new_prim = replace_prim(self.new_prim, self.sphere_segments, self.prim_type)
+                        self.new_prim = replace_prim(self.new_prim, segments, self.prim_type, context)
                     else:
-                        self.new_prim = replace_prim(self.new_prim, self.sphere_segments, 'Circle')
+                        self.new_prim = replace_prim(self.new_prim, segments, 'Circle', context)
 
                     self.history_objects.append([self.new_prim, self.hit_pos])
 
@@ -236,12 +272,12 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                     # Replace Object Primitive
                     if self.tool_mode == 'IDLE':
-                        self.new_prim = replace_prim(self.new_prim, [self.circle_segments], self.prim_type)
+                        self.new_prim = replace_prim(self.new_prim, [self.circle_segments], self.prim_type, context)
                     else:
                         if self.prim_type == 'Cube' or self.prim_type == 'Plane':
-                            self.new_prim = replace_prim(self.new_prim, [self.circle_segments], 'Plane')
+                            self.new_prim = replace_prim(self.new_prim, [self.circle_segments], 'Plane', context)
                         else:
-                            self.new_prim = replace_prim(self.new_prim, [self.circle_segments], 'Circle')
+                            self.new_prim = replace_prim(self.new_prim, [self.circle_segments], 'Circle', context)
 
                     self.history_objects.append([self.new_prim, self.hit_pos])
 
@@ -349,6 +385,8 @@ class MI_MakePrimitive(bpy.types.Operator):
                     # Do Create Primitive
                     if self.prim_type == 'Sphere':
                         new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, self.sphere_segments, is_autoaxis, 'Circle')
+                    elif self.prim_type == 'Capsule':
+                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, self.capsule_segments, is_autoaxis, 'Circle')
                     elif self.prim_type == 'Cube' or self.prim_type == 'Plane':
                         new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, [self.circle_segments], is_autoaxis, 'Plane')
                     else:
@@ -376,14 +414,15 @@ class MI_MakePrimitive(bpy.types.Operator):
                     bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
                 # Replace Plane and Circle
+                del self.history_objects[-1]
                 if self.prim_type == 'Sphere':
-                    del self.history_objects[-1]
-                    self.new_prim = replace_prim(self.new_prim, self.sphere_segments, self.prim_type)
-                    self.history_objects.append([self.new_prim, self.hit_pos])
+                    self.new_prim = replace_prim(self.new_prim, self.sphere_segments, self.prim_type, context)
+                elif self.prim_type == 'Capsule':
+                    self.new_prim = replace_prim(self.new_prim, self.capsule_segments, self.prim_type, context)
                 else:
-                    del self.history_objects[-1]
-                    self.new_prim = replace_prim(self.new_prim, [self.circle_segments], self.prim_type)
-                    self.history_objects.append([self.new_prim, self.hit_pos])
+                    self.new_prim = replace_prim(self.new_prim, [self.circle_segments], self.prim_type, context)
+
+                self.history_objects.append([self.new_prim, self.hit_pos])
 
                 # If Edit Mode
                 if self.edit_obj:
@@ -511,7 +550,7 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
         elif prim_type == 'Cone':
             bpy.ops.mesh.primitive_cone_add(radius1=1, vertices=segments[0])
         elif prim_type == 'Capsule':
-            bpy.ops.mesh.primitive_capsule_add(radius=1, vertices=segments[0])
+            add_mesh_capsule.add_capsule(1, 1, segments[1], segments[0], context)
 
         new_prim = bpy.context.object
 
@@ -578,7 +617,7 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
         return new_prim, prim_side_vec, prim_front_vec
 
 
-def replace_prim(old_prim, segments, prim_type):
+def replace_prim(old_prim, segments, prim_type, context):
     loc, rot, scale = old_prim.location.copy(), old_prim.rotation_euler.copy(), old_prim.scale.copy()
     #old_matrix = old_prim.matrix_world.copy()
 
@@ -600,33 +639,13 @@ def replace_prim(old_prim, segments, prim_type):
     elif prim_type == 'Cone':
         bpy.ops.mesh.primitive_cone_add(radius1=1, vertices=segments[0])
     elif prim_type == 'Capsule':
-        bpy.ops.mesh.primitive_capsule_add(radius=1, vertices=segments[0])
+        add_mesh_capsule.add_capsule(1, 1, segments[1], segments[0], context)
 
     new_prim = bpy.context.object
     #new_prim.matrix_world = old_matrix
     new_prim.location, new_prim.rotation_euler, new_prim.scale = loc, rot, scale
 
     return new_prim
-
-
-## get mouse on a plane
-#def get_mouse_on_plane(context, plane_pos, plane_dir, event):
-    #mouse_coords = event.mouse_region_x, event.mouse_region_y
-    #region = context.region
-    #rv3d = context.region_data
-
-    #final_dir = plane_dir
-    #if plane_dir is None:
-        #final_dir = rv3d.view_rotation * Vector((0.0, 0.0, -1.0))
-
-    #mouse_pos = view3d_utils.region_2d_to_origin_3d(region, rv3d, mouse_coords)
-    #mouse_dir = view3d_utils.region_2d_to_vector_3d(region, rv3d, mouse_coords)
-    #new_pos = mathu.geometry.intersect_line_plane(
-        #mouse_pos, mouse_pos + (mouse_dir * 10000.0), plane_pos, final_dir, False)
-    #if new_pos:
-        #return new_pos
-
-    #return None
 
 
 # auto pick position and axis

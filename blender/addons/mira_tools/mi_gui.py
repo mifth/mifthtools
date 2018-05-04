@@ -421,7 +421,7 @@ class MI_PrimsMenu(bpy.types.Menu):
         op.prim_type = 'Sphere'
         op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCylinder", icon='MESH_CYLINDER')
         op.prim_type = 'Cylinder'
+        op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCapsule", icon='MESH_CAPSULE')
+        op.prim_type = 'Capsule'
         op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCone", icon='MESH_CONE')
         op.prim_type = 'Cone'
-        #op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCapsule", icon='MESH_CAPSULE')
-        #op.prim_type = 'Capsule'
