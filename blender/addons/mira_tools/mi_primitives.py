@@ -20,6 +20,9 @@
 
 import bpy
 
+import bgl
+import blf
+
 from bpy_extras import view3d_utils
 import math
 import mathutils as mathu
@@ -46,7 +49,8 @@ class MI_MakePrimitive(bpy.types.Operator):
                ('Sphere', 'Sphere', ''),
                ('Cylinder', 'Cylinder', ''),
                ('Cone', 'Cone', ''),
-               ('Capsule', 'Capsule', '')
+               ('Capsule', 'Capsule', ''),
+               ('Clone', 'Clone', '')
                ),
         default = 'Cylinder'
     )
@@ -59,43 +63,60 @@ class MI_MakePrimitive(bpy.types.Operator):
     prim_front_vec = None
 
     edit_obj = None
+    objects_to_clone = []
     history_objects = []
 
     orient_on_surface = BoolProperty(default=False)
     center_is_cursor = BoolProperty(default=False)
     median_center = BoolProperty(default=False)
 
-    circle_segments = IntProperty(default=16)
+    circle_segments = [16]
     sphere_segments = [16, 8]
-    capsule_segments = [16, 8]
+    capsule_segments = [16, 4]
 
     tool_mode = 'IDLE'  # IDLE, IDLE_2, DRAW_1, DRAW_2
 
 
     def invoke(self, context, event):
-        clean(context, self)  # clean old stuff
+        if context.area.type == 'VIEW_3D':
+            clean(context, self)  # clean old stuff
 
-        if context.space_data.type == 'VIEW_3D':
+            if self.prim_type == 'Clone':
+                if not context.selected_objects:
+                    self.report({'WARNING'}, "No Selected Objects to Clone!")
+                    return {'CANCELLED'}
+                else:
+                    self.objects_to_clone = context.selected_objects.copy()
+
+            # the arguments we pass the the callback
+            args = (self, context)
+
+            # Add the region OpenGL drawing callback
+            # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
+            self._handle = bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
+
             mi_settings = context.scene.mi_settings
 
             # get all matrices of visible objects
             # Check if it's EDIT MODE
             if context.mode == 'EDIT_MESH':
                 self.edit_obj = context.scene.objects.active
-
             self.obj_matrices = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, mi_settings.convert_instances, context, add_active_obj=True)
 
             context.window_manager.modal_handler_add(self)
 
             return {'RUNNING_MODAL'}
+
         else:
             self.report({'WARNING'}, "Active space must be a View3d")
             return {'CANCELLED'}
 
 
     def modal(self, context, event):
+        context.area.tag_redraw()
+
         # Tooltip
-        tooltip_text = "Ctrl+MouseWheel, Ctrl+Shift+MouseWheel, +-, Ctrl++, ctrl+-: Change Segments; Shift+LeftClick: Uniform Scale; C: CenterCursor; O: OrientOnSurface"
+        tooltip_text = "Shift: Scale Constraint; Ctrl+MouseWheel, Ctrl+Shift+MouseWheel, +-, Ctrl++, ctrl+-: Change Segments; Shift+LeftClick: Uniform Scale; C: CenterCursor; O: Orient on Surface"
         context.area.header_text_set(tooltip_text)
 
         m_coords = event.mouse_region_x, event.mouse_region_y
@@ -152,7 +173,7 @@ class MI_MakePrimitive(bpy.types.Operator):
             return {'RUNNING_MODAL'}
 
 
-        elif event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE', 'NUMPAD_MINUS', 'MINUS', 'NUMPAD_PLUS', 'EQUAL'}:
+        elif event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE', 'NUMPAD_MINUS', 'MINUS', 'NUMPAD_PLUS', 'EQUAL'} and self.prim_type != 'Clone':
 
             # CHANGE SEGMENTS HERE
             if self.new_prim:
@@ -173,7 +194,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                                     self.capsule_segments[0] = self.capsule_segments[0] + 1
 
                             else:
-                                self.circle_segments += 1
+                                self.circle_segments[0] += 1
                         else:
                             if self.prim_type == 'Sphere':
                                 if event.shift:
@@ -192,8 +213,8 @@ class MI_MakePrimitive(bpy.types.Operator):
                                     self.capsule_segments[0] = max(self.capsule_segments[0], 3)
 
                             else:
-                                self.circle_segments -= 1
-                                self.circle_segments = max(self.circle_segments, 3)
+                                self.circle_segments[0] -= 1
+                                self.circle_segments[0] = max(self.circle_segments[0], 3)
                     else:
                         # allow navigation
                         return {'PASS_THROUGH'}
@@ -212,7 +233,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                             self.capsule_segments[0] = self.capsule_segments[0] + 1
 
                     else:
-                        self.circle_segments += 1
+                        self.circle_segments[0] += 1
 
                 elif event.type in {'NUMPAD_MINUS', 'MINUS'} and event.value == 'PRESS':
                     if self.prim_type == 'Sphere':
@@ -232,8 +253,8 @@ class MI_MakePrimitive(bpy.types.Operator):
                             self.capsule_segments[0] = max(self.capsule_segments[0], 3)
 
                     else:
-                        self.circle_segments -= 1
-                        self.circle_segments = max(self.circle_segments, 3)
+                        self.circle_segments[0] -= 1
+                        self.circle_segments[0] = max(self.circle_segments[0], 3)
 
                 if self.prim_type in {'Sphere','Capsule'}:
                     del self.history_objects[-1]
@@ -272,12 +293,12 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                     # Replace Object Primitive
                     if self.tool_mode == 'IDLE':
-                        self.new_prim = replace_prim(self.new_prim, [self.circle_segments], self.prim_type, context)
+                        self.new_prim = replace_prim(self.new_prim, self.circle_segments, self.prim_type, context)
                     else:
                         if self.prim_type == 'Cube' or self.prim_type == 'Plane':
-                            self.new_prim = replace_prim(self.new_prim, [self.circle_segments], 'Plane', context)
+                            self.new_prim = replace_prim(self.new_prim, self.circle_segments, 'Plane', context)
                         else:
-                            self.new_prim = replace_prim(self.new_prim, [self.circle_segments], 'Circle', context)
+                            self.new_prim = replace_prim(self.new_prim, self.circle_segments, 'Circle', context)
 
                     self.history_objects.append([self.new_prim, self.hit_pos])
 
@@ -320,8 +341,9 @@ class MI_MakePrimitive(bpy.types.Operator):
                     his_obj[0].select = True
 
                     # apply scale
-                    context.scene.objects.active = his_obj[0]
-                    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+                    if self.prim_type != 'Clone':
+                        context.scene.objects.active = his_obj[0]
+                        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
                     # set object position to hit
                     if his_obj[0].location != his_obj[1]:
@@ -334,6 +356,7 @@ class MI_MakePrimitive(bpy.types.Operator):
             # clean
             clean(context, self)
             context.area.header_text_set()
+            bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
             self.tool_mode == 'IDLE'
 
             return {'FINISHED'}
@@ -384,13 +407,15 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                     # Do Create Primitive
                     if self.prim_type == 'Sphere':
-                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, self.sphere_segments, is_autoaxis, 'Circle')
+                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, self.sphere_segments, is_autoaxis, 'Circle', self)
                     elif self.prim_type == 'Capsule':
-                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, self.capsule_segments, is_autoaxis, 'Circle')
-                    elif self.prim_type == 'Cube' or self.prim_type == 'Plane':
-                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, [self.circle_segments], is_autoaxis, 'Plane')
+                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, self.capsule_segments, is_autoaxis, 'Circle', self)
+                    elif self.prim_type in {'Cube','Plane'}:
+                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, None, is_autoaxis, 'Plane', self)
+                    elif self.prim_type == 'Clone':
+                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, None, is_autoaxis, 'Clone', self)
                     else:
-                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, [self.circle_segments], is_autoaxis, 'Circle')
+                        new_prim = create_prim(context, event, self.hit_pos, self.hit_dir, self.circle_segments, is_autoaxis, 'Circle', self)
 
                     self.new_prim = new_prim[0]
                     self.history_objects.append([self.new_prim, self.hit_pos])
@@ -420,7 +445,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                 elif self.prim_type == 'Capsule':
                     self.new_prim = replace_prim(self.new_prim, self.capsule_segments, self.prim_type, context)
                 else:
-                    self.new_prim = replace_prim(self.new_prim, [self.circle_segments], self.prim_type, context)
+                    self.new_prim = replace_prim(self.new_prim, self.circle_segments, self.prim_type, context)
 
                 self.history_objects.append([self.new_prim, self.hit_pos])
 
@@ -441,7 +466,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                 if self.tool_mode == 'DRAW_1':
 
                     # set to IDLE if this is Plane Primitive
-                    if self.prim_type in {'Plane', 'Circle'}:
+                    if self.prim_type in {'Plane', 'Circle', 'Clone'}:
                         self.tool_mode = 'IDLE'
                         return {'RUNNING_MODAL'}
 
@@ -467,17 +492,29 @@ class MI_MakePrimitive(bpy.types.Operator):
 
             if plane_pos:
                 if event.shift:
-                    # Make the same scale with Shift key
-                    new_dist = (plane_pos - self.hit_pos).length
+                    if self.prim_type == 'Clone':
+                        self.new_prim.scale = self.objects_to_clone[0].scale.copy()
+                    else:
+                        # Make the same scale with Shift key
+                        new_dist = (plane_pos - self.hit_pos).length
 
-                    self.new_prim.scale[0] = new_dist
-                    self.new_prim.scale[1] = new_dist
+                        self.new_prim.scale[0] = new_dist
+                        self.new_prim.scale[1] = new_dist
+
                 else:
-                    dist_x = mathu.geometry.distance_point_to_plane(plane_pos, self.hit_pos, self.prim_side_vec)
-                    dist_y = mathu.geometry.distance_point_to_plane(plane_pos, self.hit_pos, self.prim_front_vec)
+                    if self.prim_type == 'Clone':
+                        new_dist = (plane_pos - self.hit_pos).length
 
-                    self.new_prim.scale[0] = abs(dist_x)
-                    self.new_prim.scale[1] = abs(dist_y)
+                        self.new_prim.scale[0] = self.objects_to_clone[0].scale[0] * new_dist
+                        self.new_prim.scale[1] = self.objects_to_clone[0].scale[1] * new_dist
+                        self.new_prim.scale[2] = self.objects_to_clone[0].scale[2] * new_dist
+
+                    else:
+                        dist_x = mathu.geometry.distance_point_to_plane(plane_pos, self.hit_pos, self.prim_side_vec)
+                        dist_y = mathu.geometry.distance_point_to_plane(plane_pos, self.hit_pos, self.prim_front_vec)
+
+                        self.new_prim.scale[0] = abs(dist_x)
+                        self.new_prim.scale[1] = abs(dist_y)
 
         # Draw Primitive Z Depth
         elif self.tool_mode == 'DRAW_2':
@@ -532,9 +569,10 @@ def clean(context, self):
     self.prim_front_vec = None
     self.history_objects = []
     self.edit_obj = None
+    self.objects_to_clone = None
 
 
-def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_type):
+def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_type, self):
         rv3d = context.region_data
 
         if prim_type == 'Plane':
@@ -551,6 +589,17 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
             bpy.ops.mesh.primitive_cone_add(radius1=1, vertices=segments[0])
         elif prim_type == 'Capsule':
             add_mesh_capsule.add_capsule(1, 1, segments[1], segments[0], context)
+        elif prim_type == 'Clone':
+            orig_obj = self.objects_to_clone[-1]
+            bpy.ops.object.select_all(action='DESELECT')
+            orig_obj.select = True
+
+            bpy.ops.object.duplicate(linked=True, mode='DUMMY')
+            new_clone = context.selected_objects[0]
+            context.scene.objects.active = new_clone
+
+            #new_clone.location = Vector((0.0, 0.0, 0.0))
+            #new_clone.scale = orig_obj.scale
 
         new_prim = bpy.context.object
 
@@ -608,11 +657,6 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
         new_prim.rotation_euler = final_mat.to_euler()
 
         new_prim.location = hit_world.copy()
-        #new_prim.scale[0] = 1.0
-        #new_prim.scale[1] = 1.0
-
-        #if prim_type not in {'Plane', 'Circle'}:
-            #new_prim.scale[2] = 1.0
 
         return new_prim, prim_side_vec, prim_front_vec
 
@@ -694,4 +738,58 @@ def auto_pick(context, center_pos, event):
         hit_world = ut_base.get_mouse_on_plane(context, new_center_pos, best_dir, mouse_coords)
 
         return hit_world, best_dir
+
+
+def draw_callback_px(self, context):
+
+    rh = bpy.context.region.height
+    rw = bpy.context.region.width
+
+    font_id = 0
+    font_size = 20
+
+    # segments values
+    seg_1 = 0
+    seg_2 = 0
+
+    if self.prim_type == 'Sphere':
+        seg_1 = self.sphere_segments[0]
+        seg_2 = self.sphere_segments[1]
+    elif self.prim_type == 'Capsule':
+        seg_1 = self.capsule_segments[0]
+        seg_2 = self.capsule_segments[1]
+    else:
+        if self.prim_type not in {'Plane', 'Cube'}:
+            seg_1 = self.circle_segments[0]
+
+    #Set font color
+    bgl.glEnable(bgl.GL_BLEND)
+    bgl.glColor4f(1, 0.75, 0.95, 1)
+    bgl.glLineWidth(2)
+
+    #Draw segments text
+    blf.position(font_id, rw - 400, 250 - font_size, 0)
+    blf.size(font_id, font_size, 72)
+    blf.draw(font_id, str(seg_1))
+
+    blf.position(font_id, rw - 400, 250 - (font_size * 2), 0)
+    blf.size(font_id, font_size, 72)
+    blf.draw(font_id, str(seg_2))
+
+    blf.position(font_id, rw - 400, 250 - (font_size * 3 + 10), 0)
+    blf.size(font_id, font_size, 72)
+    blf.draw(font_id, "Orient " + str(self.orient_on_surface))
+
+    blf.position(font_id, rw - 400, 250 - (font_size * 4 + 10), 0)
+    blf.size(font_id, font_size, 72)
+    blf.draw(font_id, "Median Center " + str(self.median_center))
+
+    blf.position(font_id, rw - 400, 250 - (font_size * 5 + 10), 0)
+    blf.size(font_id, font_size, 72)
+    blf.draw(font_id, "Center is 3D Cursor " + str(self.center_is_cursor))
+
+    # restore opengl defaults
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_BLEND)
+    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
 

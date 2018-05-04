@@ -425,3 +425,7 @@ class MI_PrimsMenu(bpy.types.Menu):
         op.prim_type = 'Capsule'
         op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraCone", icon='MESH_CONE')
         op.prim_type = 'Cone'
+        self.layout.separator()
+
+        op = self.layout.operator("mi_prims.mifth_make_prim", text="MiraClone", icon='MESH_CONE')
+        op.prim_type = 'Clone'
