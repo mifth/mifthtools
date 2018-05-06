@@ -66,6 +66,8 @@ class MI_MakePrimitive(bpy.types.Operator):
     objects_to_clone = []
     history_objects = []
 
+    rot_mouse_pos = None  # rotate first position when rotation is enabled
+
     orient_on_surface = BoolProperty(default=False)
     center_is_cursor = BoolProperty(default=False)
     median_center = BoolProperty(default=False)
@@ -74,7 +76,8 @@ class MI_MakePrimitive(bpy.types.Operator):
     sphere_segments = [16, 8]
     capsule_segments = [16, 4]
 
-    tool_mode = 'IDLE'  # IDLE, IDLE_2, DRAW_1, DRAW_2
+    tool_mode = 'IDLE'  # IDLE, IDLE_2, DRAW_1, DRAW_2, ROTATE
+    tool_mode_before_rotate = None  # this is for ROTATE mode only
 
 
     def invoke(self, context, event):
@@ -116,10 +119,11 @@ class MI_MakePrimitive(bpy.types.Operator):
         context.area.tag_redraw()
 
         # Tooltip
-        tooltip_text = "Shift: Scale Constraint; Ctrl+MouseWheel, Ctrl+Shift+MouseWheel, +-, Ctrl++, ctrl+-: Change Segments; Shift+LeftClick: Uniform Scale; C: CenterCursor; O: Orient on Surface"
+        tooltip_text = "Shift: Scale Constraint; Ctrl+MouseWheel, Ctrl+Shift+MouseWheel, +-, Ctrl++, ctrl+-: Change Segments; Shift+LeftClick: Uniform Scale; C: CenterCursor; O: Orient on Surface; R: Rotate"
         context.area.header_text_set(tooltip_text)
 
         m_coords = event.mouse_region_x, event.mouse_region_y
+        rv3d = context.region_data
 
         if event.type in {'MIDDLEMOUSE'}:
             # allow navigation
@@ -149,6 +153,21 @@ class MI_MakePrimitive(bpy.types.Operator):
 
             return {'RUNNING_MODAL'}
 
+        elif event.type == 'R' and event.value == 'PRESS':
+            if self.new_prim:
+                if self.tool_mode == 'ROTATE':
+                    self.tool_mode = self.tool_mode_before_rotate
+                    self.tool_mode_before_rotate = None
+                    return {'RUNNING_MODAL'}
+                else:
+                    self.rot_mouse_pos = m_coords
+                    self.tool_mode_before_rotate = self.tool_mode
+                    self.tool_mode = 'ROTATE'
+            else:
+                return {'RUNNING_MODAL'}
+
+            return {'RUNNING_MODAL'}
+
         elif event.type == 'Z' and event.value == 'PRESS' and event.ctrl:
             # delete object with Ctrl+Z
             if self.history_objects:
@@ -173,11 +192,20 @@ class MI_MakePrimitive(bpy.types.Operator):
             return {'RUNNING_MODAL'}
 
 
-        elif event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE', 'NUMPAD_MINUS', 'MINUS', 'NUMPAD_PLUS', 'EQUAL'} and self.prim_type != 'Clone':
+        elif event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE', 'NUMPAD_MINUS', 'MINUS', 'NUMPAD_PLUS', 'EQUAL'}:
+
+            # just pass it if cloning
+            if self.prim_type == 'Clone':
+                if event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+                    # allow navigation
+                    return {'PASS_THROUGH'}
+                else:
+                    return {'RUNNING_MODAL'}
 
             # CHANGE SEGMENTS HERE
             if self.new_prim:
                 if event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+
                     if event.ctrl:
                         # Meka less/more segments
                         if event.type == 'WHEELUPMOUSE':
@@ -361,7 +389,11 @@ class MI_MakePrimitive(bpy.types.Operator):
 
             return {'FINISHED'}
 
+        # LEFTMOUSE CLICK
         if event.type == 'LEFTMOUSE':
+            if self.tool_mode == 'ROTATE':
+                return {'RUNNING_MODAL'}
+
             if self.tool_mode == 'IDLE' and event.value == 'PRESS':
                 do_create_prim = False  # check if we found hit
                 is_autoaxis = False
@@ -486,6 +518,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                     # go to standard state
                     self.tool_mode = 'IDLE'
 
+        # TOOL WORK
         # Draw Primitive X and Y
         if self.tool_mode == 'DRAW_1':
             plane_pos = ut_base.get_mouse_on_plane(context, self.hit_pos, self.hit_dir, m_coords)
@@ -518,8 +551,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
         # Draw Primitive Z Depth
         elif self.tool_mode == 'DRAW_2':
-            rv3d = context.region_data
-            mouse_coords = event.mouse_region_x, event.mouse_region_y
+
 
             if event.shift:
                 # Make the same scale with Shift key
@@ -557,6 +589,46 @@ class MI_MakePrimitive(bpy.types.Operator):
                 else:
                     self.new_prim.scale[2] = (abs(new_dist) / 2) * 2
 
+        # Rotate Primitive
+        elif self.tool_mode == 'ROTATE':
+            obj_pos_2d = view3d_utils.location_3d_to_region_2d(context.region, rv3d, self.new_prim.location)
+
+            if obj_pos_2d:
+                new_prim_mat = self.new_prim.matrix_world
+                v1 = Vector(self.rot_mouse_pos) - obj_pos_2d
+                v1 = Vector((v1[0], v1[1], 0)).normalized()
+                v2 = Vector(m_coords) - obj_pos_2d
+                v2 = Vector((v2[0], v2[1], 0)).normalized()
+
+                rot_angle = v1.angle(v2)
+
+                if rot_angle != 0:
+
+                    # check if negative angle
+                    if v1.cross(v2)[2] < 0:
+                        rot_angle = -rot_angle
+
+                    rot_axis = (new_prim_mat[0][2], new_prim_mat[1][2], new_prim_mat[2][2])
+
+                    # if edit obj
+                    if self.edit_obj:
+                        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+                        bpy.ops.object.select_all(action='DESELECT')
+                        act_temp = context.scene.objects.active
+                        #temp_sel = self.new_prim.select
+                        self.new_prim.select = True
+                        context.scene.objects.active = self.new_prim
+
+                    # do rotation
+                    bpy.ops.transform.rotate(value=rot_angle, axis=rot_axis)
+                    self.rot_mouse_pos = m_coords
+
+                    # if edit obj
+                    if self.edit_obj:
+                        self.new_prim.select = False
+                        context.scene.objects.active = act_temp
+                        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+
         return {'RUNNING_MODAL'}
 
 
@@ -570,6 +642,8 @@ def clean(context, self):
     self.history_objects = []
     self.edit_obj = None
     self.objects_to_clone = None
+    self.rot_mouse_pos = None
+    self.tool_mode_before_rotate = None
 
 
 def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_type, self):
@@ -597,9 +671,6 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
             bpy.ops.object.duplicate(linked=True, mode='DUMMY')
             new_clone = context.selected_objects[0]
             context.scene.objects.active = new_clone
-
-            #new_clone.location = Vector((0.0, 0.0, 0.0))
-            #new_clone.scale = orig_obj.scale
 
         new_prim = bpy.context.object
 
@@ -764,27 +835,27 @@ def draw_callback_px(self, context):
 
     #Set font color
     bgl.glEnable(bgl.GL_BLEND)
-    bgl.glColor4f(1, 0.75, 0.95, 1)
+    bgl.glColor4f(1, 0.75, 0.1, 1)
     bgl.glLineWidth(2)
 
     #Draw segments text
-    blf.position(font_id, rw - 400, 250 - font_size, 0)
+    blf.position(font_id, rw - 400, 210 - font_size, 0)
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, str(seg_1))
 
-    blf.position(font_id, rw - 400, 250 - (font_size * 2), 0)
+    blf.position(font_id, rw - 400, 210 - (font_size * 2), 0)
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, str(seg_2))
 
-    blf.position(font_id, rw - 400, 250 - (font_size * 3 + 10), 0)
+    blf.position(font_id, rw - 400, 210 - (font_size * 3 + 10), 0)
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, "Orient " + str(self.orient_on_surface))
 
-    blf.position(font_id, rw - 400, 250 - (font_size * 4 + 10), 0)
+    blf.position(font_id, rw - 400, 210 - (font_size * 4 + 10), 0)
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, "Median Center " + str(self.median_center))
 
-    blf.position(font_id, rw - 400, 250 - (font_size * 5 + 10), 0)
+    blf.position(font_id, rw - 400, 210 - (font_size * 5 + 10), 0)
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, "Center is 3D Cursor " + str(self.center_is_cursor))
 
