@@ -43,6 +43,10 @@ class MI_Simple_Extrude(bpy.types.Operator):
     depth = 0
     thickness = 0
     move_size = None
+    extrude_dirs = None
+    inset_dirs = None
+    extrude_verts = None
+    
 
     tool_mode = 'IDLE'  # IDLE, EXTRUDE, INSET
 
@@ -51,8 +55,6 @@ class MI_Simple_Extrude(bpy.types.Operator):
         clean(self)
 
         if context.mode == 'EDIT_MESH':
-            bpy.ops.ed.undo_push()
-
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
 
@@ -63,7 +65,35 @@ class MI_Simple_Extrude(bpy.types.Operator):
             self.center = sel_faces[0].calc_center_median()
             context.scene.cursor_location = self.center
 
+            bpy.ops.ed.undo_push()
+            bpy.ops.mesh.inset(depth=1.0, thickness=0.0)
+            bm = bmesh.from_edit_mesh(active_obj.data)
+            verts_temp_1 = [v.co.copy() for v in bm.verts if v.select]
+            bpy.ops.ed.undo()
+
+            bpy.ops.ed.undo_push()
+            bpy.ops.mesh.inset(depth=2.0, thickness=0.0)
+            bm = bmesh.from_edit_mesh(active_obj.data)
+            verts_temp_2 = [v.co.copy() for v in bm.verts if v.select]
+
+            self.extrude_dirs = []
+            for i in range(len(verts_temp_1)):
+                p1 = verts_temp_1[i]
+                p2 = verts_temp_2[i]
+                p_orig = p1 + (p1 - p2)
+                dir_ex = p2 - p1
+                self.extrude_dirs.append((dir_ex, dir_ex.copy().normalized(), dir_ex.length, p_orig))
+
+            bpy.ops.ed.undo()
+            bpy.ops.mesh.inset(depth=0.0, thickness=0.0)
+
+            bm = bmesh.from_edit_mesh(active_obj.data)
+            bm.verts.index_update()
+            bm.verts.ensure_lookup_table()
+            self.extrude_verts = [i for i in range(len(bm.verts)) if bm.verts[i].select]
+
             context.window_manager.modal_handler_add(self)
+
 
             return {'RUNNING_MODAL'}
 
@@ -75,6 +105,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
     def modal(self, context, event):
         active_obj = context.scene.objects.active
         m_coords = event.mouse_region_x, event.mouse_region_y
+        bm = bmesh.from_edit_mesh(active_obj.data)
 
         if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
             # allow navigation
@@ -97,7 +128,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
             elif self.tool_mode == 'EXTRUDE':
                 self.depth = delta
 
-                bm = bmesh.from_edit_mesh(active_obj.data)
+                #bm = bmesh.from_edit_mesh(active_obj.data)
                 sel_faces = [f for f in bm.faces if f.select]
                 self.center = sel_faces[0].calc_center_median()
                 context.scene.cursor_location = self.center
@@ -117,7 +148,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
             elif self.tool_mode == 'INSET':
                 self.thickness = max(delta, 0)
                 
-                bm = bmesh.from_edit_mesh(active_obj.data)
+                #bm = bmesh.from_edit_mesh(active_obj.data)
                 sel_faces = [f for f in bm.faces if f.select]
                 self.center = sel_faces[0].calc_center_median()
                 context.scene.cursor_location = self.center
@@ -129,16 +160,30 @@ class MI_Simple_Extrude(bpy.types.Operator):
         # TOOL WORK
         if self.tool_mode != 'IDLE':
             if event.type == 'MOUSEMOVE':
-                bpy.ops.ed.undo()
+                #bpy.ops.ed.undo()
 
                 if self.tool_mode == 'EXTRUDE':
-                    bpy.ops.mesh.inset(depth=delta, thickness=self.thickness)
+                    #bpy.ops.mesh.inset(depth=delta, thickness=self.thickness)
+                    bm_verts = bm.verts
+                    for i in range(len(self.extrude_verts)):
+                        vert_idx = self.extrude_verts[i]
+                        ex_dir = self.extrude_dirs[i][0].copy()
+                        ex_dir[0] *= delta
+                        ex_dir[1] *= delta
+                        ex_dir[2] *= delta
+                        bm_verts[vert_idx].co = self.extrude_dirs[i][3] + ex_dir
+
+                    bm.normal_update()
+                    bmesh.update_edit_mesh(active_obj.data)
+
                 else:
                     bpy.ops.mesh.inset(depth=self.depth, thickness=delta)
 
-                bpy.ops.ed.undo_push()
+                #bpy.ops.ed.undo_push()
 
         if event.type in {'LEFTMOUSE', 'ESC'}:
+            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            bpy.ops.object.mode_set(mode='EDIT', toggle=False)
             return {'FINISHED'}
 
         return {'RUNNING_MODAL'}
@@ -151,6 +196,9 @@ def clean(self):
     self.depth = 0
     self.thickness = 0
     self.move_size = None
+    self.extrude_dirs = None
+    self.inset_dirs = None
+    self.extrude_verts = None
 
 
 # calculate Move Size
