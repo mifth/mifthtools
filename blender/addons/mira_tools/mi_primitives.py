@@ -66,7 +66,7 @@ class MI_MakePrimitive(bpy.types.Operator):
     objects_to_clone = []
     history_objects = []
 
-    rot_mouse_pos = None  # rotate first position when rotation is enabled
+    deform_mouse_pos = None  # rotate first position when rotation is enabled
 
     orient_on_surface = BoolProperty(default=False)
     center_is_cursor = BoolProperty(default=False)
@@ -76,8 +76,8 @@ class MI_MakePrimitive(bpy.types.Operator):
     sphere_segments = [16, 8]
     capsule_segments = [16, 4]
 
-    tool_mode = 'IDLE'  # IDLE, IDLE_2, DRAW_1, DRAW_2, ROTATE
-    tool_mode_before_rotate = None  # this is for ROTATE mode only
+    tool_mode = 'IDLE'  # IDLE, IDLE_2, DRAW_1, DRAW_2, ROTATE, SCALE
+    tool_mode_before_deform = None  # this is for ROTATE mode only
 
 
     def invoke(self, context, event):
@@ -119,7 +119,7 @@ class MI_MakePrimitive(bpy.types.Operator):
         context.area.tag_redraw()
 
         # Tooltip
-        tooltip_text = "Shift: Scale Constraint; Ctrl+MouseWheel, Ctrl+Shift+MouseWheel, +-, Ctrl++, ctrl+-: Change Segments; Shift+LeftClick: Uniform Scale; C: CenterCursor; O: Orient on Surface; R: Rotate"
+        tooltip_text = "Shift: Scale Constraint; Ctrl+MouseWheel, Ctrl+Shift+MouseWheel, +-, Ctrl++, ctrl+-: Change Segments; Shift+LeftClick: Uniform Scale; C: CenterCursor; O: Orient on Surface; R: Rotate, S: Scale"
         context.area.header_text_set(tooltip_text)
 
         m_coords = event.mouse_region_x, event.mouse_region_y
@@ -156,13 +156,28 @@ class MI_MakePrimitive(bpy.types.Operator):
         elif event.type == 'R' and event.value == 'PRESS':
             if self.new_prim:
                 if self.tool_mode == 'ROTATE':
-                    self.tool_mode = self.tool_mode_before_rotate
-                    self.tool_mode_before_rotate = None
+                    self.tool_mode = self.tool_mode_before_deform
+                    self.tool_mode_before_deform = None
                     return {'RUNNING_MODAL'}
                 else:
-                    self.rot_mouse_pos = m_coords
-                    self.tool_mode_before_rotate = self.tool_mode
+                    self.deform_mouse_pos = m_coords
+                    self.tool_mode_before_deform = self.tool_mode
                     self.tool_mode = 'ROTATE'
+            else:
+                return {'RUNNING_MODAL'}
+
+            return {'RUNNING_MODAL'}
+
+        elif event.type == 'S' and event.value == 'PRESS':
+            if self.new_prim:
+                if self.tool_mode == 'SCALE':
+                    self.tool_mode = self.tool_mode_before_deform
+                    self.tool_mode_before_deform = None
+                    return {'RUNNING_MODAL'}
+                else:
+                    self.deform_mouse_pos = m_coords
+                    self.tool_mode_before_deform = self.tool_mode
+                    self.tool_mode = 'SCALE'
             else:
                 return {'RUNNING_MODAL'}
 
@@ -391,7 +406,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
         # LEFTMOUSE CLICK
         if event.type == 'LEFTMOUSE':
-            if self.tool_mode == 'ROTATE':
+            if self.tool_mode in {'ROTATE', 'SCALE'}:
                 return {'RUNNING_MODAL'}
 
             if self.tool_mode == 'IDLE' and event.value == 'PRESS':
@@ -595,7 +610,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
             if obj_pos_2d:
                 new_prim_mat = self.new_prim.matrix_world
-                v1 = Vector(self.rot_mouse_pos) - obj_pos_2d
+                v1 = Vector(self.deform_mouse_pos) - obj_pos_2d
                 v1 = Vector((v1[0], v1[1], 0)).normalized()
                 v2 = Vector(m_coords) - obj_pos_2d
                 v2 = Vector((v2[0], v2[1], 0)).normalized()
@@ -621,13 +636,40 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                     # do rotation
                     bpy.ops.transform.rotate(value=rot_angle, axis=rot_axis)
-                    self.rot_mouse_pos = m_coords
+                    self.deform_mouse_pos = m_coords
 
                     # if edit obj
                     if self.edit_obj:
                         self.new_prim.select = False
                         context.scene.objects.active = act_temp
                         bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+
+        # Rotate Primitive
+        elif self.tool_mode == 'SCALE':
+            obj_pos_2d = view3d_utils.location_3d_to_region_2d(context.region, rv3d, self.new_prim.location)
+
+            if obj_pos_2d:
+                v1 = Vector(self.deform_mouse_pos) - obj_pos_2d
+                v2 = Vector(m_coords) - obj_pos_2d
+
+                ## if edit obj
+                #if self.edit_obj:
+                    #bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+                    #bpy.ops.object.select_all(action='DESELECT')
+                    #act_temp = context.scene.objects.active
+                    ##temp_sel = self.new_prim.select
+                    #self.new_prim.select = True
+                    #context.scene.objects.active = self.new_prim
+
+                # do scale
+                self.new_prim.scale *= (v2.length / v1.length)
+                self.deform_mouse_pos = m_coords
+
+                ## if edit obj
+                #if self.edit_obj:
+                    #self.new_prim.select = False
+                    #context.scene.objects.active = act_temp
+                    #bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
         return {'RUNNING_MODAL'}
 
@@ -642,8 +684,8 @@ def clean(context, self):
     self.history_objects = []
     self.edit_obj = None
     self.objects_to_clone = None
-    self.rot_mouse_pos = None
-    self.tool_mode_before_rotate = None
+    self.deform_mouse_pos = None
+    self.tool_mode_before_deform = None
 
 
 def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_type, self):
