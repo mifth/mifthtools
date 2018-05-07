@@ -426,7 +426,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                 if ray_result[0] and self.orient_on_surface and not self.center_is_cursor:
                     self.hit_pos = ray_result[2].copy()
-                    self.hit_dir = ray_result[1].copy()
+                    self.hit_dir = ray_result[1].copy().normalized()
                     do_create_prim = True
                 else:
                     # make auto pick according to 3d cursor
@@ -440,7 +440,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                     else:
                         self.hit_pos = ray_result_auto[0].copy()
 
-                    self.hit_dir = ray_result_auto[1].copy()
+                    self.hit_dir = ray_result_auto[1].copy().normalized()
 
                     do_create_prim = True
                     is_autoaxis = True
@@ -652,24 +652,17 @@ class MI_MakePrimitive(bpy.types.Operator):
                 v1 = Vector(self.deform_mouse_pos) - obj_pos_2d
                 v2 = Vector(m_coords) - obj_pos_2d
 
-                ## if edit obj
-                #if self.edit_obj:
-                    #bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-                    #bpy.ops.object.select_all(action='DESELECT')
-                    #act_temp = context.scene.objects.active
-                    ##temp_sel = self.new_prim.select
-                    #self.new_prim.select = True
-                    #context.scene.objects.active = self.new_prim
-
                 # do scale
                 self.new_prim.scale *= (v2.length / v1.length)
                 self.deform_mouse_pos = m_coords
 
-                ## if edit obj
-                #if self.edit_obj:
-                    #self.new_prim.select = False
-                    #context.scene.objects.active = act_temp
-                    #bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+                # fix position for non median primitives
+                if not self.median_center and self.tool_mode_before_deform == 'IDLE' and self.prim_type != 'Clone':
+                    mult_vec = self.hit_dir.copy()
+                    mult_vec[0] *= (self.new_prim.scale[2])
+                    mult_vec[1] *= (self.new_prim.scale[2])
+                    mult_vec[2] *= (self.new_prim.scale[2])
+                    self.new_prim.location = self.hit_pos + mult_vec
 
         return {'RUNNING_MODAL'}
 
