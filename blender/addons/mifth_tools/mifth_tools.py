@@ -27,6 +27,22 @@ import math
 
 # bpy.mifthTools = dict()
 
+class MFTPanelPose(bpy.types.Panel):
+    bl_label = "Bones"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS'
+    bl_context = "posemode"
+    bl_category = 'Mifth'
+    # bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mifthTools = context.scene.mifthTools
+
+        op = layout.operator("mft.copy_bones_transform", text="CopyBonesTransform")
+        op.mode = 'Copy'
+        op = layout.operator("mft.copy_bones_transform", text="PasteBonesTransform")
+        op.mode = 'Paste'   
 
 class MFTPanelAnimation(bpy.types.Panel):
     bl_label = "Animations"
@@ -55,6 +71,11 @@ class MFTPanelAnimation(bpy.types.Panel):
         layout.prop(mifthTools, "morfCreatorNames")
         layout.prop(mifthTools, "morfUseWorldMatrix", text='useWorldMatrix')
         layout.prop(mifthTools, "morfApplyModifiers", text='applyModifiers')
+        layout.separator()
+        op = layout.operator("mft.copy_bones_transform", text="CopyBonesTransform")
+        op.mode = 'Copy'
+        op = layout.operator("mft.copy_bones_transform", text="PasteBonesTransform")
+        op.mode = 'Paste'        
 
 
 class MFTPanelPlaykot(bpy.types.Panel):
@@ -336,5 +357,42 @@ class MFTMorfCreator(bpy.types.Operator):
                     else:
                         self.report(
                             {'INFO'}, "Model " + obj.name + " has different points count")
+
+        return {'FINISHED'}
+
+
+class MFTCopyBonesTransform(bpy.types.Operator):
+    bl_idname = "mft.copy_bones_transform"
+    bl_label = "Copy Bones Transform"
+    bl_description = "Copy Bones Transform"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    bones_transform = []
+    mode = EnumProperty(
+        items=(('Copy', 'Copy', ''),
+               ('Paste', 'Paste', '')
+               ),
+        default = 'Copy'
+    )
+
+    def execute(self, context):
+
+        scene = context.scene
+        mifthTools = scene.mifthTools
+        obj_act = context.active_object
+        all_bones = obj_act.data.bones
+
+        sel_bones = context.selected_pose_bones
+
+        if sel_bones:
+            if self.mode == 'Copy':
+                del self.bones_transform[:]
+                for bone in sel_bones:
+                    self.bones_transform.append(bone.matrix.copy())
+                    print(bone.matrix)
+            elif self.mode == 'Paste':
+                for i in range(len(sel_bones)):
+                    sel_bones[i].matrix = self.bones_transform[i].copy()
+                    print(self.bones_transform[i])
 
         return {'FINISHED'}
