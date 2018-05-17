@@ -19,6 +19,7 @@
 
 import bpy
 import bmesh
+import bgl
 
 from bpy.props import *
 from bpy.types import Operator, AddonPreferences
@@ -28,6 +29,9 @@ import mathutils as mathu
 from mathutils import Vector, Matrix
 
 from . import mi_utils_base as ut_base
+from . import mi_color_manager as col_man
+from . import mi_widget_curve as c_widget
+from bpy_extras import view3d_utils
 
 
 class MI_Simple_Extrude(bpy.types.Operator):
@@ -54,15 +58,13 @@ class MI_Simple_Extrude(bpy.types.Operator):
         clean(self)
 
         if context.mode == 'EDIT_MESH':
+            # the arguments we pass the the callbackection
+            args = (self, context)
+
             active_obj = context.scene.objects.active
             bm = bmesh.from_edit_mesh(active_obj.data)
 
             self.first_mouse_x = event.mouse_x
-
-            ## Center Calculation
-            #sel_faces = [f for f in bm.faces if f.select]
-            #self.center = sel_faces[0].calc_center_median()
-            #context.scene.cursor_location = self.center
 
             # EXTRUDE TEST
             bpy.ops.ed.undo_push()
@@ -116,11 +118,12 @@ class MI_Simple_Extrude(bpy.types.Operator):
                 self.extrude_dirs.append((dir_ex, dir_ins, p3))
 
             # Center Calculation
-            self.center = verts_temp_3[0].copy()
-            context.scene.cursor_location = self.center
+            self.center = active_obj.matrix_world * verts_temp_3[0].copy()
+            #context.scene.cursor_location = self.center
+
+            self.mi_extrude_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_extrude_draw_2d, args, 'WINDOW', 'POST_PIXEL')
 
             context.window_manager.modal_handler_add(self)
-
 
             return {'RUNNING_MODAL'}
 
@@ -130,6 +133,11 @@ class MI_Simple_Extrude(bpy.types.Operator):
 
 
     def modal(self, context, event):
+        # Tooltip
+        context.area.tag_redraw()
+        tooltip_text = "E: Extrude, W: Inset, Leftclick/Esc: Finish"
+        context.area.header_text_set(tooltip_text)
+
         active_obj = context.scene.objects.active
         m_coords = event.mouse_region_x, event.mouse_region_y
         bm = bmesh.from_edit_mesh(active_obj.data)
@@ -155,8 +163,8 @@ class MI_Simple_Extrude(bpy.types.Operator):
 
                 #bm = bmesh.from_edit_mesh(active_obj.data)
                 #sel_faces = [f for f in bm.faces if f.select]
-                self.center = bm.verts[self.extrude_verts_ids[0]].co.copy()
-                context.scene.cursor_location = self.center
+                self.center = active_obj.matrix_world * bm.verts[self.extrude_verts_ids[0]].co.copy()
+                #context.scene.cursor_location = self.center
 
                 self.tool_mode = 'IDLE'
 
@@ -176,10 +184,29 @@ class MI_Simple_Extrude(bpy.types.Operator):
                 
                 #bm = bmesh.from_edit_mesh(active_obj.data)
                 #sel_faces = [f for f in bm.faces if f.select]
-                self.center = bm.verts[self.extrude_verts_ids[0]].co.copy()
-                context.scene.cursor_location = self.center
+                self.center = active_obj.matrix_world * bm.verts[self.extrude_verts_ids[0]].co.copy()
+                #context.scene.cursor_location = self.center
 
                 self.tool_mode = 'IDLE'
+
+            return {'RUNNING_MODAL'}
+
+        # RESET
+        elif event.type == 'R' and event.value == 'PRESS':
+            if self.tool_mode == 'IDLE':
+                bm_verts = bm.verts
+
+                for i in range(len(self.extrude_verts_ids)):
+                    vert_idx = self.extrude_verts_ids[i]
+
+                    bm_verts[vert_idx].co = self.extrude_dirs[i][2]
+                    self.thickness = 0.0
+                    self.depth = 0.0
+
+                self.center = active_obj.matrix_world * bm_verts[self.extrude_verts_ids[0]].co.copy()
+
+                bm.normal_update()
+                bmesh.update_edit_mesh(active_obj.data)
 
             return {'RUNNING_MODAL'}
 
@@ -204,14 +231,19 @@ class MI_Simple_Extrude(bpy.types.Operator):
                         else:
                             inset_dir *= (self.thickness)
 
-                        bm_verts[vert_idx].co = self.extrude_dirs[i][2] + ex_dir + inset_dir
+                        bm_verts[vert_idx].co = self.extrude_dirs[i][2] - ex_dir + inset_dir
 
                     bm.normal_update()
                     bmesh.update_edit_mesh(active_obj.data)
 
-        if event.type in {'LEFTMOUSE', 'ESC'}:
+        if event.type in {'LEFTMOUSE', 'RIGHTMOUSE', 'ESC'}:
+            # fix some essues. Just go to ObjectMode then o Edit Mode
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
             bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+
+            bpy.types.SpaceView3D.draw_handler_remove(self.mi_extrude_handle_2d, 'WINDOW')
+            context.area.header_text_set()
+
             return {'FINISHED'}
 
         return {'RUNNING_MODAL'}
@@ -239,3 +271,14 @@ def calc_move_size(self, context):
     move_test_2 = ut_base.get_mouse_on_plane(context, self.center, view_dir_neg, ((reg_w / 2) + 1.0, reg_h / 2))
 
     return (move_test_1 - move_test_2).length
+
+
+# Draw point in Viewport
+def mi_extrude_draw_2d(self, context):
+    if self.center:
+        rv3d = context.region_data
+        region = context.region
+        point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.center)
+
+        p_col = col_man.dre_point_base
+        c_widget.draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)

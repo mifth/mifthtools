@@ -42,7 +42,7 @@ class MFTPanelPose(bpy.types.Panel):
         op = layout.operator("mft.copy_bones_transform", text="CopyBonesTransform")
         op.mode = 'Copy'
         op = layout.operator("mft.copy_bones_transform", text="PasteBonesTransform")
-        op.mode = 'Paste'   
+        op.mode = 'Paste'
 
 class MFTPanelAnimation(bpy.types.Panel):
     bl_label = "Animations"
@@ -71,11 +71,6 @@ class MFTPanelAnimation(bpy.types.Panel):
         layout.prop(mifthTools, "morfCreatorNames")
         layout.prop(mifthTools, "morfUseWorldMatrix", text='useWorldMatrix')
         layout.prop(mifthTools, "morfApplyModifiers", text='applyModifiers')
-        layout.separator()
-        op = layout.operator("mft.copy_bones_transform", text="CopyBonesTransform")
-        op.mode = 'Copy'
-        op = layout.operator("mft.copy_bones_transform", text="PasteBonesTransform")
-        op.mode = 'Paste'        
 
 
 class MFTPanelPlaykot(bpy.types.Panel):
@@ -389,10 +384,10 @@ class MFTCopyBonesTransform(bpy.types.Operator):
                 del self.bones_transform[:]
                 for bone in sel_bones:
                     self.bones_transform.append(bone.matrix.copy())
-                    print(bone.matrix)
+                    #print(bone.matrix)
             elif self.mode == 'Paste':
                 for i in range(len(sel_bones)):
                     sel_bones[i].matrix = self.bones_transform[i].copy()
-                    print(self.bones_transform[i])
+                    #print(self.bones_transform[i])
 
         return {'FINISHED'}
