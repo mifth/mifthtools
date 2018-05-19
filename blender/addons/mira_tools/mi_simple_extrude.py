@@ -62,6 +62,11 @@ class MI_Simple_Extrude(bpy.types.Operator):
             args = (self, context)
 
             active_obj = context.scene.objects.active
+
+            # fix some essues. Just go to ObjectMode then o Edit Mode
+            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+
             bm = bmesh.from_edit_mesh(active_obj.data)
 
             self.first_mouse_x = event.mouse_x
@@ -122,6 +127,10 @@ class MI_Simple_Extrude(bpy.types.Operator):
             #context.scene.cursor_location = self.center
 
             self.mi_extrude_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_extrude_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+
+            # set default Extrude mode
+            self.move_size = calc_move_size(self, context)
+            #self.tool_mode = 'EXTRUDE'
 
             context.window_manager.modal_handler_add(self)
 
