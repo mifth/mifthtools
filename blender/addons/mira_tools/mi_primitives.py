@@ -713,13 +713,13 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
         z_neg_vec = Vector((0.0, 0.0, -1.0))
         z_world_angle = z_neg_vec.angle(normal)
 
-        if z_world_angle == math.radians(180) or z_world_angle == math.radians(-180):
-            view_cam_upvec = rv3d.view_rotation * Vector((0.0, -1.0, 0.0)).normalized()
+        if z_world_angle >= math.radians(180) or z_world_angle <= math.radians(0):
+            view_cam_upvec = (rv3d.view_rotation * Vector((0.0, -1.0, 0.0))).normalized()
             view_upvec = view_cam_upvec.copy()
             view_upvec[2] = 0.0
 
-            if view_upvec[0] == 0 and view_upvec[1] == 0:
-                view_upvec = view_cam_upvec
+            #if view_upvec[0] == 0 and view_upvec[1] == 0:
+                #view_upvec = view_cam_upvec
             if view_upvec[0] > view_upvec[1]:
                 view_upvec[0] = 1.0
                 view_upvec[1] = 0.0

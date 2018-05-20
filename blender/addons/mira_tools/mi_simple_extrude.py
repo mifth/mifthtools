@@ -49,7 +49,10 @@ class MI_Simple_Extrude(bpy.types.Operator):
     move_size = None
     extrude_dirs = None
     extrude_verts_ids = None
-    
+
+    zero_x_faces = None
+    zero_y_faces = None
+    zero_z_faces = None
 
     tool_mode = 'IDLE'  # IDLE, EXTRUDE, INSET
 
@@ -86,7 +89,6 @@ class MI_Simple_Extrude(bpy.types.Operator):
                     verts_temp_1.append(v.co.copy())
                     self.extrude_verts_ids.append(ix)
                     
-
             bpy.ops.ed.undo()
 
             # INSET TEST
@@ -108,8 +110,42 @@ class MI_Simple_Extrude(bpy.types.Operator):
             bm.verts.ensure_lookup_table()
 
             verts_temp_3 = []
-            for ix in self.extrude_verts_ids:
-                verts_temp_3.append(bm.verts[ix].co.copy())
+
+            snap_mir_x = None
+            snap_mir_y = None
+            snap_mir_z = None
+
+            for modifier in active_obj.modifiers:
+                if modifier.type == 'MIRROR':
+                    if modifier.use_x and modifier.use_clip:
+                        snap_mir_x = modifier.merge_threshold
+                    if modifier.use_y and modifier.use_clip:
+                        snap_mir_y = modifier.merge_threshold
+                    if modifier.use_z and modifier.use_clip:
+                        snap_mir_z = modifier.merge_threshold
+
+            for i in range(len(self.extrude_verts_ids)):
+                bv = bm.verts[self.extrude_verts_ids[i]]
+                verts_temp_3.append(bv.co.copy())
+
+                # get zero faces
+                if snap_mir_x or snap_mir_y or snap_mir_z:
+                    linked_faces = bv.link_faces
+                    for linked_face in linked_faces:
+                        if linked_face.index not in self.zero_x_faces:
+                            face_area = linked_face.calc_area()
+                            face_center = linked_face.calc_center_median()
+
+                            if snap_mir_x:
+                                if face_area == 0 and face_center[0] <= snap_mir_x and face_center[0] >= -snap_mir_x:
+                                    self.zero_x_faces.append(linked_face.index)
+                                    print(linked_face.index)
+                            if snap_mir_y:
+                                if face_area == 0 and face_center[1] <= snap_mir_y and face_center[1] >= -snap_mir_y:
+                                    self.zero_y_faces.append(linked_face.index)
+                            if snap_mir_z:
+                                if face_area == 0 and face_center[2] <= snap_mir_z and face_center[2] >= -snap_mir_z:
+                                    self.zero_z_faces.append(linked_face.index)
 
             # Get Dirs
             self.extrude_dirs = []
@@ -118,13 +154,13 @@ class MI_Simple_Extrude(bpy.types.Operator):
                 p2 = verts_temp_2[i]
                 p3 = verts_temp_3[i]
 
+                # set Extrude Dirs
                 dir_ex = p1 - p3
                 dir_ins = p2 - p3
                 self.extrude_dirs.append((dir_ex, dir_ins, p3))
 
             # Center Calculation
             self.center = active_obj.matrix_world * verts_temp_3[0].copy()
-            #context.scene.cursor_location = self.center
 
             self.mi_extrude_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_extrude_draw_2d, args, 'WINDOW', 'POST_PIXEL')
 
@@ -240,12 +276,48 @@ class MI_Simple_Extrude(bpy.types.Operator):
                         else:
                             inset_dir *= (self.thickness)
 
+                        # change vertex position
                         bm_verts[vert_idx].co = self.extrude_dirs[i][2] - ex_dir + inset_dir
+
+                        # fix zero positions
+                        if self.zero_x_faces:
+                            for face_id in self.zero_x_faces:
+                                zero_verts = bm.faces[face_id].verts
+
+                                for zero_vert in zero_verts:
+                                    zero_vert.co[0] = 0.0
+                        if self.zero_y_faces:
+                            for face_id in self.zero_y_faces:
+                                zero_verts = bm.faces[face_id].verts
+
+                                for zero_vert in zero_verts:
+                                    zero_vert.co[1] = 0.0
+                        if self.zero_z_faces:
+                            for face_id in self.zero_z_faces:
+                                zero_verts = bm.faces[face_id].verts
+
+                                for zero_vert in zero_verts:
+                                    zero_vert.co[2] = 0.0
 
                     bm.normal_update()
                     bmesh.update_edit_mesh(active_obj.data)
 
         if event.type in {'LEFTMOUSE', 'RIGHTMOUSE', 'ESC'}:
+            # delete zero faces
+            zero_faces = []
+
+            if self.zero_x_faces:
+                for face_id in self.zero_x_faces:
+                    zero_faces.append(bm.faces[face_id])
+            if self.zero_y_faces:
+                for face_id in self.zero_y_faces:
+                    zero_faces.append(bm.faces[face_id])
+            if self.zero_z_faces:
+                for face_id in self.zero_z_faces:
+                    zero_faces.append(bm.faces[face_id])
+
+            bmesh.ops.delete(bm, geom=zero_faces, context=5)
+
             # fix some essues. Just go to ObjectMode then o Edit Mode
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
             bpy.ops.object.mode_set(mode='EDIT', toggle=False)
@@ -267,6 +339,10 @@ def clean(self):
     self.move_size = None
     self.extrude_dirs = None
     self.extrude_verts_ids = None
+
+    self.zero_x_faces = []
+    self.zero_y_faces = []
+    self.zero_z_faces = []
 
 
 # calculate Move Size
