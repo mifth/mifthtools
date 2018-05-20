@@ -180,7 +180,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
     def modal(self, context, event):
         # Tooltip
         context.area.tag_redraw()
-        tooltip_text = "E: Extrude, W: Inset, Leftclick/Esc: Finish"
+        tooltip_text = "E: Extrude, W: Inset, R: Reset, Leftclick/Esc: Finish"
         context.area.header_text_set(tooltip_text)
 
         active_obj = context.scene.objects.active
