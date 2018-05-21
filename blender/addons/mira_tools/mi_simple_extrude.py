@@ -132,7 +132,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
                 if snap_mir_x or snap_mir_y or snap_mir_z:
                     linked_faces = bv.link_faces
                     for linked_face in linked_faces:
-                        if linked_face.index not in self.zero_x_faces:
+                        if linked_face.index not in self.zero_x_faces and linked_face.index not in self.zero_y_faces and linked_face.index not in self.zero_z_faces:
                             face_area = linked_face.calc_area()
                             face_center = linked_face.calc_center_median()
 
