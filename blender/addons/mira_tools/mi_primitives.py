@@ -100,11 +100,12 @@ class MI_MakePrimitive(bpy.types.Operator):
 
             mi_settings = context.scene.mi_settings
 
-            # get all matrices of visible objects
             # Check if it's EDIT MODE
             if context.mode == 'EDIT_MESH':
                 self.edit_obj = context.scene.objects.active
-            self.obj_matrices = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, mi_settings.convert_instances, context, add_active_obj=True)
+
+            # get all matrices of visible objects
+            self.obj_matrices = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, True, context, add_active_obj=True)
 
             context.window_manager.modal_handler_add(self)
 
