@@ -55,12 +55,12 @@ class MFTSetColorToSelected(bpy.types.Operator):
         for poly in obj.data.polygons:
             for vert_idx in poly.vertices:
                 if obj.data.vertices[vert_idx].select is True:
-                    # rgb = [0 for i in range(3)]
+
                     if self.selected_faces_only is False:
-                        color_layer.data[i].color = self.strength
+                        color_layer.data[i].color = (self.strength[0], self.strength[1], self.strength[2], 1.0)
                     else:
                         if poly.select is True:
-                            color_layer.data[i].color = self.strength
+                            color_layer.data[i].color = (self.strength[0], self.strength[1], self.strength[2], 1.0)
 
                 i += 1
 
