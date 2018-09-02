@@ -214,6 +214,9 @@ class MFTPanelCloning(bpy.types.Panel):
         layout.label(text="Position Group:")
         layout.operator("mft.group_instance_to_cursor", text="Position Group")
         layout.prop(mifthCloneTools, "getGroupsLst", text='')
+        layout.separator()
+
+        layout.operator("mft.group_to_mesh", text="Groups To Mesh")
 
 
 class MFTDrawClones(bpy.types.Operator):
@@ -806,5 +809,40 @@ class MFTGroupInstance(bpy.types.Operator):
                 1] = bpy.context.space_data.cursor_location[1]
             obj_group.dupli_offset[
                 2] = bpy.context.space_data.cursor_location[2]
+
+        return {'FINISHED'}
+
+
+class MFTGroupToMesh(bpy.types.Operator):
+    bl_idname = "mft.group_to_mesh"
+    bl_label = "Convert Group Instance to Mesh"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        bpy.ops.object.duplicates_make_real()
+        bpy.ops.object.make_single_user(object=True, obdata=True, material=False, texture=False, animation=False)
+        
+        objs = context.selected_objects
+        objs_names = [i.name for i in objs]
+
+        for name in objs_names:
+            obj = context.scene.objects[name]
+
+            if obj.type == 'EMPTY':
+                bpy.data.objects.remove(bpy.data.objects[name], True)
+
+            elif obj.type == 'MESH':
+                if obj.scale[0] < 0 or obj.scale[1] < 0 or obj.scale[2] < 0:
+                    for face in obj.data.polygons:
+                        face.select = True
+
+                    context.scene.objects.active = obj
+                    bpy.ops.object.mode_set(mode = 'EDIT')
+                    bpy.ops.mesh.flip_normals()
+                    bpy.ops.object.mode_set(mode = 'OBJECT')
+
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
 
         return {'FINISHED'}
