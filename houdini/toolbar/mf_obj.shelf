@@ -9,6 +9,7 @@
     <memberTool name="instance"/>
     <memberTool name="geom_converter"/>
     <memberTool name="scale_100"/>
+    <memberTool name="tool_2"/>
     <memberTool name="lock_selected"/>
     <memberTool name="PolyReducer"/>
   </toolshelf>
@@ -103,24 +104,37 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
   </tool>
 
   <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
-    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice):
+    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice, null_choice):
     merge_node = new_node.createNode("object_merge", node_name=node_to_merge.name())
 
 #    merge_path = node_to_merge.path()
     merge_path = "../../" + node_to_merge.name()
 
+    if choice == 1:
+        merge_node.parm('pack').set(True)
+
+    #  create null or pass
     if node_to_merge.type().name() == "subnet":
         merge_path += "/*"
     else:
-        sop_node = node_to_merge.displayNode()
-        null_out = sop_node.createOutputNode("null", node_name="SupaM")
-        null_out.setColor(hou.Color((1.0, 0.5, 0)))
-        null_out.moveToGoodPosition()
+        if null_choice != 0:
+            sop_node = node_to_merge.displayNode()
+            null_out = sop_node.createOutputNode("null", node_name="SupaM")
+            null_out.setColor(hou.Color((1.0, 0.5, 0)))
+            null_out.moveToGoodPosition()
 
-        merge_path += '/' + null_out.name()
+            merge_path += '/' + null_out.name()
 
-    if choice == 1:
-        merge_node.parm('pack').set(True)
+            if null_choice == 2:
+                merge_back_node = node_to_merge.createNode("object_merge", node_name="merge_back")
+                merge_back_node.parm('objpath1').set("../../" + new_node.name())
+                merge_back_node.parm('group1').set("SupaM_" + node_to_merge.name())
+                merge_back_node.parm('xformtype').set(1)
+
+                merge_back_node.moveToGoodPosition()
+                merge_back_node.setDisplayFlag(True)
+                merge_back_node.setRenderFlag(True)
+
 
     merge_node.parm('objpath1').set(merge_path)
     merge_node.parm('xformtype').set(1)
@@ -149,9 +163,10 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     final_merge = new_node.createNode("merge")
 
     choice = hou.ui.displayMessage("Pack?", buttons=("Don't Pack", "Pack"))
+    null_choice = hou.ui.displayMessage("Create Nulls and Merges?", buttons=("No Null", "Add Null", "Null and Merge"))
     
     for node in sel_nodes:
-        make_merge(final_merge, new_node, node, choice)
+        make_merge(final_merge, new_node, node, choice, null_choice)
 
     final_merge.moveToGoodPosition()
     attrib_del = final_merge.createOutputNode('attribdelete')
@@ -259,6 +274,51 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
         reduce_node.insertInput(0, sop_node)
 
         reduce_node.moveToGoodPosition()
+
+else:
+    msg = 'Select Object Nodes!'
+    hou.ui.displayMessage(msg)]]></script>
+  </tool>
+
+  <tool name="tool_2" label="ApplyTransform" icon="SOP_xform">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Apply Transform?", buttons=("All", "Position", "Rotation", "Scale", "Cancel"))
+
+    if choice != 4:
+
+        for obj_node in sel_nodes:
+            sop_node = obj_node.displayNode()
+
+            trans_node = sop_node.createOutputNode("xform")
+
+            poses = obj_node.parmTuple('t').eval()
+            rots = obj_node.parmTuple('r').eval()
+            scales = obj_node.parmTuple('s').eval()
+            uni_scales = obj_node.parm('scale').eval()
+
+            if choice == 0 or choice == 1:
+                trans_node.parmTuple('t').set(poses)
+            if choice == 0 or choice == 2:
+                trans_node.parmTuple('r').set(rots)
+            if choice == 0 or choice == 3:
+                trans_node.parmTuple('s').set(scales)
+                trans_node.parm('scale').set(uni_scales)
+
+            if choice == 0 or choice == 1:
+                obj_node.parmTuple('t').set((0, 0, 0))
+            if choice == 0 or choice == 2:
+                obj_node.parmTuple('r').set((0, 0, 0))
+            if choice == 0 or choice == 3:
+                obj_node.parmTuple('s').set((1, 1, 1))
+                obj_node.parm('scale').set(1)
+
+            trans_node.moveToGoodPosition()
+            trans_node.setDisplayFlag(True)
+            trans_node.setRenderFlag(True)
 
 else:
     msg = 'Select Object Nodes!'
