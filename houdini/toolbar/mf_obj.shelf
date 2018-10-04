@@ -12,6 +12,7 @@
     <memberTool name="tool_2"/>
     <memberTool name="lock_selected"/>
     <memberTool name="PolyReducer"/>
+    <memberTool name="recook1"/>
   </toolshelf>
 
   <tool name="instance" label="Instance" icon="OBJ_instance">
@@ -323,5 +324,26 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 else:
     msg = 'Select Object Nodes!'
     hou.ui.displayMessage(msg)]]></script>
+  </tool>
+
+  <tool name="recook" label="Recook" icon="PLASMA_App">
+    <toolMenuContext name="network">
+      <contextNetType>OBJ</contextNetType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[for node in hou.node("/obj").allSubChildren():
+    if node.type().name() == 'geo':
+        node.displayNode().cook(force=True)
+        ]]></script>
+  </tool>
+
+  <tool name="recook1" label="Recook" icon="PLASMA_App">
+    <toolMenuContext name="network">
+      <contextNetType>OBJ</contextNetType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[for node in hou.node("/obj").allSubChildren():
+    if node.type().name() == 'geo':
+        node.displayNode().cook(force=True)
+        node.cook(force=True)
+        ]]></script>
   </tool>
 </shelfDocument>

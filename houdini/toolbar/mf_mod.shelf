@@ -309,7 +309,7 @@ sv = toolutils.sceneViewer()
 cp = sv.constructionPlane()
 #sel_nodes = hou.selectedNodes()
 
-choice = hou.ui.displayMessage("Save the current hip file?", buttons=("1", "2", "3"))
+choice = hou.ui.displayMessage("SetPlane:", buttons=("View", "Axis-Aligned", "Original"))
 
 if choice == 1:
     cp.setTransform(sv.curViewport().viewTransform())
