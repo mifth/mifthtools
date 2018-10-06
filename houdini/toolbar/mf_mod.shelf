@@ -309,7 +309,7 @@ sv = toolutils.sceneViewer()
 cp = sv.constructionPlane()
 #sel_nodes = hou.selectedNodes()
 
-choice = hou.ui.displayMessage("SetPlane:", buttons=("View", "Axis-Aligned", "Original"))
+choice = hou.ui.displayMessage("SetPlane:", buttons=("Axis-Aligned", "View", "Original"))
 
 if choice == 1:
     cp.setTransform(sv.curViewport().viewTransform())
