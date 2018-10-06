@@ -132,6 +132,15 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
                 merge_back_node.parm('group1').set("SupaM_" + node_to_merge.name())
                 merge_back_node.parm('xformtype').set(1)
 
+                # make new connections for the merge node
+                for connects in sop_node.outputConnections():
+                    out_node = connects.outputNode()
+                    in_idx = connects.inputIndex()
+                    out_idx = connects.outputIndex()
+
+                    if out_node.name() != null_out.name():
+                        out_node.setInput(out_idx, merge_back_node, in_idx)
+
                 merge_back_node.moveToGoodPosition()
                 merge_back_node.setDisplayFlag(True)
                 merge_back_node.setRenderFlag(True)
