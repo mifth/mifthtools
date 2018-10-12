@@ -13,6 +13,7 @@
     <memberTool name="lock_selected"/>
     <memberTool name="PolyReducer"/>
     <memberTool name="recook1"/>
+    <memberTool name="rename"/>
   </toolshelf>
 
   <tool name="instance" label="Instance" icon="OBJ_instance">
@@ -354,5 +355,22 @@ else:
         node.displayNode().cook(force=True)
         node.cook(force=True)
         ]]></script>
+  </tool>
+
+  <tool name="rename" label="Rename" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+
+mess = hou.ui.readMultiInput("Rename:", ('Rename', 'Bake'), buttons=('OK', 'Cancel'))
+
+if mess[0] == 0 and (mess[1][0] != '' or mess[1][1] != ''):
+    for node in sel_nodes:
+        if mess[1][1] != '':
+            if node.parent() == sel_nodes[0].parent():
+                node.setName(mess[1][1] + '_hi', unique_name=True)
+            else:
+                node.setName(mess[1][1] + '_low', unique_name=True)
+
+        elif mess[1][0] != '':
+            node.setName(mess[1][0], unique_name=True)]]></script>
   </tool>
 </shelfDocument>
