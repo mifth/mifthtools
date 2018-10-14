@@ -79,8 +79,8 @@ import toolutils
 kwargs['ordered'] = True
 node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
 
-if not kwargs['ctrlclick']:
-    node.parm('merge_type').set('last')
+node.parm('merge_type').set('last')
+node.parm('grouptype').set('points')
 ]]></script>
   </tool>
 
