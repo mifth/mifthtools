@@ -349,7 +349,9 @@ node = soptoolutils.genericTool(kwargs, 'mifth_subdive_plus')]]></script>
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-if kwargs['ctrlclick']:
+choice = hou.ui.displayMessage("Apply Transform?", buttons=("Linear", "Radial"))
+
+if choice == 1:
     node = soptoolutils.genericTool(kwargs, 'mifth_edit_radial_falloff')
 
     bou = node.node('./bound1').geometry().boundingBox()
