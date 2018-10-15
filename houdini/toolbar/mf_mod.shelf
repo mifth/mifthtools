@@ -80,7 +80,7 @@ kwargs['ordered'] = True
 node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
 
 node.parm('merge_type').set('last')
-node.parm('grouptype').set('points')
+#node.parm('grouptype').set('points')
 ]]></script>
   </tool>
 
