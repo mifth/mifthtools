@@ -52,11 +52,6 @@
 				"icon","SHELF_extract_object",
 				"script","radialmenu.runShelfTool(kwargs, 'extract_to_object')"
 			],
-			"top_left",["script",
-				"label","PartMesh",
-				"icon","SOP_blast",
-				"script","radialmenu.runShelfTool(kwargs, 'part_mesh')"
-			],
 			"left",["script",
 				"label","Merge",
 				"icon","SOP_merge",
@@ -206,6 +201,11 @@
 				"label","Duplicate",
 				"icon","SOP_duplicate",
 				"script","radialmenu.runShelfTool(kwargs, 'geometry_duplicate')"
+			],
+			"top_right",["script",
+				"label","PartMesh",
+				"icon","SOP_blast",
+				"script","radialmenu.runShelfTool(kwargs, 'part_mesh')"
 			]
 		],
 		"right",["submenu",
