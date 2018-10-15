@@ -1,5 +1,5 @@
 [
-	"fileversion","16.5.268",
+	"fileversion","16.5.571",
 	"name","MfModel",
 	"categories","Modeling",
 	"submenu",["submenu",
@@ -142,7 +142,7 @@
 			"bottom",["script",
 				"label","Edge Collapse",
 				"icon","SOP_edgecollapse",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_edgecollapse')"
+				"script","import soptoolutils\nimport toolutils\n\nsoptoolutils.genericTool(kwargs, 'mifth_edge_collapse_plus')"
 			],
 			"bottom_right",["script",
 				"label","Normal",
@@ -218,8 +218,8 @@
 			"bottom",["script",
 				"label","Unhide",
 				"icon","SOP_visibility",
-				"script","import soptoolutils\n\nnode = soptoolutils.genericTool(kwargs, 'visibility')  \nnode.parm('action').set(1)\nnode.parm('group').set('')"
-			],
+				"script","import soptoolutils\n\ncur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()\n\nnode = cur_obj.displayNode().createOutputNode(\"visibility\")\nnode.parm('action').set(1)\nnode.parm('group').set('')\n\nnode.moveToGoodPosition()\nnode.setDisplayFlag(True)\nnode.setRenderFlag(True)"],
+			
 			"right",["script",
 				"label","Hide Non-Selected",
 				"icon","SOP_visibility",
