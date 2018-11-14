@@ -152,7 +152,10 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     #merge_node.setName(node_to_merge.name())
     merge_node.moveToGoodPosition()
 
-    group_node = merge_node.createOutputNode("group", node_name=node_to_merge.name())
+    del_gr_node = merge_node.createOutputNode("groupdelete")
+    del_gr_node.parm('group1').set("SupaM_*")
+
+    group_node = del_gr_node.createOutputNode("group", node_name=node_to_merge.name())
     group_node.parm('crname').set("SupaM_" + node_to_merge.name())
 
     final_merge.setNextInput(group_node)
