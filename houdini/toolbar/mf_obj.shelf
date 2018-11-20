@@ -14,6 +14,7 @@
     <memberTool name="PolyReducer"/>
     <memberTool name="recook1"/>
     <memberTool name="rename"/>
+    <memberTool name="id_material"/>
   </toolshelf>
 
   <tool name="instance" label="Instance" icon="OBJ_instance">
@@ -375,5 +376,28 @@ if mess[0] == 0 and (mess[1][0] != '' or mess[1][1] != ''):
 
         elif mess[1][0] != '':
             node.setName(mess[1][0], unique_name=True)]]></script>
+  </tool>
+
+  <tool name="id_material" label="IDMat" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import colorsys
+
+sel_nodes = hou.selectedNodes()
+
+choice = hou.ui.displayMessage("Randomize colors?", buttons=("Yes", "No"))
+
+for i, node in enumerate(sel_nodes):
+    if node.parmTuple('ogl_diff') is None:
+        node.addSpareParmTuple(hou.FloatParmTemplate('ogl_diff', 'Opengl Diffuse', 3) )
+
+    node.parm('ogl_diffx').setExpression("ch('basecolorr')")
+    node.parm('ogl_diffy').setExpression("ch('basecolorg')")
+    node.parm('ogl_diffz').setExpression("ch('basecolorb')")
+
+    if choice == 0:
+        rgb_set = colorsys.hsv_to_rgb(float(i) / float( len(sel_nodes) ), 1, 1)
+        node.parm('basecolorr').set(rgb_set[0])
+        node.parm('basecolorg').set(rgb_set[1])
+        node.parm('basecolorb').set(rgb_set[2])
+        ]]></script>
   </tool>
 </shelfDocument>
