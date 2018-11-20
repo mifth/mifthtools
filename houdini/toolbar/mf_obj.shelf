@@ -10,6 +10,7 @@
     <memberTool name="geom_converter"/>
     <memberTool name="scale_100"/>
     <memberTool name="tool_2"/>
+    <memberTool name="goz_fix"/>
     <memberTool name="lock_selected"/>
     <memberTool name="PolyReducer"/>
     <memberTool name="recook1"/>
@@ -399,5 +400,27 @@ for i, node in enumerate(sel_nodes):
         node.parm('basecolorg').set(rgb_set[1])
         node.parm('basecolorb').set(rgb_set[2])
         ]]></script>
+  </tool>
+
+  <tool name="goz_fix" label="GoZ_Fix" icon="SOP_xform">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+
+    for obj_node in sel_nodes:
+        sop_node = obj_node.displayNode()
+
+        trans_node = sop_node.createOutputNode("xform")
+
+        obj_node.parm('rx').set(180)
+
+        trans_node.moveToGoodPosition()
+        trans_node.setDisplayFlag(True)
+        trans_node.setRenderFlag(True)
+else:
+    msg = 'Select Object Nodes!'
+    hou.ui.displayMessage(msg)]]></script>
   </tool>
 </shelfDocument>
