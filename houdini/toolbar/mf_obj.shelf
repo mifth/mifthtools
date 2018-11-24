@@ -26,6 +26,9 @@ cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     choice = hou.ui.displayMessage("Instance", buttons=("Instance", "Geo", "Replace"))
 
+    if choice == 1:
+        choice_2 = hou.ui.displayMessage("Pack Meshes?", buttons=("Yes", "No"))
+
     for node in sel_nodes:
         if choice == 2 and node is sel_nodes[-1]:
             node.setSelected(False, clear_all_selected=False)
@@ -77,7 +80,8 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
         else:
             merge_node = obj_inst.createNode("object_merge")
-            merge_node.parm('pack').set(True)
+            if choice_2 == 0:
+                merge_node.parm('pack').set(True)
 
             if choice == 1:
                 merge_node.parm('objpath1').set('../../' + obj_source.name())

@@ -1,5 +1,5 @@
 [
-	"fileversion","16.5.571",
+	"fileversion","17.0.382",
 	"name","MfModel",
 	"categories","Modeling",
 	"submenu",["submenu",
@@ -218,7 +218,7 @@
 			"bottom",["script",
 				"label","Unhide",
 				"icon","SOP_visibility",
-				"script","import soptoolutils\n\ncur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()\n\nnode = cur_obj.displayNode().createOutputNode(\"visibility\")\nnode.parm('action').set(1)\nnode.parm('group').set('')\n\nnode.moveToGoodPosition()\nnode.setDisplayFlag(True)\nnode.setRenderFlag(True)"],
+				"script","import soptoolutils\n\ncur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()\n\nnode = cur_obj.displayNode().createOutputNode(\"visibility\")\nnode.parm('action').set(1)\nnode.parm('group').set('')\n\nnode.moveToGoodPosition()\nnode.setDisplayFlag(True)\nnode.setRenderFlag(True)\nnode.setCurrent(True, clear_all_selected=True)"],
 			
 			"right",["script",
 				"label","Hide Non-Selected",
