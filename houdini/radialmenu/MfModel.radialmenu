@@ -163,9 +163,9 @@
 				"script","radialmenu.runShelfTool(kwargs, 'sop_knife')"
 			],
 			"bottom",["script",
-				"label","Edge Loop",
-				"icon","SHELF_edgeloop",
-				"script","radialmenu.runShelfTool(kwargs, 'sop_edgeloop')"
+				"label","PolyDraw",
+				"icon","SOP_polydraw",
+				"script","radialmenu.runShelfTool(kwargs, 'sop_polydraw')"
 			],
 			"right",["script",
 				"label","Divide Edges",
