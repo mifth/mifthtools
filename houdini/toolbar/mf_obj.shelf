@@ -26,6 +26,8 @@ cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     choice = hou.ui.displayMessage("Instance", buttons=("Instance", "Geo", "Replace"))
 
+    choice_3 = hou.ui.displayMessage("Path:", buttons=("Relative", "Absolute"))
+
     if choice == 1:
         choice_2 = hou.ui.displayMessage("Pack Meshes?", buttons=("Yes", "No"))
 
@@ -72,7 +74,10 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
                 attr_cr = obj_inst.children()[0].createOutputNode('attribcreate')
                 attr_cr.parm('type1').set(3)
                 attr_cr.parm('name1').set('instancepath')
-                attr_cr.parm('string1').set('op:../../../' + obj_source.name())
+                if choice_3 == 0:
+                    attr_cr.parm('string1').set('op:../../../' + obj_source.name())
+                else:
+                    attr_cr.parm('string1').set('op:' + obj_source.path())
 
                 instance = attr_cr.createOutputNode('instance')
                 instance.setDisplayFlag(True)
@@ -84,9 +89,15 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
                 merge_node.parm('pack').set(True)
 
             if choice == 1:
-                merge_node.parm('objpath1').set('../../' + obj_source.name())
+                if choice_3 == 0:
+                    merge_node.parm('objpath1').set('../../' + obj_source.name())
+                else:
+                    merge_node.parm('objpath1').set(obj_source.path())
             else:
-                merge_node.parm('objpath1').set('../../' + sel_nodes[-1].name())
+                if choice_3 == 0:
+                    merge_node.parm('objpath1').set('../../' + sel_nodes[-1].name())
+                else:
+                    merge_node.parm('objpath1').set(sel_nodes[-1].path())
 
             #merge_node.parm('xformtype').set(1)
             merge_node.moveToGoodPosition()
