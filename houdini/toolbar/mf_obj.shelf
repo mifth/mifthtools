@@ -123,11 +123,13 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
   </tool>
 
   <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
-    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice, null_choice):
+    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice, null_choice, path_choice):
     merge_node = new_node.createNode("object_merge", node_name=node_to_merge.name())
 
-#    merge_path = node_to_merge.path()
-    merge_path = "../../" + node_to_merge.name()
+    if path_choice and path_choice == 0:
+        merge_path = "../../" + node_to_merge.name()
+    else:
+        merge_path = node_to_merge.path()
 
     if choice == 1:
         merge_node.parm('pack').set(True)
@@ -195,9 +197,12 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
     choice = hou.ui.displayMessage("Pack?", buttons=("Don't Pack", "Pack"))
     null_choice = hou.ui.displayMessage("Create Nulls and Merges?", buttons=("No Null", "Add Null", "Null and Merge"))
+
+    if null_choice == 0:
+        path_choice = hou.ui.displayMessage("Path Type:", buttons=("Relative", "Absolute"))
     
     for node in sel_nodes:
-        make_merge(final_merge, new_node, node, choice, null_choice)
+        make_merge(final_merge, new_node, node, choice, null_choice, path_choice)
 
     final_merge.moveToGoodPosition()
     attrib_del = final_merge.createOutputNode('attribdelete')
