@@ -197,6 +197,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
     choice = hou.ui.displayMessage("Pack?", buttons=("Don't Pack", "Pack"))
     null_choice = hou.ui.displayMessage("Create Nulls and Merges?", buttons=("No Null", "Add Null", "Null and Merge"))
+    path_choice = None
 
     if null_choice == 0:
         path_choice = hou.ui.displayMessage("Path Type:", buttons=("Relative", "Absolute"))
