@@ -123,7 +123,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
   </tool>
 
   <tool name="geom_converter" label="GeomConvert" icon="SOP_object_merge">
-    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice, null_choice, path_choice):
+    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice, null_choice, path_choice, group_choice, null_name_choice):
     merge_node = new_node.createNode("object_merge", node_name=node_to_merge.name())
 
     if path_choice and path_choice == 0:
@@ -140,7 +140,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     else:
         if null_choice != 0:
             sop_node = node_to_merge.displayNode()
-            null_out = sop_node.createOutputNode("null", node_name="SupaM")
+            null_out = sop_node.createOutputNode("null", node_name=null_name_choice[1])
             null_out.setColor(hou.Color((1.0, 0.5, 0)))
             null_out.moveToGoodPosition()
 
@@ -149,7 +149,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
             if null_choice == 2:
                 merge_back_node = node_to_merge.createNode("object_merge", node_name="merge_back")
                 merge_back_node.parm('objpath1').set("../../" + new_node.name())
-                merge_back_node.parm('group1').set("SupaM_" + node_to_merge.name())
+                merge_back_node.parm('group1').set(null_name_choice[1] + '_' + node_to_merge.name())
                 merge_back_node.parm('xformtype').set(1)
 
                 # make new connections for the merge node
@@ -171,18 +171,23 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     #merge_node.setName(node_to_merge.name())
     merge_node.moveToGoodPosition()
 
-    del_gr_node = merge_node.createOutputNode("groupdelete")
-    del_gr_node.parm('group1').set("SupaM_*")
+    # create groups
+    if group_choice and group_choice == 0:
+        del_gr_node = merge_node.createOutputNode("groupdelete")
+        del_gr_node.parm('group1').set(null_name_choice[1] + '_*')
+    
+        group_node = del_gr_node.createOutputNode("group", node_name=node_to_merge.name())
+        group_node.parm('crname').set(null_name_choice[1] + "_" + node_to_merge.name())
+    
+        final_merge.setNextInput(group_node)
+    else:
+        final_merge.setNextInput(merge_node)
 
-    group_node = del_gr_node.createOutputNode("group", node_name=node_to_merge.name())
-    group_node.parm('crname').set("SupaM_" + node_to_merge.name())
-
-    final_merge.setNextInput(group_node)
-
+    # if the node is Subnet. Find Subnet in Subnet.
     if node_to_merge.type().name() == "subnet":
         for node in node_to_merge.children():
             if node.type().name() == "subnet":
-                make_merge(final_merge, new_node, node)
+                make_merge(final_merge, new_node, node, choice, null_choice, path_choice, group_choice, null_name_choice)
 
 
 main_obj = hou.node('/obj')
@@ -199,11 +204,17 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     null_choice = hou.ui.displayMessage("Create Nulls and Merges?", buttons=("No Null", "Add Null", "Null and Merge"))
     path_choice = None
 
-    if null_choice == 0:
-        path_choice = hou.ui.displayMessage("Path Type:", buttons=("Relative", "Absolute"))
-    
+    #if null_choice == 0:
+    path_choice = hou.ui.displayMessage("Path Type:", buttons=("Relative", "Absolute"))
+
+    if null_choice in (0, 1):
+        group_choice = hou.ui.displayMessage("Path Type:", buttons=("Create Group", "No Group"))
+
+    if null_choice in (1, 2):
+        null_name_choice = hou.ui.readInput("Write Null Name", initial_contents='SupaM')
+
     for node in sel_nodes:
-        make_merge(final_merge, new_node, node, choice, null_choice, path_choice)
+        make_merge(final_merge, new_node, node, choice, null_choice, path_choice, group_choice, null_name_choice)
 
     final_merge.moveToGoodPosition()
     attrib_del = final_merge.createOutputNode('attribdelete')
