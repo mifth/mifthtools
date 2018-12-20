@@ -326,7 +326,30 @@ else:
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
-node = soptoolutils.genericTool(kwargs, 'mifth_subdive_plus')]]></script>
+# Old
+#node = soptoolutils.genericTool(kwargs, 'mifth_subdive_plus')
+
+# New
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+sel_nodes = hou.selectedNodes()
+
+if sel_nodes and sel_nodes[-1].type().category().name() == 'Object':
+    display_val = sel_nodes[-1].parm('viewportlod').eval()
+
+    if display_val == 0:
+        for node in sel_nodes:
+            node.parm('viewportlod').set(5)
+    else:
+        for node in sel_nodes:
+            node.parm('viewportlod').set(0)
+
+elif cur_obj.type().category().name() == 'Object':
+    display_val = cur_obj.parm('viewportlod').eval()
+
+    if display_val == 0:
+        cur_obj.parm('viewportlod').set(5)
+    else:
+        cur_obj.parm('viewportlod').set(0)]]></script>
   </tool>
 
   <tool name="falloff" label="Faloff" icon="SOP_edit">
