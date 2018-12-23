@@ -21,7 +21,7 @@
     <memberTool name="set_plane"/>
     <memberTool name="subdive"/>
     <memberTool name="select_even"/>
-    <memberTool name="cur_bool"/>
+    <memberTool name="hard_gun_bool"/>
   </toolshelf>
 
   <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
@@ -540,7 +540,7 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
         blast_2.setCurrent(True, clear_all_selected=True)]]></script>
   </tool>
 
-  <tool name="cur_bool" label="CurveBool" icon="SOP_boolean-2.0">
+  <tool name="hard_gun_bool" label="HGunBool" icon="SOP_boolean-2.0">
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
     </toolMenuContext>
@@ -549,36 +549,69 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
     </toolMenuContext>
     <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
 
+mesh_length = 300
+
 if sel_nodes and len(sel_nodes) == 2:
 
-    if sel_nodes[0].type().name() == 'curve':
-        n_cur = sel_nodes[0]
-        n_mesh = sel_nodes[1]
-    else:
-        n_cur = sel_nodes[1]
-        n_mesh = sel_nodes[0]
+#    if sel_nodes[0].type().name() == 'curve':
+#        n_cur = sel_nodes[0]
+#        n_mesh = sel_nodes[1]
+#    else:
+    n_mesh = sel_nodes[0]
+    n_mesh_2 = sel_nodes[1]
 
-    n_cur.parm('close').set(True)
     n_mesh.setSelectableTemplateFlag(False)
     n_mesh.setTemplateFlag(False)
 
-    peak_node = n_cur.createOutputNode("peak")
-    peak_node.parm('dist').set(-20)
+    # if mesh is an open curve'
+    if n_mesh_2.type().name() == 'curve':
+        n_mesh_2.parm('close').set(True)
 
-    extr_node = peak_node.createOutputNode("polyextrude::2.0")
-    extr_node.parm('outputback').set(True)
-    extr_node.parm('dist').setExpression("-ch('../" + peak_node.name() + "/dist') * 2")
+        peak_node = n_mesh_2.createOutputNode("peak")
+        peak_node.parm('dist').set(-mesh_length)
+    
+        extr_node = peak_node.createOutputNode("polyextrude::2.0")
+        extr_node.parm('outputback').set(True)
+        #extr_node.parm('dist').setExpression("-ch('../" + peak_node.name() + "/dist') * 2")
+        extr_node.parm('dist').set(mesh_length * 2)
+    
+        second_node = extr_node
+    else:
+        second_node = n_mesh_2
+
+    choice = hou.ui.displayMessage("Mirror?", buttons=("No", "X", "Y", "Z"))
+    if choice in (1, 2, 3):
+        mir_node = extr_node.createOutputNode("mirror")
+        mir_node.parm('consolidatepts').set(False)
+
+        second_node = mir_node
+
+        if choice == 2:
+            mir_node.parmTuple('dir').set( (0, 1, 0) )
+        elif choice == 3:
+            mir_node.parmTuple('dir').set( (0, 0, 1) )
+    
 
     bool_node = n_mesh.createOutputNode("boolean::2.0")
-    bool_node.parm('resolvea').set(False)
+    #bool_node.parm('resolvea').set(False)
     bool_node.parm('resolveb').set(False)
     bool_node.parm('booleanop').set(2)
-    bool_node.setNextInput(extr_node)
+    bool_node.setNextInput(second_node)
 
-    bool_node.setDisplayFlag(True)
-    bool_node.setRenderFlag(True)
-    bool_node.setSelected(True, clear_all_selected=True)
+#    bool_node.setDisplayFlag(True)
+#    bool_node.setRenderFlag(True)
+#    bool_node.setSelected(True, clear_all_selected=True)
     bool_node.moveToGoodPosition()
+
+    # make new connections for the merge node
+    for connects in n_mesh.outputConnections():
+        out_node = connects.outputNode()
+        in_idx = connects.inputIndex()
+        out_idx = connects.outputIndex()
+
+        if out_node.name() != bool_node.name():
+            out_node.setInput(out_idx, bool_node, in_idx)
+            out_node.moveToGoodPosition()
 
 else:
     msg = 'Select 2 SOP Nodes!'
