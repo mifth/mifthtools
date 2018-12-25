@@ -9,7 +9,6 @@
     <memberTool name="symmetry_extrude"/>
     <memberTool name="edges_to_face"/>
     <memberTool name="falloff"/>
-    <memberTool name="arc"/>
     <memberTool name="divide_edges"/>
     <memberTool name="scale_edges"/>
     <memberTool name="transform_primitives"/>
@@ -21,8 +20,8 @@
     <memberTool name="set_plane"/>
     <memberTool name="subdive"/>
     <memberTool name="select_even"/>
-    <memberTool name="hard_gun_bool"/>
     <memberTool name="hard_gun_prim"/>
+    <memberTool name="hard_gun_bool"/>
   </toolshelf>
 
   <tool name="divide_edges" label="Divide Edges" icon="SOP_edgedivide">
@@ -439,13 +438,6 @@ viewer.selectGeometry(use_existing_selection=False, initial_selection=nes_sel_st
 #viewer.setCurrentState(viewer_state)]]></script>
   </tool>
 
-  <tool name="arc" label="Arc" icon="SOP_circle">
-    <script scriptType="python"><![CDATA[import soptoolutils
-import toolutils
-
-node = soptoolutils.genericTool(kwargs, 'mifth_make_arc')]]></script>
-  </tool>
-
   <tool name="tool_1" label="Boolean Merged" icon="SOP_boolean">
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
@@ -609,10 +601,10 @@ if sel_nodes and len(sel_nodes) == 2:
     else:
         second_node = n_mesh_2
 
-    choice = hou.ui.displayMessage("Mirror?", buttons=("No", "X", "Y", "Z"))
+    choice = hou.ui.displayMessage("Mirror First Mesh?", buttons=("No", "X", "Y", "Z"))
 
     if choice in (1, 2, 3):
-        choice_clip = hou.ui.displayMessage("Clip?", buttons=("Yes", "No",))
+        choice_clip = hou.ui.displayMessage("Clip First Mesh?", buttons=("Yes", "No",))
 
         # add clip
         if choice_clip == 0:
@@ -697,16 +689,81 @@ else:
     hou.ui.displayMessage(msg)]]></script>
   </tool>
 
-  <tool name="hard_gun_prim" label="HardGunPrim" icon="SOP_boolean-2.0">
+  <tool name="hard_gun_prim" label="HardGunPrim" icon="SOP_box">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
 viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
+#sel_nodes = hou.selectedNodes()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
+choice = hou.ui.displayMessage("Mirror?", buttons=("Curve", "Box", "Tube", "Sphere", "Grid", "Circle"))
 
-print hou.selectedNodes()[-1]]]></script>
+cur_snap = viewer.snappingMode()
+viewer.setSnappingMode(hou.snappingMode.Prim)
+
+if choice != 0:
+    positions = viewer.selectPositions(number_of_positions=2, connect_positions=True, show_coordinates=True, position_type=hou.positionType.WorldSpace)
+    prim_size = (positions[0] - positions[1]).length()
+    if prim_size == 0:
+        prim_size = 1
+
+if choice == 0:
+    box = cur_obj.createNode('curve')
+    box.moveToGoodPosition()
+    box.setCurrent(True, clear_all_selected=False)
+
+elif choice == 1:
+    box = cur_obj.createNode('box')
+    box.moveToGoodPosition()
+    box.setCurrent(True, clear_all_selected=False)
+    box.parmTuple('t').set(positions[0])
+    box.parmTuple('size').set( (prim_size, prim_size, prim_size) )
+
+elif choice == 2:
+    tube_nd = cur_obj.createNode('tube')
+    tube_nd.moveToGoodPosition()
+    tube_nd.setCurrent(True, clear_all_selected=False)
+    tube_nd.parmTuple('t').set(positions[0])
+    tube_nd.parm('type').set(1)
+    tube_nd.parm('rad1').set(prim_size)
+    tube_nd.parm('rad2').set(prim_size)
+    tube_nd.parm('height').set(prim_size)
+    tube_nd.parm('cols').set(30)
+    tube_nd.parm('cap').set(1)
+
+elif choice == 3:
+    sphere = cur_obj.createNode('sphere')
+    sphere.moveToGoodPosition()
+    sphere.setCurrent(True, clear_all_selected=False)
+    sphere.parmTuple('t').set(positions[0])
+    sphere.parm('type').set(2)
+    sphere.parmTuple('rad').set( (prim_size, prim_size, prim_size) )
+    sphere.parm('rows').set(15)
+    sphere.parm('cols').set(30)
+
+elif choice == 4:
+    grid = cur_obj.createNode('grid')
+    grid.moveToGoodPosition()
+    grid.setCurrent(True, clear_all_selected=False)
+    grid.parmTuple('t').set(positions[0])
+    grid.parmTuple('size').set( (prim_size, prim_size) )
+    grid.parm('rows').set(2)
+    grid.parm('cols').set(2)
+
+elif choice == 5:
+    circle = cur_obj.createNode('circle')
+    circle.moveToGoodPosition()
+    circle.setCurrent(True, clear_all_selected=False)
+    circle.parmTuple('t').set(positions[0])
+    circle.parm('type').set(1)
+    circle.parmTuple('rad').set( (-prim_size, prim_size) )
+    circle.parm('divs').set(30)
+    circle.parm('orient').set(2)
+
+viewer.setSnappingMode(cur_snap)
+]]></script>
   </tool>
 </shelfDocument>
