@@ -13,12 +13,8 @@
     <memberTool name="scale_edges"/>
     <memberTool name="transform_primitives"/>
     <memberTool name="merge_verts"/>
-    <memberTool name="part_mesh"/>
-    <memberTool name="merge"/>
-    <memberTool name="extract_to_object"/>
     <memberTool name="pivot_selected"/>
     <memberTool name="set_plane"/>
-    <memberTool name="subdive"/>
     <memberTool name="select_even"/>
   </toolshelf>
 
@@ -122,44 +118,6 @@ else:
     node.parm('fillmode').set(0)]]></script>
   </tool>
 
-  <tool name="part_mesh" label="PartMesh" icon="SOP_blast">
-    <toolMenuContext name="viewer">
-      <contextNetType>SOP</contextNetType>
-    </toolMenuContext>
-    <script scriptType="python"><![CDATA[import soptoolutils
-import toolutils
-
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
-cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
-
-if sel_str and geo.geometryType() == hou.geometryType.Primitives:
-
-    main_node = cur_obj.displayNode()
-
-    blast_2 = main_node.createOutputNode('blast', node_name='blast_base')
-    blast_2.parm('negate').set(False)
-    blast_2.parm('group').set(sel_str)
-
-    blast_1 = main_node.createOutputNode('blast', node_name='blast_part')
-    blast_1.parm('negate').set(True)
-    blast_1.parm('group').set(sel_str)
-
-    final_merge = main_node.parent().createNode("merge")
-
-    final_merge.setNextInput(blast_2)
-
-    final_merge.setNextInput(blast_1)
-
-    final_merge.moveToGoodPosition()
-
-    final_merge.setDisplayFlag(True)
-    final_merge.setRenderFlag(True)
-    final_merge.setCurrent(True, clear_all_selected=True)
-]]></script>
-  </tool>
-
   <tool name="pivot_center" label="PivotToCenter" icon="OBJ_null">
     <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
 
@@ -234,30 +192,6 @@ if sel_nodes:
                 last_node.parm('pz').setExpression('$CEZ')]]></script>
   </tool>
 
-  <tool name="merge" label="Merge" icon="SOP_merge">
-    <toolMenuContext name="viewer">
-      <contextNetType>SOP</contextNetType>
-      <contextNetType>DOP</contextNetType>
-    </toolMenuContext>
-    <toolMenuContext name="cop_viewer">
-      <contextNetType>COP2</contextNetType>
-    </toolMenuContext>
-    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
-
-if sel_nodes and len(sel_nodes) > 1:
-
-    merge_node = sel_nodes[-1].parent().createNode('merge')
-    merge_node.moveToGoodPosition()
-
-    for node in sel_nodes:
-        merge_node.setNextInput(node)
-        merge_node.setDisplayFlag(True)
-        merge_node.setRenderFlag(True)
-        merge_node.setCurrent(True, clear_all_selected=True)
-
-    merge_node.moveToGoodPosition()]]></script>
-  </tool>
-
   <tool name="set_plane" label="SetPlane" icon="OBJ_null">
     <script scriptType="python"><![CDATA[import toolutils
 import soptoolutils
@@ -318,36 +252,6 @@ else:
         set_direct_normal(cp, hou.Vector3(0, 1, 0))
     elif cp_axis == 'z':
         set_direct_normal(cp, hou.Vector3(0, 0, 1))]]></script>
-  </tool>
-
-  <tool name="subdive" label="Subdive" icon="SOP_subdivide">
-    <script scriptType="python"><![CDATA[import soptoolutils
-import toolutils
-
-# Old
-#node = soptoolutils.genericTool(kwargs, 'mifth_subdive_plus')
-
-# New
-cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
-sel_nodes = hou.selectedNodes()
-
-if sel_nodes and sel_nodes[-1].type().category().name() == 'Object':
-    display_val = sel_nodes[-1].parm('viewportlod').eval()
-
-    if display_val == 0:
-        for node in sel_nodes:
-            node.parm('viewportlod').set(5)
-    else:
-        for node in sel_nodes:
-            node.parm('viewportlod').set(0)
-
-elif cur_obj.type().category().name() == 'Object':
-    display_val = cur_obj.parm('viewportlod').eval()
-
-    if display_val == 0:
-        cur_obj.parm('viewportlod').set(5)
-    else:
-        cur_obj.parm('viewportlod').set(0)]]></script>
   </tool>
 
   <tool name="falloff" label="Faloff" icon="SOP_edit">
@@ -472,62 +376,5 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
     final_node.setDisplayFlag(True)
     final_node.setRenderFlag(True)
     final_node.setCurrent(True, clear_all_selected=True)]]></script>
-  </tool>
-
-  <tool name="extract_to_object" label="Extract To Object" icon="SHELF_extract_object">
-    <script scriptType="python"><![CDATA[import soptoolutils
-import toolutils
-
-viewer = toolutils.sceneViewer()
-geo = viewer.selectGeometry()
-sel_str = geo.mergedSelectionString()
-sel_nodes = hou.selectedNodes()
-
-if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
-
-    main_node = sel_nodes[-1]
-
-
-    the_pre_obj = main_node.parent()
-    the_obj = None
-    for i in range(1000):
-        if the_pre_obj.type().category() == hou.objNodeTypeCategory():
-            the_obj = the_pre_obj
-            break
-
-        the_pre_obj = the_pre_obj.parent()
-        
-
-    if the_obj:
-        parent_obj = the_obj.parent()
-    
-        blast_1 = main_node.createOutputNode('blast')
-        blast_1.parm('group').set(sel_str)
-        #blast_1.setNextInput(main_node)
-        #blast_1.moveToGoodPosition()
-
-        blast_1.setDisplayFlag(True)
-        blast_1.setRenderFlag(True)
-        blast_1.setCurrent(True, clear_all_selected=True)
-    
-        new_obj = parent_obj.createNode('geo', the_obj.name(), run_init_scripts=False)
-        new_obj.parm('use_dcolor').set(False)
-        new_obj.moveToGoodPosition()
-    
-        obj_merge = new_obj.createNode("object_merge")
-        obj_merge.parm('objpath1').set(obj_merge.relativePathTo(main_node))
-        obj_merge.parm('xformtype').set(1)
-        obj_merge.moveToGoodPosition()
-    
-        blast_2 = new_obj.createNode('blast')
-        blast_2.parm('group').set(sel_str)
-        blast_2.setNextInput(obj_merge)
-        blast_2.parm('negate').set(True)
-        blast_2.moveToGoodPosition()
-
-        blast_2.setHardLocked(True)
-        blast_2.setDisplayFlag(True)
-        blast_2.setRenderFlag(True)
-        blast_2.setCurrent(True, clear_all_selected=True)]]></script>
   </tool>
 </shelfDocument>

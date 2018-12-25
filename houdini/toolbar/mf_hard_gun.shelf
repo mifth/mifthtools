@@ -6,8 +6,13 @@
  a single file. -->
 
   <toolshelf name="hard_gun" label="Hard Gun">
-    <memberTool name="hard_gun_bool"/>
     <memberTool name="hard_gun_prim"/>
+    <memberTool name="hard_gun_bool"/>
+    <memberTool name="hard_gun_clean"/>
+    <memberTool name="hard_gun_merge"/>
+    <memberTool name="hard_gun_part_mesh"/>
+    <memberTool name="hard_gun_extract_to_object"/>
+    <memberTool name="hard_gun_view_subdive"/>
   </toolshelf>
 
   <tool name="hard_gun_bool" label="HardGunBool" icon="SOP_boolean-2.0">
@@ -28,6 +33,8 @@ sel_str = geo.mergedSelectionString()
 mesh_length = 100
 
 if sel_nodes and len(sel_nodes) == 2:
+
+    choice_bool = hou.ui.displayMessage("Boolean Type:", buttons=("Substract", "Shatter", "Intersect", "Seam"))
 
     n_mesh = sel_nodes[1]
     n_mesh_2 = sel_nodes[0]
@@ -133,6 +140,14 @@ if sel_nodes and len(sel_nodes) == 2:
     bool_node.parm('resolveb').set(False)
     bool_node.parm('booleanop').set(2)
     bool_node.setNextInput(second_node)
+
+    if choice_bool == 1:
+        bool_node.parm('booleanop').set(3)
+    elif choice_bool == 2:
+        bool_node.parm('booleanop').set(1)
+    elif choice_bool == 3:
+        bool_node.parm('booleanop').set(6)
+
     bool_node.setColor( hou.Color((0.9, 0.65, 0.8)) )
 
     b_block_end = bool_node.createOutputNode("block_end")
@@ -181,6 +196,20 @@ choice = hou.ui.displayMessage("Mirror?", buttons=("Curve", "Box", "Tube", "Sphe
 cur_snap = viewer.snappingMode()
 viewer.setSnappingMode(hou.snappingMode.Prim)
 
+# View Direction
+view_dir = ( hou.Vector3(0, 0, 1) * hou.Matrix4(viewer.curViewport().viewTransform().extractRotationMatrix3()) ).normalized()
+view_x = abs(view_dir[0])
+view_y = abs(view_dir[1])
+view_z = abs(view_dir[2])
+
+# get View Axis
+view_axis = 'X'
+if view_y > view_x and view_y > view_z:
+    view_axis = 'Y'
+elif view_z > view_x and view_z > view_y:
+    view_axis = 'Z'
+
+
 if choice != 0:
     positions = viewer.selectPositions(number_of_positions=2, connect_positions=True, show_coordinates=True, position_type=hou.positionType.WorldSpace)
     prim_size = (positions[0] - positions[1]).length()
@@ -197,7 +226,7 @@ elif choice == 1:
     box.moveToGoodPosition()
     box.setCurrent(True, clear_all_selected=False)
     box.parmTuple('t').set(positions[0])
-    box.parmTuple('size').set( (prim_size, prim_size, prim_size) )
+    box.parmTuple('size').set( (prim_size * 2, prim_size * 2, prim_size * 2) )
 
 elif choice == 2:
     tube_nd = cur_obj.createNode('tube')
@@ -211,6 +240,11 @@ elif choice == 2:
     tube_nd.parm('cols').set(30)
     tube_nd.parm('cap').set(1)
 
+    if view_axis == 'X':
+        tube_nd.parm('orient').set(0)
+    elif view_axis == 'Z':
+        tube_nd.parm('orient').set(2)
+
 elif choice == 3:
     sphere = cur_obj.createNode('sphere')
     sphere.moveToGoodPosition()
@@ -221,14 +255,34 @@ elif choice == 3:
     sphere.parm('rows').set(15)
     sphere.parm('cols').set(30)
 
+    if view_axis == 'X':
+        sphere.parm('orient').set(0)
+    elif view_axis == 'Z':
+        sphere.parm('orient').set(2)
+
 elif choice == 4:
     grid = cur_obj.createNode('grid')
     grid.moveToGoodPosition()
     grid.setCurrent(True, clear_all_selected=False)
     grid.parmTuple('t').set(positions[0])
-    grid.parmTuple('size').set( (prim_size, prim_size) )
+    grid.parmTuple('size').set( (prim_size * 2, prim_size * 2) )
     grid.parm('rows').set(2)
     grid.parm('cols').set(2)
+
+    if view_axis == 'X':
+        grid.parm('orient').set(1)
+
+        if view_dir[0] < 0:
+            grid.parm('sizex').set(-prim_size * 2)
+            
+    elif view_axis == 'Z':
+        grid.parm('orient').set(0)
+
+        if view_dir[2] > 0:
+            grid.parm('sizex').set(-prim_size * 2)
+    else:
+        if view_dir[1] < 0:
+            grid.parm('sizex').set(-prim_size * 2)
 
 elif choice == 5:
     circle = cur_obj.createNode('circle')
@@ -240,7 +294,209 @@ elif choice == 5:
     circle.parm('divs').set(30)
     circle.parm('orient').set(2)
 
+    if view_axis == 'X':
+        circle.parm('orient').set(1)
+
+        if view_dir[0] < 0:
+            circle.parm('radx').set(prim_size)
+
+    elif view_axis == 'Z':
+        circle.parm('orient').set(0)
+
+        if view_dir[2] < 0:
+            circle.parm('radx').set(prim_size)
+    else:
+        if view_dir[1] < 0:
+            circle.parm('radx').set(prim_size)
+
 viewer.setSnappingMode(cur_snap)
 ]]></script>
+  </tool>
+
+  <tool name="hard_gun_clean" label="HardGunClean" icon="SOP_clean">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+sel_nodes = hou.selectedNodes()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if sel_nodes:
+    cur_node = sel_nodes[-1]
+else:
+    cur_node = cur_obj.displayNode()
+
+group = cur_node.createOutputNode("groupcreate")
+group.parm('groupname').set('del')
+group.parm('grouptype').set(2)
+group.parm('groupbase').set(False)
+group.parm('groupedges').set(True)
+group.parm('domaxedgeangle').set(True)
+group.parm('maxedgeangle').set(1)
+group.setColor( hou.Color((0.7, 0.8, 0.7)) )
+
+dis = group.createOutputNode("dissolve::2.0")
+dis.parm('group').set('del')
+dis.parm('compnorms').set(False)
+dis.parm('reminlinepts').set(True)
+dis.parm('coltol').set(180)
+dis.parm('remunusedpts').set(True)
+dis.parm('deldegeneratebridges').set(False)
+dis.setColor( hou.Color((0.7, 0.8, 0.7)) )
+
+dis.setDisplayFlag(True)
+dis.setRenderFlag(True)
+dis.setCurrent(True, clear_all_selected=True)]]></script>
+  </tool>
+
+  <tool name="hard_gun_merge" label="Merge" icon="SOP_merge">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+      <contextNetType>DOP</contextNetType>
+    </toolMenuContext>
+    <toolMenuContext name="cop_viewer">
+      <contextNetType>COP2</contextNetType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+
+if sel_nodes and len(sel_nodes) > 1:
+
+    merge_node = sel_nodes[-1].parent().createNode('merge')
+    merge_node.moveToGoodPosition()
+
+    for node in sel_nodes:
+        merge_node.setNextInput(node)
+        merge_node.setDisplayFlag(True)
+        merge_node.setRenderFlag(True)
+        merge_node.setCurrent(True, clear_all_selected=True)
+
+    merge_node.moveToGoodPosition()]]></script>
+  </tool>
+
+  <tool name="hard_gun_part_mesh" label="PartMesh" icon="SOP_blast">
+    <toolMenuContext name="viewer">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if sel_str and geo.geometryType() == hou.geometryType.Primitives:
+
+    main_node = cur_obj.displayNode()
+
+    blast_2 = main_node.createOutputNode('blast', node_name='blast_base')
+    blast_2.parm('negate').set(False)
+    blast_2.parm('group').set(sel_str)
+
+    blast_1 = main_node.createOutputNode('blast', node_name='blast_part')
+    blast_1.parm('negate').set(True)
+    blast_1.parm('group').set(sel_str)
+
+    final_merge = main_node.parent().createNode("merge")
+
+    final_merge.setNextInput(blast_2)
+
+    final_merge.setNextInput(blast_1)
+
+    final_merge.moveToGoodPosition()
+
+    final_merge.setDisplayFlag(True)
+    final_merge.setRenderFlag(True)
+    final_merge.setCurrent(True, clear_all_selected=True)
+]]></script>
+  </tool>
+
+  <tool name="hard_gun_extract_to_object" label="Extract To Object" icon="SHELF_extract_object">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geo = viewer.selectGeometry()
+sel_str = geo.mergedSelectionString()
+sel_nodes = hou.selectedNodes()
+
+if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
+
+    main_node = sel_nodes[-1]
+
+
+    the_pre_obj = main_node.parent()
+    the_obj = None
+    for i in range(1000):
+        if the_pre_obj.type().category() == hou.objNodeTypeCategory():
+            the_obj = the_pre_obj
+            break
+
+        the_pre_obj = the_pre_obj.parent()
+        
+
+    if the_obj:
+        parent_obj = the_obj.parent()
+    
+        blast_1 = main_node.createOutputNode('blast')
+        blast_1.parm('group').set(sel_str)
+        #blast_1.setNextInput(main_node)
+        #blast_1.moveToGoodPosition()
+
+        blast_1.setDisplayFlag(True)
+        blast_1.setRenderFlag(True)
+        blast_1.setCurrent(True, clear_all_selected=True)
+    
+        new_obj = parent_obj.createNode('geo', the_obj.name(), run_init_scripts=False)
+        new_obj.parm('use_dcolor').set(False)
+        new_obj.moveToGoodPosition()
+    
+        obj_merge = new_obj.createNode("object_merge")
+        obj_merge.parm('objpath1').set(obj_merge.relativePathTo(main_node))
+        obj_merge.parm('xformtype').set(1)
+        obj_merge.moveToGoodPosition()
+    
+        blast_2 = new_obj.createNode('blast')
+        blast_2.parm('group').set(sel_str)
+        blast_2.setNextInput(obj_merge)
+        blast_2.parm('negate').set(True)
+        blast_2.moveToGoodPosition()
+
+        blast_2.setHardLocked(True)
+        blast_2.setDisplayFlag(True)
+        blast_2.setRenderFlag(True)
+        blast_2.setCurrent(True, clear_all_selected=True)]]></script>
+  </tool>
+
+  <tool name="hard_gun_view_subdive" label="View Subdive" icon="SOP_subdivide">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+# Old
+#node = soptoolutils.genericTool(kwargs, 'mifth_subdive_plus')
+
+# New
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+sel_nodes = hou.selectedNodes()
+
+if sel_nodes and sel_nodes[-1].type().category().name() == 'Object':
+    display_val = sel_nodes[-1].parm('viewportlod').eval()
+
+    if display_val == 0:
+        for node in sel_nodes:
+            node.parm('viewportlod').set(5)
+    else:
+        for node in sel_nodes:
+            node.parm('viewportlod').set(0)
+
+elif cur_obj.type().category().name() == 'Object':
+    display_val = cur_obj.parm('viewportlod').eval()
+
+    if display_val == 0:
+        cur_obj.parm('viewportlod').set(5)
+    else:
+        cur_obj.parm('viewportlod').set(0)]]></script>
   </tool>
 </shelfDocument>
