@@ -7,6 +7,34 @@
 		"top",["submenu",
 			"label","Generate",
 			"top",["submenu",
+				"label","HardGun",
+				"top",["script",
+					"label","HG_Prim",
+					"icon","SOP_box",
+					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_prim')"
+				],
+				"top_left",["script",
+					"label","HG_Merge",
+					"icon","SOP_merge",
+					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_merge')"
+				],
+				"left",["script",
+					"label","HG_Extract",
+					"icon","SHELF_extract_object",
+					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_extract_to_object')"
+				],
+				"right",["script",
+					"label","HG_Clean",
+					"icon","SOP_clean",
+					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_clean')"
+				],
+				"top_right",["script",
+					"label","HG_Bool",
+					"icon","SOP_boolean-2.0",
+					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_bool')"
+				]
+			],
+			"top_left",["submenu",
 				"label","Create",
 				"top",["script",
 					"label","Box",
@@ -47,16 +75,6 @@
 		],
 		"top_left",["submenu",
 			"label","Utils",
-			"top",["script",
-				"label","Extract To Object",
-				"icon","SHELF_extract_object",
-				"script","radialmenu.runShelfTool(kwargs, 'extract_to_object')"
-			],
-			"left",["script",
-				"label","Merge",
-				"icon","SOP_merge",
-				"script","radialmenu.runShelfTool(kwargs, 'merge')"
-			],
 			"top_right",["submenu",
 				"label","Transform",
 				"top",["script",
@@ -182,20 +200,10 @@
 			],
 			"bottom",["submenu",
 				"label","Boolean",
-				"bottom_left",["script",
-					"label","CurveBool",
-					"icon","SOP_boolean-2.0",
-					"script","radialmenu.runShelfTool(kwargs, 'cur_bool')"
-				],
 				"bottom",["script",
 					"label","Boolean",
 					"icon","SOP_boolean",
-					"script","import soptoolutils\n\nnew_node = soptoolutils.addBooleanTool(kwargs)\nnew_node.parm('booleanop').set(2)\nnew_node.parm('resolvea').set(False)\nnew_node.parm('resolveb').set(False)\nnew_node.parm('useaonlypieces').set(True)\nnew_node.parm('useabpieces').set(True)\n\n#radialmenu.runShelfTool(kwargs, 'sop_boolean::2.0')"],
-				
-				"bottom_right",["script",
-					"label","Flux",
-					"icon","SOP_solid",
-					"script","#radialmenu.runShelfTool(kwargs, 'sop_flux')\n#soptoolutils.genericTool(kwargs, 'flux')\n\nsel_nodes = hou.selectedNodes()\n\nif sel_nodes:\n\n    flux_node = sel_nodes[-1].createOutputNode(\"flux\", node_name='flux')\n    flux_node.moveToGoodPosition()\n"]
+					"script","import soptoolutils\n\nnew_node = soptoolutils.addBooleanTool(kwargs)\nnew_node.parm('booleanop').set(2)\nnew_node.parm('resolvea').set(False)\nnew_node.parm('resolveb').set(False)\nnew_node.parm('useaonlypieces').set(True)\nnew_node.parm('useabpieces').set(True)\n\n#radialmenu.runShelfTool(kwargs, 'sop_boolean::2.0')"]
 			],
 			"right",["script",
 				"label","Duplicate",
@@ -203,9 +211,9 @@
 				"script","radialmenu.runShelfTool(kwargs, 'geometry_duplicate')"
 			],
 			"top_right",["script",
-				"label","PartMesh",
+				"label","HG_PartMesh",
 				"icon","SOP_blast",
-				"script","radialmenu.runShelfTool(kwargs, 'part_mesh')"
+				"script","radialmenu.runShelfTool(kwargs, 'hard_gun_part_mesh')"
 			]
 		],
 		"right",["submenu",

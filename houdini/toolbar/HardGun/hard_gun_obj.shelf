@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<shelfDocument>
+  <!-- This file contains definitions of shelves, toolbars, and tools.
+ It should not be hand-edited when it is being used by the application.
+ Note, that two definitions of the same element are not allowed in
+ a single file. -->
+
+  <toolshelf name="hard_gun_obj" label="HGObj">
+    <memberTool name="hard_gun_obj_instance"/>
+    <memberTool name="hard_gun_obj_geom_converter"/>
+    <memberTool name="hard_gun_obj_poly_reducer"/>
+    <memberTool name="hard_gun_obj_lock_selected"/>
+    <memberTool name="hard_gun_obj_rename"/>
+    <memberTool name="hard_gun_obj_id_material"/>
+  </toolshelf>
+
+  <tool name="hard_gun_obj_id_material" label="HG_IDMat" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import colorsys
+
+sel_nodes = hou.selectedNodes()
+
+choice = hou.ui.displayMessage("Randomize colors?", buttons=("Yes", "No"))
+
+for i, node in enumerate(sel_nodes):
+    if node.parmTuple('ogl_diff') is None:
+        node.addSpareParmTuple(hou.FloatParmTemplate('ogl_diff', 'Opengl Diffuse', 3) )
+
+    node.parm('ogl_diffx').setExpression("ch('basecolorr')")
+    node.parm('ogl_diffy').setExpression("ch('basecolorg')")
+    node.parm('ogl_diffz').setExpression("ch('basecolorb')")
+
+    if choice == 0:
+        rgb_set = colorsys.hsv_to_rgb(float(i) / float( len(sel_nodes) ), 1, 1)
+        node.parm('basecolorr').set(rgb_set[0])
+        node.parm('basecolorg').set(rgb_set[1])
+        node.parm('basecolorb').set(rgb_set[2])
+        ]]></script>
+  </tool>
+
+  <tool name="hard_gun_obj_rename" label="HG_Rename" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+
+mess = hou.ui.readMultiInput("Rename:", ('Rename', 'Bake'), buttons=('OK', 'Cancel'))
+
+if mess[0] == 0 and (mess[1][0] != '' or mess[1][1] != ''):
+    for node in sel_nodes:
+        if mess[1][1] != '':
+            if node.parent() == sel_nodes[0].parent():
+                node.setName(mess[1][1] + '_hi', unique_name=True)
+            else:
+                node.setName(mess[1][1] + '_low', unique_name=True)
+
+        elif mess[1][0] != '':
+            node.setName(mess[1][0], unique_name=True)]]></script>
+  </tool>
+
+  <tool name="hard_gun_obj_poly_reducer" label="HG_Reduce" icon="SOP_polyreduce-2.0">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Reduce Percent?", buttons=("1", "5", "10", "20", "30", "50"))
+
+    for obj_node in sel_nodes:
+        sop_node = obj_node.displayNode()
+        reduce_node = obj_node.createNode("polyreduce::2.0")
+
+        percent = 1
+        if choice == 1:
+            percent = 5
+        elif choice == 2:
+            percent = 10
+        elif choice == 3:
+            percent = 20
+        elif choice == 4:
+            percent = 30
+        elif choice == 5:
+            percent = 50
+
+        reduce_node.setDisplayFlag(True)
+        reduce_node.setRenderFlag(True)
+        reduce_node.parm('percentage').set(percent)
+
+        reduce_node.insertInput(0, sop_node)
+
+        reduce_node.moveToGoodPosition()
+
+else:
+    msg = 'Select Object Nodes!'
+    hou.ui.displayMessage(msg)]]></script>
+  </tool>
+
+  <tool name="hard_gun_obj_lock_selected" label="HG_Lock" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Save the current hip file?", buttons=("Lock", "Unlock"))
+
+    for obj_node in sel_nodes:
+        if obj_node.type().name() == "geo":
+            sop_node = obj_node.displayNode()
+            if choice == 1:
+                sop_node.setHardLocked(False)
+            else:
+                sop_node.setHardLocked(True)
+
+
+#    msg = 'All Done!'
+#    hou.ui.displayMessage(msg)
+
+else:
+    msg = 'Select Object Nodes!'
+    hou.ui.displayMessage(msg)]]></script>
+  </tool>
+
+  <tool name="hard_gun_obj_geom_converter" label="HG_Convert" icon="SOP_object_merge">
+    <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice, null_choice, path_choice, group_choice, null_name_choice):
+    merge_node = new_node.createNode("object_merge", node_name=node_to_merge.name())
+
+    if path_choice and path_choice == 0:
+        merge_path = "../../" + node_to_merge.name()
+    else:
+        merge_path = node_to_merge.path()
+
+    if choice == 1:
+        merge_node.parm('pack').set(True)
+
+    #  create null or pass
+    if node_to_merge.type().name() == "subnet":
+        merge_path += "/*"
+    else:
+        if null_choice != 0:
+            sop_node = node_to_merge.displayNode()
+            null_out = sop_node.createOutputNode("null", node_name=null_name_choice[1])
+            null_out.setColor(hou.Color((1.0, 0.5, 0)))
+            null_out.moveToGoodPosition()
+
+            merge_path += '/' + null_out.name()
+
+            if null_choice == 2:
+                merge_back_node = node_to_merge.createNode("object_merge", node_name="merge_back")
+                merge_back_node.parm('objpath1').set("../../" + new_node.name())
+                merge_back_node.parm('group1').set(null_name_choice[1] + '_' + node_to_merge.name())
+                merge_back_node.parm('xformtype').set(1)
+
+                # make new connections for the merge node
+                for connects in sop_node.outputConnections():
+                    out_node = connects.outputNode()
+                    in_idx = connects.inputIndex()
+                    out_idx = connects.outputIndex()
+
+                    if out_node.name() != null_out.name():
+                        out_node.setInput(out_idx, merge_back_node, in_idx)
+
+                merge_back_node.moveToGoodPosition()
+                merge_back_node.setDisplayFlag(True)
+                merge_back_node.setRenderFlag(True)
+
+
+    merge_node.parm('objpath1').set(merge_path)
+    merge_node.parm('xformtype').set(1)
+    #merge_node.setName(node_to_merge.name())
+    merge_node.moveToGoodPosition()
+
+    # create groups
+    if group_choice and group_choice == 0:
+        del_gr_node = merge_node.createOutputNode("groupdelete")
+        del_gr_node.parm('group1').set(null_name_choice[1] + '_*')
+    
+        group_node = del_gr_node.createOutputNode("group", node_name=node_to_merge.name())
+        group_node.parm('crname').set(null_name_choice[1] + "_" + node_to_merge.name())
+    
+        final_merge.setNextInput(group_node)
+    else:
+        final_merge.setNextInput(merge_node)
+
+    # if the node is Subnet. Find Subnet in Subnet.
+    if node_to_merge.type().name() == "subnet":
+        for node in node_to_merge.children():
+            if node.type().name() == "subnet":
+                make_merge(final_merge, new_node, node, choice, null_choice, path_choice, group_choice, null_name_choice)
+
+
+main_obj = hou.node('/obj')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+sel_nodes = hou.selectedNodes()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    new_node = cur_obj.createNode('geo', 'mereged_objects', run_init_scripts=False)
+    new_node.moveToGoodPosition()
+    new_node.parm('use_dcolor').set(False)
+    final_merge = new_node.createNode("merge")
+
+    choice = hou.ui.displayMessage("Pack?", buttons=("Don't Pack", "Pack"))
+    null_choice = hou.ui.displayMessage("Create Nulls and Merges?", buttons=("No Null", "Add Null", "Null and Merge"))
+    path_choice = None
+
+    #if null_choice == 0:
+    path_choice = hou.ui.displayMessage("Path Type:", buttons=("Relative", "Absolute"))
+
+    if null_choice in (0, 1):
+        group_choice = hou.ui.displayMessage("Path Type:", buttons=("Create Group", "No Group"))
+
+    if null_choice in (1, 2):
+        null_name_choice = hou.ui.readInput("Write Null Name", initial_contents='SupaM')
+
+    for node in sel_nodes:
+        make_merge(final_merge, new_node, node, choice, null_choice, path_choice, group_choice, null_name_choice)
+
+    final_merge.moveToGoodPosition()
+    attrib_del = final_merge.createOutputNode('attribdelete')
+    attrib_del.parm('vtxdel').set('Cd')
+    attrib_del.parm('ptdel').set('Cd')
+    attrib_del.parm('primdel').set('Cd')
+
+    attrib_del.moveToGoodPosition()
+
+    attrib_del.setDisplayFlag(True)
+    attrib_del.setRenderFlag(True)]]></script>
+  </tool>
+
+  <tool name="hard_gun_obj_instance" label="HG_Instance" icon="OBJ_instance">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    choice = hou.ui.displayMessage("Instance", buttons=("Instance", "Geo", "Replace"))
+
+    choice_3 = hou.ui.displayMessage("Path:", buttons=("Relative", "Absolute"))
+
+    if choice == 1:
+        choice_2 = hou.ui.displayMessage("Pack Meshes?", buttons=("Yes", "No"))
+
+    for node in sel_nodes:
+        if choice == 2 and node is sel_nodes[-1]:
+            node.setSelected(False, clear_all_selected=False)
+            continue
+
+        obj_source = node
+#        if choice >= 1:
+#            obj_source = sel_nodes[-1]
+
+        if choice == 0:
+            obj_inst = cur_obj.createNode("instance")
+
+            obj_inst.parmTuple('i_t').set(obj_source.parmTuple('t').eval())
+            obj_inst.parmTuple('i_r').set(obj_source.parmTuple('r').eval())
+            obj_inst.parmTuple('i_s').set(obj_source.parmTuple('s').eval())
+            obj_inst.parmTuple('i_p').set(obj_source.parmTuple('p').eval())
+            obj_inst.parmTuple('i_pr').set(obj_source.parmTuple('pr').eval())
+            obj_inst.parm('i_scale').set(obj_source.parm('scale').eval())
+
+        else:
+            obj_inst = cur_obj.createNode('geo', run_init_scripts=False)
+
+            obj_inst.parmTuple('t').set(obj_source.parmTuple('t').eval())
+            obj_inst.parmTuple('r').set(obj_source.parmTuple('r').eval())
+            obj_inst.parmTuple('s').set(obj_source.parmTuple('s').eval())
+            obj_inst.parmTuple('p').set(obj_source.parmTuple('p').eval())
+            obj_inst.parmTuple('pr').set(obj_source.parmTuple('pr').eval())
+            obj_inst.parm('scale').set(obj_source.parm('scale').eval())
+
+        if choice == 2:
+            obj_inst.setName(sel_nodes[-1].name(), unique_name=True)
+        else:
+            obj_inst.setName(obj_source.name(), unique_name=True)
+
+        if choice == 0:
+            if obj_source.type().name() == 'instance':
+                obj_inst.parm('instancepath').set(obj_source.parm('instancepath').eval())
+            else:
+                #obj_inst.parm('instancepath').set(obj_source.path())
+
+                attr_cr = obj_inst.children()[0].createOutputNode('attribcreate')
+                attr_cr.parm('type1').set(3)
+                attr_cr.parm('name1').set('instancepath')
+                if choice_3 == 0:
+                    attr_cr.parm('string1').set('op:../../../' + obj_source.name())
+                else:
+                    attr_cr.parm('string1').set('op:' + obj_source.path())
+
+                instance = attr_cr.createOutputNode('instance')
+                instance.setDisplayFlag(True)
+                instance.setRenderFlag(True)
+
+        else:
+            merge_node = obj_inst.createNode("object_merge")
+            if choice_2 == 0:
+                merge_node.parm('pack').set(True)
+
+            if choice == 1:
+                if choice_3 == 0:
+                    merge_node.parm('objpath1').set('../../' + obj_source.name())
+                else:
+                    merge_node.parm('objpath1').set(obj_source.path())
+            else:
+                if choice_3 == 0:
+                    merge_node.parm('objpath1').set('../../' + sel_nodes[-1].name())
+                else:
+                    merge_node.parm('objpath1').set(sel_nodes[-1].path())
+
+            #merge_node.parm('xformtype').set(1)
+            merge_node.moveToGoodPosition()
+
+        obj_inst.moveToGoodPosition()
+        if choice == 2:
+            obj_inst.setPosition(obj_source.position())
+
+        obj_inst.setColor( hou.Color((1.0, 0.85, 0.5)) )
+        obj_inst.setSelected(True, clear_all_selected=False)
+        obj_source.setSelected(False, clear_all_selected=False)
+
+    # remove nodes
+    if choice == 2:
+        sel_nodes2 = list(sel_nodes)
+        sel_nodes2.remove(sel_nodes[-1])
+        sel_nodes3 = []
+        for node in sel_nodes2:
+            sel_nodes3.append(node.path())
+
+        for node_path in sel_nodes3:
+            hou.node(node_path).destroy()]]></script>
+  </tool>
+</shelfDocument>

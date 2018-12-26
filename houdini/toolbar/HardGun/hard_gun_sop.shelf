@@ -5,17 +5,7 @@
  Note, that two definitions of the same element are not allowed in
  a single file. -->
 
-  <toolshelf name="hard_gun" label="Hard Gun">
-    <memberTool name="hard_gun_prim"/>
-    <memberTool name="hard_gun_bool"/>
-    <memberTool name="hard_gun_clean"/>
-    <memberTool name="hard_gun_merge"/>
-    <memberTool name="hard_gun_part_mesh"/>
-    <memberTool name="hard_gun_extract_to_object"/>
-    <memberTool name="hard_gun_view_subdive"/>
-  </toolshelf>
-
-  <tool name="hard_gun_bool" label="HardGunBool" icon="SOP_boolean-2.0">
+  <tool name="hard_gun_bool" label="HG_Bool" icon="SOP_boolean-2.0">
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
     </toolMenuContext>
@@ -181,7 +171,7 @@ else:
     hou.ui.displayMessage(msg)]]></script>
   </tool>
 
-  <tool name="hard_gun_prim" label="HardGunPrim" icon="SOP_box">
+  <tool name="hard_gun_prim" label="HG_Prim" icon="SOP_box">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -313,7 +303,7 @@ viewer.setSnappingMode(cur_snap)
 ]]></script>
   </tool>
 
-  <tool name="hard_gun_clean" label="HardGunClean" icon="SOP_clean">
+  <tool name="hard_gun_clean" label="HG_Clean" icon="SOP_clean">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -351,7 +341,7 @@ dis.setRenderFlag(True)
 dis.setCurrent(True, clear_all_selected=True)]]></script>
   </tool>
 
-  <tool name="hard_gun_merge" label="Merge" icon="SOP_merge">
+  <tool name="hard_gun_merge" label="HG_Merge" icon="SOP_merge">
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
       <contextNetType>DOP</contextNetType>
@@ -375,7 +365,7 @@ if sel_nodes and len(sel_nodes) > 1:
     merge_node.moveToGoodPosition()]]></script>
   </tool>
 
-  <tool name="hard_gun_part_mesh" label="PartMesh" icon="SOP_blast">
+  <tool name="hard_gun_part_mesh" label="HG_PartMesh" icon="SOP_blast">
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
     </toolMenuContext>
@@ -413,7 +403,7 @@ if sel_str and geo.geometryType() == hou.geometryType.Primitives:
 ]]></script>
   </tool>
 
-  <tool name="hard_gun_extract_to_object" label="Extract To Object" icon="SHELF_extract_object">
+  <tool name="hard_gun_extract_to_object" label="HG_Extract" icon="SHELF_extract_object">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -499,4 +489,14 @@ elif cur_obj.type().category().name() == 'Object':
     else:
         cur_obj.parm('viewportlod').set(0)]]></script>
   </tool>
+
+  <toolshelf name="hard_gun_modeling" label="HGSop">
+    <memberTool name="hard_gun_prim"/>
+    <memberTool name="hard_gun_bool"/>
+    <memberTool name="hard_gun_clean"/>
+    <memberTool name="hard_gun_merge"/>
+    <memberTool name="hard_gun_part_mesh"/>
+    <memberTool name="hard_gun_extract_to_object"/>
+    <memberTool name="hard_gun_view_subdive"/>
+  </toolshelf>
 </shelfDocument>
