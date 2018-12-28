@@ -5,7 +5,7 @@
  Note, that two definitions of the same element are not allowed in
  a single file. -->
 
-  <tool name="hard_gun_bool" label="HG_Bool" icon="SOP_boolean-2.0">
+  <tool name="hard_gun_bool" label="Boolean" icon="SOP_boolean-2.0">
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
     </toolMenuContext>
@@ -171,7 +171,7 @@ else:
     hou.ui.displayMessage(msg)]]></script>
   </tool>
 
-  <tool name="hard_gun_prim" label="HG_Prim" icon="SOP_box">
+  <tool name="hard_gun_prim" label="Prim" icon="SOP_box">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -303,7 +303,7 @@ viewer.setSnappingMode(cur_snap)
 ]]></script>
   </tool>
 
-  <tool name="hard_gun_clean" label="HG_Clean" icon="SOP_clean">
+  <tool name="hard_gun_clean" label="Clean Edges" icon="SOP_clean">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -341,7 +341,7 @@ dis.setRenderFlag(True)
 dis.setCurrent(True, clear_all_selected=True)]]></script>
   </tool>
 
-  <tool name="hard_gun_merge" label="HG_Merge" icon="SOP_merge">
+  <tool name="hard_gun_merge" label="Merge" icon="SOP_merge">
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
       <contextNetType>DOP</contextNetType>
@@ -362,10 +362,20 @@ if sel_nodes and len(sel_nodes) > 1:
         merge_node.setRenderFlag(True)
         merge_node.setCurrent(True, clear_all_selected=True)
 
+        # make new connections for the merge node
+        for connects in node.outputConnections():
+            out_node = connects.outputNode()
+            in_idx = connects.inputIndex()
+            out_idx = connects.outputIndex()
+    
+            if out_node.name() != merge_node.name():
+                out_node.setInput(out_idx, merge_node, in_idx)
+                out_node.moveToGoodPosition()
+
     merge_node.moveToGoodPosition()]]></script>
   </tool>
 
-  <tool name="hard_gun_part_mesh" label="HG_PartMesh" icon="SOP_blast">
+  <tool name="hard_gun_part_mesh" label="PartMesh" icon="SOP_blast">
     <toolMenuContext name="viewer">
       <contextNetType>SOP</contextNetType>
     </toolMenuContext>
@@ -403,7 +413,7 @@ if sel_str and geo.geometryType() == hou.geometryType.Primitives:
 ]]></script>
   </tool>
 
-  <tool name="hard_gun_extract_to_object" label="HG_Extract" icon="SHELF_extract_object">
+  <tool name="hard_gun_extract_to_object" label="Extract" icon="SHELF_extract_object">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -493,10 +503,41 @@ elif cur_obj.type().category().name() == 'Object':
   <toolshelf name="hard_gun_modeling" label="HGSop">
     <memberTool name="hard_gun_prim"/>
     <memberTool name="hard_gun_bool"/>
-    <memberTool name="hard_gun_clean"/>
     <memberTool name="hard_gun_merge"/>
     <memberTool name="hard_gun_part_mesh"/>
+    <memberTool name="hard_gun_clean"/>
+    <memberTool name="hg_clean_topology"/>
     <memberTool name="hard_gun_extract_to_object"/>
     <memberTool name="hard_gun_view_subdive"/>
   </toolshelf>
+
+  <tool name="hg_clean_topology" label="Clean Topology" icon="SOP_clean">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+sel_nodes = hou.selectedNodes()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if sel_nodes:
+    cur_node = sel_nodes[-1]
+else:
+    cur_node = cur_obj.displayNode()
+
+doc = cur_node.createOutputNode("polydoctor")
+doc.parm('manyedges').set(0)
+doc.setColor( hou.Color((0.7, 0.8, 0.7)) )
+
+del_nd = doc.createOutputNode("delete")
+del_nd.parm('groupop').set(2)
+del_nd.parm('negate').set(1)
+del_nd.parm('filter').setExpression("isclosed(opinputpath('.', 0), $PR)")
+del_nd.setColor( hou.Color((0.7, 0.8, 0.7)) )
+
+del_nd.setDisplayFlag(True)
+del_nd.setRenderFlag(True)
+del_nd.setCurrent(True, clear_all_selected=True)]]></script>
+  </tool>
 </shelfDocument>

@@ -226,7 +226,7 @@
 			"bottom",["script",
 				"label","Unhide",
 				"icon","SOP_visibility",
-				"script","import soptoolutils\n\ncur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()\n\nnode = cur_obj.displayNode().createOutputNode(\"visibility\")\nnode.parm('action').set(1)\nnode.parm('group').set('')\n\nnode.moveToGoodPosition()\nnode.setDisplayFlag(True)\nnode.setRenderFlag(True)\nnode.setCurrent(True, clear_all_selected=True)"],
+				"script","import soptoolutils\n\ncur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()\n\nnode = cur_obj.displayNode().createOutputNode(\"visibility\")\nnode.parm('action').set(1)\nnode.parm('group').set('')\n\n# make new connections for the merge node\nfor connects in cur_obj.displayNode().outputConnections():\n    out_node = connects.outputNode()\n    in_idx = connects.inputIndex()\n    out_idx = connects.outputIndex()\n\n    if out_node.name() != node.name():\n        out_node.setInput(out_idx, node, in_idx)\n        out_node.moveToGoodPosition()\n\nnode.moveToGoodPosition()\nnode.setDisplayFlag(True)\nnode.setRenderFlag(True)\nnode.setCurrent(True, clear_all_selected=True)"],
 			
 			"right",["script",
 				"label","Hide Non-Selected",

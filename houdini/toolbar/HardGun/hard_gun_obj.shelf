@@ -14,7 +14,7 @@
     <memberTool name="hard_gun_obj_id_material"/>
   </toolshelf>
 
-  <tool name="hard_gun_obj_id_material" label="HG_IDMat" icon="PLASMA_App">
+  <tool name="hard_gun_obj_id_material" label="IDMat" icon="PLASMA_App">
     <script scriptType="python"><![CDATA[import colorsys
 
 sel_nodes = hou.selectedNodes()
@@ -37,7 +37,7 @@ for i, node in enumerate(sel_nodes):
         ]]></script>
   </tool>
 
-  <tool name="hard_gun_obj_rename" label="HG_Rename" icon="PLASMA_App">
+  <tool name="hard_gun_obj_rename" label="Rename" icon="PLASMA_App">
     <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
 
 mess = hou.ui.readMultiInput("Rename:", ('Rename', 'Bake'), buttons=('OK', 'Cancel'))
@@ -54,7 +54,7 @@ if mess[0] == 0 and (mess[1][0] != '' or mess[1][1] != ''):
             node.setName(mess[1][0], unique_name=True)]]></script>
   </tool>
 
-  <tool name="hard_gun_obj_poly_reducer" label="HG_Reduce" icon="SOP_polyreduce-2.0">
+  <tool name="hard_gun_obj_poly_reducer" label="Reduce" icon="SOP_polyreduce-2.0">
     <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
 out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
@@ -91,7 +91,7 @@ else:
     hou.ui.displayMessage(msg)]]></script>
   </tool>
 
-  <tool name="hard_gun_obj_lock_selected" label="HG_Lock" icon="PLASMA_App">
+  <tool name="hard_gun_obj_lock_selected" label="Lock" icon="PLASMA_App">
     <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
 out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
@@ -116,7 +116,7 @@ else:
     hou.ui.displayMessage(msg)]]></script>
   </tool>
 
-  <tool name="hard_gun_obj_geom_converter" label="HG_Convert" icon="SOP_object_merge">
+  <tool name="hard_gun_obj_geom_converter" label="Convert" icon="SOP_object_merge">
     <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice, null_choice, path_choice, group_choice, null_name_choice):
     merge_node = new_node.createNode("object_merge", node_name=node_to_merge.name())
 
@@ -222,7 +222,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     attrib_del.setRenderFlag(True)]]></script>
   </tool>
 
-  <tool name="hard_gun_obj_instance" label="HG_Instance" icon="OBJ_instance">
+  <tool name="hard_gun_obj_instance" label="Instance" icon="OBJ_instance">
     <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
 out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
