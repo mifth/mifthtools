@@ -17,7 +17,7 @@ import toolutils
 
 viewer = toolutils.sceneViewer()
 sel_nodes = hou.selectedNodes()
-geo = viewer.selectGeometry()
+geo = viewer.selectGeometry(use_existing_selection=False, initial_selection_type=hou.geometryType.Primitives)
 sel_str = geo.mergedSelectionString()
 
 mesh_length = 100
@@ -209,19 +209,19 @@ if choice != 0:
 if choice == 0:
     box = cur_obj.createNode('curve')
     box.moveToGoodPosition()
-    box.setCurrent(True, clear_all_selected=False)
+    box.setCurrent(True, clear_all_selected=True)
 
 elif choice == 1:
     box = cur_obj.createNode('box')
     box.moveToGoodPosition()
-    box.setCurrent(True, clear_all_selected=False)
+    box.setCurrent(True, clear_all_selected=True)
     box.parmTuple('t').set(positions[0])
     box.parmTuple('size').set( (prim_size * 2, prim_size * 2, prim_size * 2) )
 
 elif choice == 2:
     tube_nd = cur_obj.createNode('tube')
     tube_nd.moveToGoodPosition()
-    tube_nd.setCurrent(True, clear_all_selected=False)
+    tube_nd.setCurrent(True, clear_all_selected=True)
     tube_nd.parmTuple('t').set(positions[0])
     tube_nd.parm('type').set(1)
     tube_nd.parm('rad1').set(prim_size)
@@ -238,7 +238,7 @@ elif choice == 2:
 elif choice == 3:
     sphere = cur_obj.createNode('sphere')
     sphere.moveToGoodPosition()
-    sphere.setCurrent(True, clear_all_selected=False)
+    sphere.setCurrent(True, clear_all_selected=True)
     sphere.parmTuple('t').set(positions[0])
     sphere.parm('type').set(2)
     sphere.parmTuple('rad').set( (prim_size, prim_size, prim_size) )
@@ -253,7 +253,7 @@ elif choice == 3:
 elif choice == 4:
     grid = cur_obj.createNode('grid')
     grid.moveToGoodPosition()
-    grid.setCurrent(True, clear_all_selected=False)
+    grid.setCurrent(True, clear_all_selected=True)
     grid.parmTuple('t').set(positions[0])
     grid.parmTuple('size').set( (prim_size * 2, prim_size * 2) )
     grid.parm('rows').set(2)
@@ -277,7 +277,7 @@ elif choice == 4:
 elif choice == 5:
     circle = cur_obj.createNode('circle')
     circle.moveToGoodPosition()
-    circle.setCurrent(True, clear_all_selected=False)
+    circle.setCurrent(True, clear_all_selected=True)
     circle.parmTuple('t').set(positions[0])
     circle.parm('type').set(1)
     circle.parmTuple('rad').set( (-prim_size, prim_size) )
