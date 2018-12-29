@@ -24,9 +24,9 @@
 					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_extract_to_object')"
 				],
 				"right",["script",
-					"label","HG_Clean",
-					"icon","SOP_clean",
-					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_clean')"
+					"label","Bevel Setup",
+					"icon","SOP_polybevel",
+					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_bevel_setup')"
 				],
 				"top_right",["script",
 					"label","HG_Bool",

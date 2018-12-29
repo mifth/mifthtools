@@ -129,6 +129,7 @@ if sel_nodes and len(sel_nodes) == 2:
     #bool_node.parm('resolvea').set(False)
     bool_node.parm('resolveb').set(False)
     bool_node.parm('booleanop').set(2)
+    #bool_node.parm('useabseamedges').set(True)
     bool_node.setNextInput(second_node)
 
     if choice_bool == 1:
@@ -336,8 +337,8 @@ dis.parm('remunusedpts').set(True)
 dis.parm('deldegeneratebridges').set(False)
 dis.setColor( hou.Color((0.7, 0.8, 0.7)) )
 
-dis.setDisplayFlag(True)
-dis.setRenderFlag(True)
+#dis.setDisplayFlag(True)
+#dis.setRenderFlag(True)
 dis.setCurrent(True, clear_all_selected=True)]]></script>
   </tool>
 
@@ -507,6 +508,7 @@ elif cur_obj.type().category().name() == 'Object':
     <memberTool name="hard_gun_part_mesh"/>
     <memberTool name="hard_gun_clean"/>
     <memberTool name="hg_clean_topology"/>
+    <memberTool name="hard_gun_bevel_setup"/>
     <memberTool name="hard_gun_extract_to_object"/>
     <memberTool name="hard_gun_view_subdive"/>
   </toolshelf>
@@ -539,5 +541,65 @@ del_nd.setColor( hou.Color((0.7, 0.8, 0.7)) )
 del_nd.setDisplayFlag(True)
 del_nd.setRenderFlag(True)
 del_nd.setCurrent(True, clear_all_selected=True)]]></script>
+  </tool>
+
+  <tool name="hard_gun_bevel_setup" label="Bevel Setup" icon="SOP_polybevel">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+sel_nodes = hou.selectedNodes()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if sel_nodes:
+    cur_node = sel_nodes[-1]
+else:
+    cur_node = cur_obj.displayNode()
+
+choice = hou.ui.displayMessage("Bevel Mode:", buttons=("Basic", "Advanced"))
+
+if choice == 1:
+    point = cur_node.createOutputNode("attribexpression")
+    point.parm('preset1').set(0)
+    point.parm('name1').set('pscale')
+    point.parm('type1').set('float')
+    point.parm('valf_1').set(30)
+    point.parm('snippet1').set('value')
+    point.setColor( hou.Color((0.145, 0.667, 0.557)) )
+
+    bev = point.createOutputNode("polybevel::2.0")
+    bev.parm('offset').set(0.0001)
+    bev.parm('usepointscale').set(True)
+    
+else:
+    bev = cur_node.createOutputNode("polybevel::2.0")
+    bev.parm('offset').set(0.003)
+
+bev.parm('grouptype').set(2)
+bev.parm('ignoregrpflat').set(True)
+bev.parm('groupflatangle').set(15)
+bev.parm('allowvertexsplits').set(True)
+bev.parm('divisions').set(3)
+bev.parm('usecornerprims').set(True)
+bev.parm('useedgeprims').set(True)
+bev.setColor( hou.Color((0.145, 0.667, 0.557)) )
+
+nor_1 = bev.createOutputNode("normal")
+nor_1.parm('group').set('bevelprims')
+nor_1.parm('cuspangle').set(60)
+nor_1.parm('method').set(2)
+nor_1.setColor( hou.Color((0.145, 0.667, 0.557)) )
+
+nor_2 = nor_1.createOutputNode("normal")
+nor_2.parm('group').set('!bevelprims')
+nor_2.parm('cuspangle').set(15)
+nor_2.parm('method').set(2)
+nor_2.setColor( hou.Color((0.145, 0.667, 0.557)) )
+
+nor_2.setDisplayFlag(True)
+nor_2.setRenderFlag(True)
+nor_2.setCurrent(True, clear_all_selected=True)]]></script>
   </tool>
 </shelfDocument>
