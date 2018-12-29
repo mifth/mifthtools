@@ -563,7 +563,7 @@ choice = hou.ui.displayMessage("Bevel Mode:", buttons=("Basic", "Advanced"))
 if choice == 1:
     point = cur_node.createOutputNode("attribexpression")
     point.parm('preset1').set(0)
-    point.parm('name1').set('pscale')
+    point.parm('name1').set('bevel_pscale')
     point.parm('type1').set('float')
     point.parm('valf_1').set(30)
     point.parm('snippet1').set('value')
@@ -572,6 +572,7 @@ if choice == 1:
     bev = point.createOutputNode("polybevel::2.0")
     bev.parm('offset').set(0.0001)
     bev.parm('usepointscale').set(True)
+    bev.parm('pointscaleattr').set('bevel_pscale')
     
 else:
     bev = cur_node.createOutputNode("polybevel::2.0")
