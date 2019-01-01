@@ -166,7 +166,7 @@ else:
     merge_node.moveToGoodPosition()
 
     # create groups
-    if group_choice and group_choice == 0:
+    if group_choice is not None and group_choice == 0:
         del_gr_node = merge_node.createOutputNode("groupdelete")
         del_gr_node.parm('group1').set(null_name_choice[1] + '_*')
     
@@ -201,9 +201,15 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
     #if null_choice == 0:
     path_choice = hou.ui.displayMessage("Path Type:", buttons=("Relative", "Absolute"))
 
+    # if create a group
+    group_choice = None
     if null_choice in (0, 1):
         group_choice = hou.ui.displayMessage("Path Type:", buttons=("Create Group", "No Group"))
+    elif null_choice == 2:
+        group_choice = 0
 
+    # Null Name
+    null_name_choice = None
     if null_choice in (1, 2):
         null_name_choice = hou.ui.readInput("Write Null Name", initial_contents='SupaM')
 
