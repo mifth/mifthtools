@@ -513,7 +513,7 @@ elif cur_obj.type().category().name() == 'Object':
     <memberTool name="hard_gun_view_subdive"/>
   </toolshelf>
 
-  <tool name="hg_clean_topology" label="Clean Topology" icon="SOP_clean">
+  <tool name="hg_clean_topology" label="Clean Mesh" icon="SOP_clean">
     <script scriptType="python"><![CDATA[import soptoolutils
 import toolutils
 
@@ -538,9 +538,14 @@ del_nd.parm('negate').set(1)
 del_nd.parm('filter').setExpression("isclosed(opinputpath('.', 0), $PR)")
 del_nd.setColor( hou.Color((0.7, 0.8, 0.7)) )
 
-del_nd.setDisplayFlag(True)
-del_nd.setRenderFlag(True)
-del_nd.setCurrent(True, clear_all_selected=True)]]></script>
+fix_n = del_nd.createOutputNode("attribwrangle")
+fix_n.parm('class').set('vertex')
+fix_n.parm('snippet').set('if (hasvertexattrib(0, "N") == 1) {\nif (@N == (0,0,0)) @N = (0,1,0);\n@N = normalize(@N); \n}')
+fix_n.setColor( hou.Color((0.7, 0.8, 0.7)) )
+
+fix_n.setDisplayFlag(True)
+fix_n.setRenderFlag(True)
+fix_n.setCurrent(True, clear_all_selected=True)]]></script>
   </tool>
 
   <tool name="hard_gun_bevel_setup" label="Bevel Setup" icon="SOP_polybevel">
