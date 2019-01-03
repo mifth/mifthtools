@@ -540,7 +540,7 @@ del_nd.setColor( hou.Color((0.7, 0.8, 0.7)) )
 
 fix_n = del_nd.createOutputNode("attribwrangle")
 fix_n.parm('class').set('vertex')
-fix_n.parm('snippet').set('if (hasvertexattrib(0, "N") == 1) {\nif (@N == (0,0,0)) { @N = (0,1,0); }\n@N = normalize(@N); }')
+fix_n.parm('snippet').set('if (hasvertexattrib(0, "N") == 1) {\nif (length(@N) == 0.0) { @N = set(0,1,0); }\n@N = normalize(@N); }\n\n')
 fix_n.setColor( hou.Color((0.7, 0.8, 0.7)) )
 
 fix_n.setDisplayFlag(True)
