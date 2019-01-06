@@ -295,7 +295,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
         else:
             merge_node = obj_inst.createNode("object_merge")
-            if choice_2 == 0:
+            if choice == 1 and choice_2 == 0:
                 merge_node.parm('pack').set(True)
 
             if choice == 1:
