@@ -261,7 +261,8 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
             obj_inst.parm('i_scale').set(obj_source.parm('scale').eval())
 
         else:
-            obj_inst = cur_obj.createNode('geo', run_init_scripts=False)
+            obj_inst = cur_obj.createNode('geo', run_init_scripts=True)
+            obj_inst.deleteItems(obj_inst.children())
 
             obj_inst.parmTuple('t').set(obj_source.parmTuple('t').eval())
             obj_inst.parmTuple('r').set(obj_source.parmTuple('r').eval())
@@ -316,7 +317,9 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
         if choice == 2:
             obj_inst.setPosition(obj_source.position())
 
-        obj_inst.setColor( hou.Color((1.0, 0.85, 0.5)) )
+        if choice != 2:
+            obj_inst.setColor( hou.Color((1.0, 0.85, 0.5)) )
+
         obj_inst.setSelected(True, clear_all_selected=False)
         obj_source.setSelected(False, clear_all_selected=False)
 
