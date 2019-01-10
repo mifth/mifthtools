@@ -203,6 +203,10 @@ elif view_z > view_x and view_z > view_y:
 
 if choice != 0:
     positions = viewer.selectPositions(number_of_positions=2, connect_positions=True, show_coordinates=True, position_type=hou.positionType.WorldSpace)
+
+    # fix object transform
+    positions = (positions[0] * cur_obj.worldTransform().inverted(), positions[1] * cur_obj.worldTransform().inverted() )
+
     prim_size = (positions[0] - positions[1]).length()
     if prim_size == 0:
         prim_size = 1
