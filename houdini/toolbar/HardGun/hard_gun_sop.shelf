@@ -464,16 +464,27 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
         blast_1.setDisplayFlag(True)
         blast_1.setRenderFlag(True)
         blast_1.setCurrent(True, clear_all_selected=True)
+
+        # make new connections for the merge node
+        for connects in main_node.outputConnections():
+            out_node = connects.outputNode()
+            in_idx = connects.inputIndex()
+            out_idx = connects.outputIndex()
     
+            if out_node.name() != blast_1.name():
+                out_node.setInput(out_idx, blast_1, in_idx)
+                out_node.moveToGoodPosition()
+
+        #  create new object
         new_obj = parent_obj.createNode('geo', the_obj.name(), run_init_scripts=False)
         new_obj.parm('use_dcolor').set(False)
         new_obj.moveToGoodPosition()
-    
+
         obj_merge = new_obj.createNode("object_merge")
         obj_merge.parm('objpath1').set(obj_merge.relativePathTo(main_node))
         obj_merge.parm('xformtype').set(1)
         obj_merge.moveToGoodPosition()
-    
+
         blast_2 = new_obj.createNode('blast')
         blast_2.parm('group').set(sel_str)
         blast_2.setNextInput(obj_merge)
