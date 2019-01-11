@@ -189,6 +189,7 @@ viewer.setSnappingMode(hou.snappingMode.Prim)
 
 # View Direction
 view_dir = ( hou.Vector3(0, 0, 1) * hou.Matrix4(viewer.curViewport().viewTransform().extractRotationMatrix3()) ).normalized()
+view_dir = (view_dir * cur_obj.worldTransform().inverted().transposed()).normalized()
 view_x = abs(view_dir[0])
 view_y = abs(view_dir[1])
 view_z = abs(view_dir[2])
