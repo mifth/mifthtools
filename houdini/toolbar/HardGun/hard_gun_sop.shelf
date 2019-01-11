@@ -408,14 +408,24 @@ if sel_str and geo.geometryType() == hou.geometryType.Primitives:
     final_merge = main_node.parent().createNode("merge")
 
     final_merge.setNextInput(blast_2)
-
     final_merge.setNextInput(blast_1)
+
 
     final_merge.moveToGoodPosition()
 
     final_merge.setDisplayFlag(True)
     final_merge.setRenderFlag(True)
     final_merge.setCurrent(True, clear_all_selected=True)
+    
+    # make new connections for the merge node
+    for connects in main_node.outputConnections():
+        out_node = connects.outputNode()
+        in_idx = connects.inputIndex()
+        out_idx = connects.outputIndex()
+
+        if out_node.name() not in ( blast_2.name(), blast_1.name() ):
+            out_node.setInput(out_idx, final_merge, in_idx)
+            out_node.moveToGoodPosition()
 ]]></script>
   </tool>
 
