@@ -115,7 +115,8 @@ if viewer.currentGeometrySelection().selections()[0].numSelected() == 2:
     node = soptoolutils.genericTool(kwargs, 'mifth_edgestoface')
 else:
     node = soptoolutils.genericTool(kwargs, 'polyfill')
-    node.parm('fillmode').set(0)]]></script>
+    node.parm('fillmode').set(0)
+    node.parm('completeloops').set(0)]]></script>
   </tool>
 
   <tool name="pivot_center" label="PivotToCenter" icon="OBJ_null">
