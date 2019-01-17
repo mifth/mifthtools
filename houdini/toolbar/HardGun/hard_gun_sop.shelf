@@ -476,8 +476,9 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
                 out_node.moveToGoodPosition()
 
         #  create new object
-        new_obj = parent_obj.createNode('geo', the_obj.name(), run_init_scripts=False)
-        new_obj.parm('use_dcolor').set(False)
+        new_obj = parent_obj.createNode('geo', the_obj.name(), run_init_scripts=True)
+        new_obj.deleteItems(new_obj.children())
+        #new_obj.parm('use_dcolor').set(False)
         new_obj.moveToGoodPosition()
 
         obj_merge = new_obj.createNode("object_merge")
