@@ -182,6 +182,11 @@ viewer = toolutils.sceneViewer()
 #sel_str = geo.mergedSelectionString()
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
+# create object if it does not exists
+if cur_obj.childTypeCategory().name() == 'Object':
+    cur_obj = cur_obj.createNode('geo', run_init_scripts=True)
+    cur_obj.deleteItems(cur_obj.children())
+
 choice = hou.ui.displayMessage("Mirror?", buttons=("Curve", "Box", "Tube", "Sphere", "Grid", "Circle"))
 
 cur_snap = viewer.snappingMode()
