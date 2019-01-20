@@ -69,19 +69,25 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
             rots = obj_node.parmTuple('r').eval()
             scales = obj_node.parmTuple('s').eval()
             uni_scales = obj_node.parm('scale').eval()
+            piv_poses = obj_node.parmTuple('p').eval()
+            piv_rots = obj_node.parmTuple('pr').eval()
 
             if choice == 0 or choice == 1:
-                trans_node.parmTuple('t').set(poses)
+                new_pos = (poses[0] + piv_poses[0], poses[1] + piv_poses[1], poses[2] + piv_poses[2])
+                trans_node.parmTuple('t').set(new_pos)
             if choice == 0 or choice == 2:
-                trans_node.parmTuple('r').set(rots)
+                new_rot = (rots[0] + piv_rots[0], rots[1] + piv_rots[1], rots[2] + piv_rots[2])
+                trans_node.parmTuple('r').set(new_rot)
             if choice == 0 or choice == 3:
                 trans_node.parmTuple('s').set(scales)
                 trans_node.parm('scale').set(uni_scales)
 
             if choice == 0 or choice == 1:
                 obj_node.parmTuple('t').set((0, 0, 0))
+                obj_node.parmTuple('p').set((0, 0, 0))
             if choice == 0 or choice == 2:
                 obj_node.parmTuple('r').set((0, 0, 0))
+                obj_node.parmTuple('pr').set((0, 0, 0))
             if choice == 0 or choice == 3:
                 obj_node.parmTuple('s').set((1, 1, 1))
                 obj_node.parm('scale').set(1)
