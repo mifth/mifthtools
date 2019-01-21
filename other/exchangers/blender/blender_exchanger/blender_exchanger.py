@@ -122,7 +122,7 @@ class EX_ExportScene(bpy.types.Operator):
             apply_modifiers = b_exchanger.doApplyModifiers
 
             # Export Model
-            bpy.ops.export_scene.fbx(filepath=model_path, check_existing=True, axis_forward='-Z', axis_up='Y', use_selection=True, global_scale=self.world_scale, apply_unit_scale=True, bake_space_transform=True, use_mesh_modifiers=apply_modifiers, use_custom_props=True, primary_bone_axis='Y', secondary_bone_axis='X', bake_anim=False, use_anim=False)
+            bpy.ops.export_scene.fbx(filepath=model_path, check_existing=True, axis_forward='-Z', axis_up='Y', use_selection=True, global_scale=self.world_scale, apply_unit_scale=True, bake_space_transform=True, use_mesh_modifiers=apply_modifiers, use_custom_props=True, primary_bone_axis='Y', secondary_bone_axis='X')
 
             # revert render level of modifiers back
             for mod_stuff in fix_modidiers:
