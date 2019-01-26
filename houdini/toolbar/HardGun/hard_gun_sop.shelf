@@ -182,10 +182,17 @@ viewer = toolutils.sceneViewer()
 #sel_str = geo.mergedSelectionString()
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
+is_new_obj = False
+
 # create object if it does not exists
 if cur_obj.childTypeCategory().name() == 'Object':
     cur_obj = cur_obj.createNode('geo', run_init_scripts=True)
     cur_obj.deleteItems(cur_obj.children())
+    cur_obj.moveToGoodPosition()
+    cur_obj.setDisplayFlag(True)
+    cur_obj.setCurrent(True, clear_all_selected=True)
+
+    is_new_obj = True
 
 choice = hou.ui.displayMessage("Mirror?", buttons=("Curve", "Box", "Tube", "Sphere", "Grid", "Circle"))
 
@@ -208,10 +215,19 @@ elif view_z > view_x and view_z > view_y:
 
 
 if choice != 0:
+    # parent object for fixing object's transform
+    parent_obj = cur_obj
+    if is_new_obj:
+        parent_obj = cur_obj.parent()
+
     positions = viewer.selectPositions(number_of_positions=2, connect_positions=True, show_coordinates=True, position_type=hou.positionType.WorldSpace)
 
-    # fix object transform
-    positions = (positions[0] * cur_obj.worldTransform().inverted(), positions[1] * cur_obj.worldTransform().inverted() )
+    # fix object's transform
+    positions = (positions[0] * parent_obj.worldTransform().inverted(), positions[1] * parent_obj.worldTransform().inverted() )
+
+    # set new position for new Object if it was created
+    if is_new_obj:
+        cur_obj.parmTuple('t').set(positions[0])
 
     prim_size = (positions[0] - positions[1]).length()
     if prim_size == 0:
@@ -224,16 +240,28 @@ if choice == 0:
 
 elif choice == 1:
     box = cur_obj.createNode('box')
+    box.parm('type').set(1)
+    box.parmTuple('divrate').set((2,2,2))
     box.moveToGoodPosition()
     box.setCurrent(True, clear_all_selected=True)
-    box.parmTuple('t').set(positions[0])
+
+    if not is_new_obj:
+        box.parmTuple('t').set(positions[0])
+
     box.parmTuple('size').set( (prim_size * 2, prim_size * 2, prim_size * 2) )
+
+    if view_axis == 'X':
+        if is_new_obj:
+            cur_obj.parm('ry').set(90)
 
 elif choice == 2:
     tube_nd = cur_obj.createNode('tube')
     tube_nd.moveToGoodPosition()
     tube_nd.setCurrent(True, clear_all_selected=True)
-    tube_nd.parmTuple('t').set(positions[0])
+
+    if not is_new_obj:
+        tube_nd.parmTuple('t').set(positions[0])
+
     tube_nd.parm('type').set(1)
     tube_nd.parm('rad1').set(prim_size)
     tube_nd.parm('rad2').set(prim_size)
@@ -242,72 +270,115 @@ elif choice == 2:
     tube_nd.parm('cap').set(1)
 
     if view_axis == 'X':
-        tube_nd.parm('orient').set(0)
+        if is_new_obj:
+            cur_obj.parm('ry').set(90)
+            tube_nd.parm('orient').set(2)
+        else:
+            tube_nd.parm('orient').set(0)
     elif view_axis == 'Z':
-        tube_nd.parm('orient').set(2)
+        if is_new_obj:
+            #cur_obj.parm('rx').set(90)
+            tube_nd.parm('orient').set(2)
+        else:
+            tube_nd.parm('orient').set(2)
 
 elif choice == 3:
     sphere = cur_obj.createNode('sphere')
     sphere.moveToGoodPosition()
     sphere.setCurrent(True, clear_all_selected=True)
-    sphere.parmTuple('t').set(positions[0])
+
+    if not is_new_obj:
+        sphere.parmTuple('t').set(positions[0])
+
     sphere.parm('type').set(2)
     sphere.parmTuple('rad').set( (prim_size, prim_size, prim_size) )
     sphere.parm('rows').set(15)
     sphere.parm('cols').set(30)
 
     if view_axis == 'X':
-        sphere.parm('orient').set(0)
+        if is_new_obj:
+            cur_obj.parm('ry').set(90)
+            sphere.parm('orient').set(2)
+        else:
+            sphere.parm('orient').set(0)
     elif view_axis == 'Z':
-        sphere.parm('orient').set(2)
+        if is_new_obj:
+            #cur_obj.parm('rx').set(90)
+            sphere.parm('orient').set(2)
+        else:
+            sphere.parm('orient').set(2)
 
 elif choice == 4:
     grid = cur_obj.createNode('grid')
     grid.moveToGoodPosition()
     grid.setCurrent(True, clear_all_selected=True)
-    grid.parmTuple('t').set(positions[0])
+
+    if not is_new_obj:
+        grid.parmTuple('t').set(positions[0])
+
     grid.parmTuple('size').set( (prim_size * 2, prim_size * 2) )
     grid.parm('rows').set(2)
     grid.parm('cols').set(2)
 
     if view_axis == 'X':
-        grid.parm('orient').set(1)
-
-        if view_dir[0] < 0:
+        if is_new_obj:
+            cur_obj.parm('ry').set(90)
+            grid.parm('orient').set(0)
             grid.parm('sizex').set(-prim_size * 2)
+        else:
+            grid.parm('orient').set(1)
+
+            if view_dir[0] < 0:
+                grid.parm('sizex').set(-prim_size * 2)
             
     elif view_axis == 'Z':
-        grid.parm('orient').set(0)
-
-        if view_dir[2] > 0:
+        if is_new_obj:
+            #cur_obj.parm('rz').set(90)
+            grid.parm('orient').set(0)
             grid.parm('sizex').set(-prim_size * 2)
+        else:
+            grid.parm('orient').set(0)
+
+            if view_dir[2] > 0:
+                grid.parm('sizex').set(-prim_size * 2)
     else:
-        if view_dir[1] < 0:
+        if view_dir[1] < 0 and not is_new_obj:
             grid.parm('sizex').set(-prim_size * 2)
 
 elif choice == 5:
     circle = cur_obj.createNode('circle')
     circle.moveToGoodPosition()
     circle.setCurrent(True, clear_all_selected=True)
-    circle.parmTuple('t').set(positions[0])
+
+    if not is_new_obj:
+        circle.parmTuple('t').set(positions[0])
+
     circle.parm('type').set(1)
     circle.parmTuple('rad').set( (-prim_size, prim_size) )
     circle.parm('divs').set(30)
     circle.parm('orient').set(2)
 
     if view_axis == 'X':
-        circle.parm('orient').set(1)
+        if is_new_obj:
+            cur_obj.parm('ry').set(90)
+            circle.parm('orient').set(0)
+        else:
+            circle.parm('orient').set(1)
 
-        if view_dir[0] < 0:
-            circle.parm('radx').set(prim_size)
+            if view_dir[0] < 0:
+                circle.parm('radx').set(prim_size)
 
     elif view_axis == 'Z':
-        circle.parm('orient').set(0)
+        if is_new_obj:
+            #cur_obj.parm('rz').set(90)
+            circle.parm('orient').set(0)
+        else:
+            circle.parm('orient').set(0)
 
-        if view_dir[2] < 0:
-            circle.parm('radx').set(prim_size)
+            if view_dir[2] < 0:
+                circle.parm('radx').set(prim_size)
     else:
-        if view_dir[1] < 0:
+        if view_dir[1] < 0 and not is_new_obj:
             circle.parm('radx').set(prim_size)
 
 viewer.setSnappingMode(cur_snap)
