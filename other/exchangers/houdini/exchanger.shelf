@@ -89,19 +89,15 @@ if cur_obj.childTypeCategory().name() == 'Object':
     geo_node = cur_obj.createNode("geo")
     geo_node.moveToGoodPosition()
 
-    file_node = geo_node.children()[0]
-    file_node.parm('file').set(ex_path)
+    cur_obj = geo_node
 
-    file_node.setHardLocked(True)
+file_node = cur_obj.createNode("file")
+file_node.parm('file').set(ex_path)
+file_node.setHardLocked(True)
 
-elif cur_obj.childTypeCategory().name() == 'Sop':
-    file_node = cur_obj.createNode("file")
-    file_node.parm('file').set(ex_path)
-    file_node.setHardLocked(True)
-
-    file_node.setDisplayFlag(True)
-    file_node.setRenderFlag(True)
-    file_node.moveToGoodPosition()
+file_node.setDisplayFlag(True)
+file_node.setRenderFlag(True)
+file_node.moveToGoodPosition()
 ]]></script>
   </tool>
 
