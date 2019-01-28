@@ -88,6 +88,7 @@ ex_path = exchange_dir + "exchange.OBJ"
 if cur_obj.childTypeCategory().name() == 'Object':
     geo_node = cur_obj.createNode("geo")
     geo_node.moveToGoodPosition()
+    geo_node.setCurrent(True, clear_all_selected=True)
 
     cur_obj = geo_node
 
