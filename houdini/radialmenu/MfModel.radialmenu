@@ -9,17 +9,17 @@
 			"top",["submenu",
 				"label","HardGun",
 				"top",["script",
-					"label","HG_Prim",
+					"label","Primitives",
 					"icon","SOP_box",
 					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_prim')"
 				],
 				"top_left",["script",
-					"label","HG_Merge",
+					"label","Merge",
 					"icon","SOP_merge",
 					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_merge')"
 				],
 				"left",["script",
-					"label","HG_Extract",
+					"label","Extract",
 					"icon","SHELF_extract_object",
 					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_extract_to_object')"
 				],
@@ -29,7 +29,7 @@
 					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_bevel_setup')"
 				],
 				"top_right",["script",
-					"label","HG_Bool",
+					"label","Boolean",
 					"icon","SOP_boolean-2.0",
 					"script","radialmenu.runShelfTool(kwargs, 'hard_gun_bool')"
 				]
@@ -211,7 +211,7 @@
 				"script","radialmenu.runShelfTool(kwargs, 'geometry_duplicate')"
 			],
 			"top_right",["script",
-				"label","HG_PartMesh",
+				"label","Part Mesh",
 				"icon","SOP_blast",
 				"script","radialmenu.runShelfTool(kwargs, 'hard_gun_part_mesh')"
 			]
