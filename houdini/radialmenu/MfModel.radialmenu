@@ -1,5 +1,5 @@
 [
-	"fileversion","17.0.382",
+	"fileversion","17.0.487",
 	"name","MfModel",
 	"categories","Modeling",
 	"submenu",["submenu",
@@ -226,7 +226,7 @@
 			"bottom",["script",
 				"label","Unhide",
 				"icon","SOP_visibility",
-				"script","import soptoolutils\n\ncur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()\n\nnode = cur_obj.displayNode().createOutputNode(\"visibility\")\nnode.parm('action').set(1)\nnode.parm('group').set('')\n\n# make new connections for the merge node\nfor connects in cur_obj.displayNode().outputConnections():\n    out_node = connects.outputNode()\n    in_idx = connects.inputIndex()\n    out_idx = connects.outputIndex()\n\n    if out_node.name() != node.name():\n        out_node.setInput(out_idx, node, in_idx)\n        out_node.moveToGoodPosition()\n\nnode.moveToGoodPosition()\nnode.setDisplayFlag(True)\nnode.setRenderFlag(True)\nnode.setCurrent(True, clear_all_selected=True)"],
+				"script","import soptoolutils\nimport toolutils\n\nsel_nodes = hou.selectedNodes()\ncur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()\n\nif sel_nodes:\n    cur_node = sel_nodes[-1]\nelse:\n    cur_node = cur_obj.displayNode()\n\nnode = cur_node.createOutputNode(\"visibility\")\nnode.parm('action').set(1)\nnode.parm('group').set('')\n\n# make new connections for the merge node\nfor connects in cur_node.outputConnections():\n    out_node = connects.outputNode()\n    in_idx = connects.inputIndex()\n    out_idx = connects.outputIndex()\n\n    if out_node.name() != node.name():\n        out_node.setInput(out_idx, node, in_idx)\n        out_node.moveToGoodPosition()\n\nnode.moveToGoodPosition()\n\nif cur_node.name() == cur_obj.displayNode().name():\n    node.setDisplayFlag(True)\n    node.setRenderFlag(True)\n\nnode.setCurrent(True, clear_all_selected=True)"],
 			
 			"right",["script",
 				"label","Hide Non-Selected",
