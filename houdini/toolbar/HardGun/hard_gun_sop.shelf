@@ -223,7 +223,8 @@ if choice != 0:
     positions = viewer.selectPositions(number_of_positions=2, connect_positions=True, show_coordinates=True, position_type=hou.positionType.WorldSpace)
 
     # fix object's transform
-    positions = (positions[0] * parent_obj.worldTransform().inverted(), positions[1] * parent_obj.worldTransform().inverted() )
+    if parent_obj.path() != '/obj':
+        positions = (positions[0] * parent_obj.worldTransform().inverted(), positions[1] * parent_obj.worldTransform().inverted() )
 
     # set new position for new Object if it was created
     if is_new_obj:
