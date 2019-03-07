@@ -554,6 +554,14 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
 
         #  create new object
         new_obj = parent_obj.createNode('geo', the_obj.name(), run_init_scripts=True)
+
+        new_obj.parmTuple('t').set(the_obj.parmTuple('t').eval())
+        new_obj.parmTuple('r').set(the_obj.parmTuple('r').eval())
+        new_obj.parmTuple('s').set(the_obj.parmTuple('s').eval())
+        new_obj.parmTuple('p').set(the_obj.parmTuple('p').eval())
+        new_obj.parmTuple('pr').set(the_obj.parmTuple('pr').eval())
+        new_obj.parm('scale').set(the_obj.parm('scale').eval())
+
         new_obj.deleteItems(new_obj.children())
         #new_obj.parm('use_dcolor').set(False)
         new_obj.moveToGoodPosition()
