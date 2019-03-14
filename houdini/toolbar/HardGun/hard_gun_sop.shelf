@@ -218,7 +218,7 @@ if choice != 0:
     # parent object for fixing object's transform
     parent_obj = cur_obj
     if is_new_obj:
-        parent_obj = cur_obj.parent()
+            parent_obj = cur_obj.parent()
 
     positions = viewer.selectPositions(number_of_positions=2, connect_positions=True, show_coordinates=True, position_type=hou.positionType.WorldSpace)
 
@@ -228,7 +228,7 @@ if choice != 0:
 
     # set new position for new Object if it was created
     if is_new_obj:
-        cur_obj.parmTuple('t').set(positions[0])
+            cur_obj.parmTuple('t').set(positions[0])
 
     prim_size = (positions[0] - positions[1]).length()
     if prim_size == 0:
@@ -253,7 +253,8 @@ elif choice == 1:
 
     if view_axis == 'X':
         if is_new_obj:
-            cur_obj.parm('ry').set(90)
+            if positions[0] != positions[1]:
+                cur_obj.parm('ry').set(90)
 
 elif choice == 2:
     tube_nd = cur_obj.createNode('tube')
@@ -267,19 +268,21 @@ elif choice == 2:
     tube_nd.parm('rad1').set(prim_size)
     tube_nd.parm('rad2').set(prim_size)
     tube_nd.parm('height').set(prim_size)
-    tube_nd.parm('cols').set(30)
+    tube_nd.parm('cols').set(32)
     tube_nd.parm('cap').set(1)
 
     if view_axis == 'X':
         if is_new_obj:
-            cur_obj.parm('ry').set(90)
-            tube_nd.parm('orient').set(2)
+            if positions[0] != positions[1]:
+                cur_obj.parm('ry').set(90)
+                tube_nd.parm('orient').set(2)
         else:
             tube_nd.parm('orient').set(0)
     elif view_axis == 'Z':
         if is_new_obj:
-            #cur_obj.parm('rx').set(90)
-            tube_nd.parm('orient').set(2)
+            if positions[0] != positions[1]:
+                #cur_obj.parm('rx').set(90)
+                tube_nd.parm('orient').set(2)
         else:
             tube_nd.parm('orient').set(2)
 
@@ -293,19 +296,21 @@ elif choice == 3:
 
     sphere.parm('type').set(2)
     sphere.parmTuple('rad').set( (prim_size, prim_size, prim_size) )
-    sphere.parm('rows').set(15)
-    sphere.parm('cols').set(30)
+    sphere.parm('rows').set(16)
+    sphere.parm('cols').set(32)
 
     if view_axis == 'X':
         if is_new_obj:
-            cur_obj.parm('ry').set(90)
-            sphere.parm('orient').set(2)
+            if positions[0] != positions[1]:
+                cur_obj.parm('ry').set(90)
+                sphere.parm('orient').set(2)
         else:
             sphere.parm('orient').set(0)
     elif view_axis == 'Z':
         if is_new_obj:
-            #cur_obj.parm('rx').set(90)
-            sphere.parm('orient').set(2)
+            if positions[0] != positions[1]:
+                #cur_obj.parm('rx').set(90)
+                sphere.parm('orient').set(2)
         else:
             sphere.parm('orient').set(2)
 
@@ -323,9 +328,10 @@ elif choice == 4:
 
     if view_axis == 'X':
         if is_new_obj:
-            cur_obj.parm('ry').set(90)
-            grid.parm('orient').set(0)
-            grid.parm('sizex').set(-prim_size * 2)
+            if positions[0] != positions[1]:
+                cur_obj.parm('ry').set(90)
+                grid.parm('orient').set(0)
+                grid.parm('sizex').set(-prim_size * 2)
         else:
             grid.parm('orient').set(1)
 
@@ -334,9 +340,10 @@ elif choice == 4:
             
     elif view_axis == 'Z':
         if is_new_obj:
-            #cur_obj.parm('rz').set(90)
-            grid.parm('orient').set(0)
-            grid.parm('sizex').set(-prim_size * 2)
+            if positions[0] != positions[1]:
+                #cur_obj.parm('rz').set(90)
+                grid.parm('orient').set(0)
+                grid.parm('sizex').set(-prim_size * 2)
         else:
             grid.parm('orient').set(0)
 
@@ -356,13 +363,14 @@ elif choice == 5:
 
     circle.parm('type').set(1)
     circle.parmTuple('rad').set( (-prim_size, prim_size) )
-    circle.parm('divs').set(30)
+    circle.parm('divs').set(32)
     circle.parm('orient').set(2)
 
     if view_axis == 'X':
         if is_new_obj:
-            cur_obj.parm('ry').set(90)
-            circle.parm('orient').set(0)
+            if positions[0] != positions[1]:
+                cur_obj.parm('ry').set(90)
+                circle.parm('orient').set(0)
         else:
             circle.parm('orient').set(1)
 
@@ -371,8 +379,9 @@ elif choice == 5:
 
     elif view_axis == 'Z':
         if is_new_obj:
-            #cur_obj.parm('rz').set(90)
-            circle.parm('orient').set(0)
+            if positions[0] != positions[1]:
+                #cur_obj.parm('rz').set(90)
+                circle.parm('orient').set(0)
         else:
             circle.parm('orient').set(0)
 
