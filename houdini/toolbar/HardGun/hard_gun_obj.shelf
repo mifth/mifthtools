@@ -120,7 +120,7 @@ else:
     <script scriptType="python"><![CDATA[def make_merge(final_merge, new_node, node_to_merge, choice, null_choice, path_choice, group_choice, null_name_choice):
     merge_node = new_node.createNode("object_merge", node_name=node_to_merge.name())
 
-    if path_choice and path_choice == 0:
+    if path_choice == 0:
         merge_path = "../../" + node_to_merge.name()
     else:
         merge_path = node_to_merge.path()
