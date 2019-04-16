@@ -59,10 +59,10 @@ class jmPipeTool(bpy.types.Operator):
                 bpy.ops.mesh.duplicate_move()
                 bpy.ops.mesh.separate(type='SELECTED')
                 bpy.ops.object.editmode_toggle()
-                bpy.ops.object.select_all(action='DESELECT')
 
                 #pipe = context.view_layer.objects[-1]
-                pipe = bpy.data.objects[-1]
+                pipe = context.selected_objects[-1]
+                bpy.ops.object.select_all(action='DESELECT')
                 pipe.select_set(state=True)
                 context.view_layer.objects.active = pipe
                 bpy.ops.object.convert(target='CURVE')
