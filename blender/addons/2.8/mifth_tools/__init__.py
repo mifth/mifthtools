@@ -74,81 +74,81 @@ from bpy.props import *
 class MFTProperties(bpy.types.PropertyGroup):
 
     # Output Settings
-    outputFolder = StringProperty(
+    outputFolder : StringProperty(
         name="outputFolder",
         subtype="NONE",
         default="seq"
     )
 
-    outputSubFolder = StringProperty(
+    outputSubFolder : StringProperty(
         name="outputSubFolder",
         subtype="NONE",
         default="ren"
     )
 
-    outputSequence = StringProperty(
+    outputSequence : StringProperty(
         name="outputSequence",
         subtype="NONE",
         default="render"
     )
 
-    outputSequenceSize = IntProperty(
+    outputSequenceSize : IntProperty(
         default=8,
         min=1,
         max=60
     )
 
-    doOutputSubFolder = BoolProperty(
+    doOutputSubFolder : BoolProperty(
         name="do Output SubFolder",
         description="do Output SubFolder...",
         default=False
     )
 
     # Curve Animator Settings
-    doUseSceneFrames = BoolProperty(
+    doUseSceneFrames : BoolProperty(
         name="do use scene frames",
         description="do use scene frames...",
         default=False
     )
 
-    curveAniStartFrame = IntProperty(
+    curveAniStartFrame : IntProperty(
         default=1,
         min=1,
         max=10000
     )
 
-    curveAniEndFrame = IntProperty(
+    curveAniEndFrame : IntProperty(
         default=100,
         min=1,
         max=10000
     )
 
-    curveAniStepFrame = IntProperty(
+    curveAniStepFrame : IntProperty(
         default=10,
         min=1,
         max=10000
     )
 
-    curveAniInterpolation = FloatProperty(
+    curveAniInterpolation : FloatProperty(
         default=0.3,
         min=0.0,
         max=1.0
     )
 
     # MorfCreator settings
-    morfCreatorNames = StringProperty(
+    morfCreatorNames : StringProperty(
         name="MorfNames",
         subtype="NONE",
         default=""
     )
 
-    morfUseWorldMatrix = BoolProperty(
+    morfUseWorldMatrix : BoolProperty(
         name="use world matrix",
         description="use world matrix...",
         default=False
     )
 
-    morfApplyModifiers = BoolProperty(
+    morfApplyModifiers : BoolProperty(
         name="apply modifiers to morf",
         description="apply modifiers to morf...",
         default=False

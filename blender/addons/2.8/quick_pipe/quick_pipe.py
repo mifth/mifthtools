@@ -25,8 +25,8 @@ class jmPipeTool(bpy.types.Operator):
     bl_label = "Quick Pipe"
     bl_options = {'REGISTER', 'UNDO'}
 
-    first_mouse_x = IntProperty()
-    first_value = FloatProperty()
+    first_mouse_x : IntProperty()
+    first_value : FloatProperty()
 
     def modal(self, context, event):
         if event.type in {'RIGHTMOUSE', 'ESC', 'LEFTMOUSE'}:
