@@ -543,13 +543,6 @@ keyconfig_data = \
   {"space_type": 'EMPTY', "region_type": 'WINDOW'},
   {"items":
    [("wm.call_menu_pie",
-     {"type": 'TAB', "value": 'PRESS', "shift": True, "ctrl": True},
-     {"properties":
-      [("name", 'view3d.snap_of'),
-       ],
-      },
-     ),
-    ("wm.call_menu_pie",
      {"type": 'Z', "value": 'PRESS'},
      {"properties":
       [("name", 'VIEW3D_MT_shade_of'),
@@ -1212,8 +1205,8 @@ keyconfig_data = \
     ("wm.tool_set_by_id",
      {"type": 'Q', "value": 'PRESS'},
      {"properties":
-      [("name", 'builtin.select_box'),
-       ("cycle", True),
+      [("name", 'builtin.select_lasso'),
+       ("cycle", False),
        ],
       },
      ),
