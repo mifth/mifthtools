@@ -101,6 +101,11 @@ class jmPipeTool(bpy.types.Operator):
         #row.operator("object.quickpipe")
 
 
+def menu_func(self, context):
+    layout = self.layout
+    layout.operator_context = "INVOKE_DEFAULT"
+    self.layout.operator(jmPipeTool.bl_idname, text="Quick Pipe")
+
 classes = (
     jmPipeTool,
 )
@@ -110,13 +115,19 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    #update_panel(None, bpy.context)
+    #  update_panel(None, bpy.context)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(menu_func)  # Mesh Context Menu
+    #bpy.types.VIEW3D_MT_edit_mesh_vertices.append(menu_func)  # Vertices Menu(CTRL+V)
+    bpy.types.VIEW3D_MT_edit_mesh_edges.append(menu_func)  # Edge Menu(CTRL+E)
 
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
 
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(menu_func)
+    #bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(menu_func)
+    bpy.types.VIEW3D_MT_edit_mesh_edges.remove(menu_func)
 
 if __name__ == "__main__":
     register()
