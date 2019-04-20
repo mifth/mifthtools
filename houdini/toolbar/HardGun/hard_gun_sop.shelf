@@ -632,6 +632,7 @@ elif cur_obj.type().category().name() == 'Object':
     <memberTool name="hard_gun_bevel_setup"/>
     <memberTool name="hard_gun_extract_to_object"/>
     <memberTool name="hard_gun_view_subdive"/>
+    <memberTool name="hard_gun_view_subdive_2"/>
   </toolshelf>
 
   <tool name="hg_clean_topology" label="Clean Mesh" icon="SOP_clean">
@@ -728,5 +729,58 @@ nor_2.setColor( hou.Color((0.145, 0.667, 0.557)) )
 nor_2.setDisplayFlag(True)
 nor_2.setRenderFlag(True)
 nor_2.setCurrent(True, clear_all_selected=True)]]></script>
+  </tool>
+
+  <tool name="hard_gun_view_subdive_2" label="View Subdive 2" icon="SOP_subdivide">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+sel_nodes = hou.selectedNodes()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if sel_nodes:
+    cur_node = sel_nodes[-1]
+else:
+    cur_node = cur_obj.displayNode()
+
+# OBJ
+if sel_nodes and sel_nodes[-1].type().category().name() == 'Object':
+    display_val = sel_nodes[-1].parm('viewportlod').eval()
+
+    if display_val == 0:
+        for node in sel_nodes:
+            node.parm('viewportlod').set(5)
+    else:
+        for node in sel_nodes:
+            node.parm('viewportlod').set(0)
+
+# SOP
+elif cur_obj.type().category().name() == 'Object':
+    if cur_node.type().name() != 'subdivide':
+        sub_node = cur_node.createOutputNode('subdivide')
+        sub_node.parm('iterations').set(2)
+
+        # make new connections for the merge node
+        for connects in cur_node.outputConnections():
+            out_node = connects.outputNode()
+            in_idx = connects.inputIndex()
+            out_idx = connects.outputIndex()
+    
+            if out_node.name() != sub_node.name():
+                out_node.setInput(out_idx, sub_node, in_idx)
+                out_node.moveToGoodPosition()
+
+        sub_node.setCurrent(True, clear_all_selected=True)
+        if cur_node == cur_obj.displayNode():
+            sub_node.setDisplayFlag(True)
+            sub_node.setRenderFlag(True)
+            sub_node.setCurrent(True, clear_all_selected=True)
+
+    else:
+        cur_node.inputConnections()[0].inputNode().setCurrent(True, clear_all_selected=False)
+        cur_node.destroy()]]></script>
   </tool>
 </shelfDocument>
