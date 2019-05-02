@@ -541,11 +541,13 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
 
     if the_obj:
         parent_obj = the_obj.parent()
+
+        null_nd = main_node.createOutputNode('null')
+        null_nd.setColor( hou.Color((0.95, 0.5, 0.4)) )
     
-        blast_1 = main_node.createOutputNode('blast')
+        blast_1 = null_nd.createOutputNode('blast')
         blast_1.parm('group').set(sel_str)
-        #blast_1.setNextInput(main_node)
-        #blast_1.moveToGoodPosition()
+        blast_1.setColor( hou.Color((0.95, 0.5, 0.4)) )
 
         blast_1.setDisplayFlag(True)
         blast_1.setRenderFlag(True)
@@ -557,7 +559,7 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
             in_idx = connects.inputIndex()
             out_idx = connects.outputIndex()
     
-            if out_node.name() != blast_1.name():
+            if out_node.name() not in (blast_1.name(), null_nd.name()):
                 out_node.setInput(out_idx, blast_1, in_idx)
                 out_node.moveToGoodPosition()
 
@@ -576,7 +578,7 @@ if sel_str and sel_nodes and geo.geometryType() == hou.geometryType.Primitives:
         new_obj.moveToGoodPosition()
 
         obj_merge = new_obj.createNode("object_merge")
-        obj_merge.parm('objpath1').set(obj_merge.relativePathTo(main_node))
+        obj_merge.parm('objpath1').set(obj_merge.relativePathTo(null_nd))
         obj_merge.parm('xformtype').set(1)
         obj_merge.moveToGoodPosition()
 

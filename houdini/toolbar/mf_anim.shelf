@@ -66,6 +66,8 @@ else:
     <memberTool name="mirror_captures"/>
     <memberTool name="copy_keys"/>
     <memberTool name="paste_keys"/>
+    <memberTool name="paste_keys_mir"/>
+    <memberTool name="clear_transform"/>
   </toolshelf>
 
   <tool name="rename_symm" label="RenameSym" icon="OBJ_STATE_mirrorcapture">
@@ -293,5 +295,108 @@ for i, node in enumerate(sel_nodes):
         #paste_node = node
         paste_keys(node, ses.mf_ani_cp.keys()[i])
         #print ses.mf_ani_cp[ses.mf_ani_cp.keys()[i]], ses.mf_ani_cp.keys()[i], node.name()]]></script>
+  </tool>
+
+  <tool name="paste_keys_mir" label="PasteKeys Mirrored" icon="OBJ_STATE_mirrorcapture">
+    <script scriptType="python"><![CDATA[import collections
+
+ses = hou.session
+
+try:
+    ses.mf_ani_cp
+except:
+    ses.mf_ani_cp = collections.OrderedDict()
+
+def paste_keys(paste_node, node_name):
+
+    if paste_node.parmTuple('t'):
+        if not paste_node.parm('tx').isLocked():
+            paste_node.parm('tx').set(-ses.mf_ani_cp[node_name][0][0])
+        if not paste_node.parm('ty').isLocked():
+            paste_node.parm('ty').set(ses.mf_ani_cp[node_name][0][1])
+        if not paste_node.parm('tz').isLocked():
+            paste_node.parm('tz').set(ses.mf_ani_cp[node_name][0][2])
+
+    if paste_node.parmTuple('r'):
+        if not paste_node.parm('rx').isLocked():
+            paste_node.parm('rx').setPending(ses.mf_ani_cp[node_name][1][0])
+        if not paste_node.parm('ry').isLocked():
+            paste_node.parm('ry').setPending(-ses.mf_ani_cp[node_name][1][1])
+        if not paste_node.parm('rz').isLocked():
+            paste_node.parm('rz').setPending(-ses.mf_ani_cp[node_name][1][2])
+
+    if paste_node.type().name() == 'bone':
+        if not paste_node.parm('scale').isLocked():
+            sc = paste_node.parm('scale').set(ses.mf_ani_cp[node_name][2])
+    else:
+        #print paste_node.type()
+        if paste_node.parmTuple('s'):
+            if not paste_node.parm('sx').isLocked():
+                sc = paste_node.parm('sx').set(ses.mf_ani_cp[node_name][2][0])
+            if not paste_node.parm('sy').isLocked():
+                sc = paste_node.parm('sy').set(ses.mf_ani_cp[node_name][2][1])
+            if not paste_node.parm('sz').isLocked():
+                sc = paste_node.parm('sz').set(ses.mf_ani_cp[node_name][2][2])
+
+sel_nodes = hou.selectedNodes()
+
+# Paste Mirrored
+for i, node in enumerate(sel_nodes):
+    if i <= len(ses.mf_ani_cp.keys())-1:
+        node_name = ses.mf_ani_cp.keys()[i]
+
+        if node_name.startswith('L_'):
+            node_name = 'R_' + line[len('L_'):]
+        elif node_name.startswith('R_'):
+            node_name = 'L_' + line[len('R_'):]
+
+        if node_name not in ses.mf_ani_cp.keys():
+            msg = 'No Object ' + node_name + ' in copied objects!'
+            hou.ui.displayMessage(msg)
+            continue
+
+        paste_keys(node, ses.mf_ani_cp.keys()[i])
+]]></script>
+  </tool>
+
+  <tool name="clear_transform" label="Clear Transform" icon="SOP_xform">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+
+choice = hou.ui.displayMessage("Clear Transform?", buttons=("Position&Rotation", "Position", "Rotation", "Scale", "Cancel"))
+
+for node in sel_nodes:
+
+    if choice in (0, 1):
+        if node.parmTuple('t'):
+            if not node.parm('tx').isLocked():
+                node.parm('tx').set(0)
+            if not node.parm('ty').isLocked():
+                node.parm('ty').set(0)
+            if not node.parm('tz').isLocked():
+                node.parm('tz').set(0)
+
+    if choice in (0, 2):
+        if node.parmTuple('r'):
+            if not node.parm('rx').isLocked():
+                node.parm('rx').setPending(0)
+            if not node.parm('ry').isLocked():
+                node.parm('ry').setPending(0)
+            if not node.parm('rz').isLocked():
+                node.parm('rz').setPending(0)
+
+    if choice == 3:
+        if node.type().name() == 'bone':
+            if not node.parm('scale').isLocked():
+                sc = node.parm('scale').set(1)
+        else:
+            #print paste_node.type()
+            if node.parmTuple('s'):
+                if not node.parm('sx').isLocked():
+                    sc = node.parm('sx').set(1)
+                if not node.parm('sy').isLocked():
+                    sc = node.parm('sy').set(1)
+                if not node.parm('sz').isLocked():
+                    sc = node.parm('sz').set(1)
+]]></script>
   </tool>
 </shelfDocument>
