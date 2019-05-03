@@ -307,11 +307,15 @@ try:
 except:
     ses.mf_ani_cp = collections.OrderedDict()
 
-def paste_keys(paste_node, node_name):
+def paste_keys(paste_node, node_name, do_mirror):
 
     if paste_node.parmTuple('t'):
         if not paste_node.parm('tx').isLocked():
-            paste_node.parm('tx').set(-ses.mf_ani_cp[node_name][0][0])
+            if do_mirror:
+                paste_node.parm('tx').set(-ses.mf_ani_cp[node_name][0][0])
+            else:
+                paste_node.parm('tx').set(ses.mf_ani_cp[node_name][0][0])
+
         if not paste_node.parm('ty').isLocked():
             paste_node.parm('ty').set(ses.mf_ani_cp[node_name][0][1])
         if not paste_node.parm('tz').isLocked():
@@ -321,9 +325,15 @@ def paste_keys(paste_node, node_name):
         if not paste_node.parm('rx').isLocked():
             paste_node.parm('rx').setPending(ses.mf_ani_cp[node_name][1][0])
         if not paste_node.parm('ry').isLocked():
-            paste_node.parm('ry').setPending(-ses.mf_ani_cp[node_name][1][1])
+            if do_mirror:
+                paste_node.parm('ry').setPending(-ses.mf_ani_cp[node_name][1][1])
+            else:
+                paste_node.parm('ry').setPending(ses.mf_ani_cp[node_name][1][1])
         if not paste_node.parm('rz').isLocked():
-            paste_node.parm('rz').setPending(-ses.mf_ani_cp[node_name][1][2])
+            if do_mirror:
+                paste_node.parm('rz').setPending(-ses.mf_ani_cp[node_name][1][2])
+            else:
+                paste_node.parm('rz').setPending(ses.mf_ani_cp[node_name][1][2])
 
     if paste_node.type().name() == 'bone':
         if not paste_node.parm('scale').isLocked():
@@ -344,18 +354,23 @@ sel_nodes = hou.selectedNodes()
 for i, node in enumerate(sel_nodes):
     if i <= len(ses.mf_ani_cp.keys())-1:
         node_name = ses.mf_ani_cp.keys()[i]
+        do_mirror = True
 
-        if node_name.startswith('L_'):
-            node_name = 'R_' + line[len('L_'):]
-        elif node_name.startswith('R_'):
-            node_name = 'L_' + line[len('R_'):]
+        if node.name().startswith('L_'):
+            node_name_tmp = 'R_' + node.name()[len('L_'):]
+            node_name = node_name.replace(node.name(), node_name_tmp)
+            do_mirror = False
+        elif node.name().startswith('R_'):
+            node_name_tmp = 'L_' + node.name()[len('R_'):]
+            node_name = node_name.replace(node.name(), node_name_tmp)
+            do_mirror = False
 
         if node_name not in ses.mf_ani_cp.keys():
             msg = 'No Object ' + node_name + ' in copied objects!'
             hou.ui.displayMessage(msg)
             continue
 
-        paste_keys(node, ses.mf_ani_cp.keys()[i])
+        paste_keys(node, node_name, do_mirror)
 ]]></script>
   </tool>
 
