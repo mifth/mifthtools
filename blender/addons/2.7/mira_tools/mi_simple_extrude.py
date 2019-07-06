@@ -36,7 +36,7 @@ from bpy_extras import view3d_utils
 
 class MI_Simple_Extrude(bpy.types.Operator):
     """Extrude like in Modo"""
-    bl_idname = "mira.simple_exrude"
+    bl_idname = "mira.simple_extrude"
     bl_label = "Simple Extrude"
     bl_description = "Simple Extrude"
     bl_options = {'REGISTER', 'UNDO'}
