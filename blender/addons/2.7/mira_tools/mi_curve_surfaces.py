@@ -685,7 +685,14 @@ class MI_CurveSurfaces(bpy.types.Operator):
                         else:
                             center_plane = context.space_data.cursor_location
 
+                    # New Position
                     new_point_pos = ut_base.get_mouse_on_plane(context, center_plane, None, m_coords)
+
+                    # Snap to Surface
+                    if curve_settings.surface_snap is True and self.picked_meshes:
+                            new_point_pos_2 = ut_base.get_mouse_raycast(context, self.picked_meshes, m_coords)[2]
+                            if new_point_pos_2:
+                                new_point_pos = new_point_pos_2
 
                     if new_point_pos:
                         # deselect all points
@@ -711,10 +718,10 @@ class MI_CurveSurfaces(bpy.types.Operator):
                         new_point.select = True
                         cur.active_point = new_point.point_id
 
-                        # Snap to Surface
-                        if curve_settings.surface_snap is True:
-                            if self.picked_meshes:
-                                cur_main.snap_to_surface(context, [new_point], self.picked_meshes, region, rv3d, None)
+                        ## Snap to Surface
+                        #if curve_settings.surface_snap is True:
+                            #if self.picked_meshes:
+                                #cur_main.snap_to_surface(context, [new_point], self.picked_meshes, region, rv3d, None)
 
                         self.surf_tool_mode = 'MOVE_POINT'
                         return {'RUNNING_MODAL'}
