@@ -567,6 +567,7 @@ def draw_curve_2d(curves, active_cur, context):
                         if handle_2_pos_2d:
                             c_widget.draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, 3, col_man.cur_handle_2_base)
 
+
 def draw_text_2d(self, context):
 
     cur_stretch_settings = context.scene.mi_cur_stretch_settings
