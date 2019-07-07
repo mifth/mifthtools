@@ -19,6 +19,7 @@
 
 import bpy
 import bgl
+import blf
 import string
 import bmesh
 
@@ -53,8 +54,8 @@ class MI_OT_CurveStretch(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     # curve tool mode
-    curve_tool_modes = ('IDLE', 'MOVE_POINT', 'SELECT_POINT', 'SELECT_MULTI')
-    curve_tool_mode = 'IDLE'
+    curve_tool_modes = ('SET_POINTS', 'IDLE', 'MOVE_POINT', 'SELECT_POINT', 'SELECT_MULTI')
+    curve_tool_mode = 'SET_POINTS'
 
     # Selection Tools Vaariables
     select_radius = 16
@@ -76,6 +77,59 @@ class MI_OT_CurveStretch(bpy.types.Operator):
 
     manipulator = None
 
+
+    # initialize one time.
+    def start_tool(self, context):
+        # the arguments we pass the the callbackection
+        args = (self, context)
+        # Add the region OpenGL drawing callback
+        # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
+
+        cur_stretch_settings = context.scene.mi_cur_stretch_settings
+        curve_settings = context.scene.mi_settings
+
+        active_obj = context.active_object
+        bm = bmesh.from_edit_mesh(active_obj.data)
+
+
+        self.manipulator = context.space_data.show_gizmo
+        context.space_data.show_gizmo = False
+
+
+        for loop in self.loops:
+            loop_verts = [active_obj.matrix_world @ bm.verts[i].co for i in loop[0]]
+            loop_line = cur_main.pass_line(loop_verts, loop[1])
+            new_curve = cur_main.create_curve_to_line(cur_stretch_settings.points_number, loop_line, self.all_curves, loop[1])
+
+            # set closed curve
+            if loop[1] is True:
+                new_curve.closed = True
+
+            self.all_curves.append(new_curve)
+            self.active_curve = new_curve
+
+            cur_main.generate_bezier_points(self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
+
+            self.original_verts_data.append( cur_main.pass_line([bm.verts[i].co.copy() for i in loop[0]] , loop[1]) )
+
+            # move point to the curve
+            for curve in self.all_curves:
+                update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, curve_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
+
+            # get meshes for snapping
+            if curve_settings.surface_snap is True:
+                meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, curve_settings.convert_instances, context)
+                if meshes_array:
+                    self.picked_meshes = meshes_array
+
+        self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
+        self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+        self.gh_circle_select_handle = bpy.types.SpaceView3D.draw_handler_add(gh_circle_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+
+        bm.normal_update()
+        bmesh.update_edit_mesh(active_obj.data)
+
+
     def invoke(self, context, event):
         reset_params(self)
 
@@ -85,9 +139,6 @@ class MI_OT_CurveStretch(bpy.types.Operator):
             # Add the region OpenGL drawing callback
             # draw in view space with 'POST_VIEW' and 'PRE_VIEW'
 
-            cur_stretch_settings = context.scene.mi_cur_stretch_settings
-            curve_settings = context.scene.mi_settings
-
             active_obj = context.active_object
             bm = bmesh.from_edit_mesh(active_obj.data)
 
@@ -96,49 +147,16 @@ class MI_OT_CurveStretch(bpy.types.Operator):
             self.loops = loop_t.check_loops(self.loops, bm)
 
             if self.loops:
-                self.manipulator = context.space_data.show_gizmo
-                context.space_data.show_gizmo = False
-
-
-                for loop in self.loops:
-                    loop_verts = [active_obj.matrix_world @ bm.verts[i].co for i in loop[0]]
-                    loop_line = cur_main.pass_line(loop_verts, loop[1])
-                    new_curve = cur_main.create_curve_to_line(cur_stretch_settings.points_number, loop_line, self.all_curves, loop[1])
-
-                    # set closed curve
-                    if loop[1] is True:
-                        new_curve.closed = True
-
-                    self.all_curves.append(new_curve)
-                    self.active_curve = new_curve
-
-                    cur_main.generate_bezier_points(self.active_curve, self.active_curve.display_bezier, curve_settings.curve_resolution)
-
-                    self.original_verts_data.append( cur_main.pass_line([bm.verts[i].co.copy() for i in loop[0]] , loop[1]) )
-
-                    # move point to the curve
-                    for curve in self.all_curves:
-                        update_curve_line(active_obj, curve, self.loops, self.all_curves, bm, curve_settings.spread_mode, self.original_verts_data[self.all_curves.index(curve)])
-
-                    # get meshes for snapping
-                    if curve_settings.surface_snap is True:
-                        meshes_array = ut_base.get_obj_dup_meshes(curve_settings.snap_objects, curve_settings.convert_instances, context)
-                        if meshes_array:
-                            self.picked_meshes = meshes_array
-
-                self.mi_deform_handle_3d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_3d, args, 'WINDOW', 'POST_VIEW')
-                self.mi_deform_handle_2d = bpy.types.SpaceView3D.draw_handler_add(mi_curve_draw_2d, args, 'WINDOW', 'POST_PIXEL')
-                self.gh_circle_select_handle = bpy.types.SpaceView3D.draw_handler_add(gh_circle_draw_2d, args, 'WINDOW', 'POST_PIXEL')
+                self.mi_text_2d = bpy.types.SpaceView3D.draw_handler_add(draw_text_2d, args, 'WINDOW', 'POST_PIXEL')
                 context.window_manager.modal_handler_add(self)
 
-                bm.normal_update()
-                bmesh.update_edit_mesh(active_obj.data)
-
                 return {'RUNNING_MODAL'}
+
             else:
                 #finish_work(self, context)
                 self.report({'WARNING'}, "No loops found!")
                 return {'CANCELLED'}
+
         else:
             #finish_work(self, context)
             self.report({'WARNING'}, "View3D not found, cannot run operator!")
@@ -164,6 +182,22 @@ class MI_OT_CurveStretch(bpy.types.Operator):
         self.select_coords = m_coords
 
         keys_pass = mi_inputs.get_input_pass(mi_inputs.pass_keys, addon_prefs.key_inputs, event)
+
+
+        if self.curve_tool_mode == 'SET_POINTS':
+            context.area.header_text_set("Scroll Mouse Wheel, +, - keys to set Points Number.")
+            
+            if event.type in ('WHEELUPMOUSE', 'NUMPAD_PLUS', 'EQUAL', 'PLUS') and event.value == 'PRESS':
+                cur_stretch_settings.points_number += 1
+            elif event.type in ('WHEELDOWNMOUSE','NUMPAD_MINUS', 'MINUS') and event.value == 'PRESS':
+                cur_stretch_settings.points_number = max( cur_stretch_settings.points_number - 1, 2 )
+
+            elif event.type == 'LEFTMOUSE':
+                bpy.types.SpaceView3D.draw_handler_remove(self.mi_text_2d, 'WINDOW')
+                self.start_tool(context)
+                self.curve_tool_mode = 'IDLE'
+
+            return {'RUNNING_MODAL'}
 
         # make picking
         if self.curve_tool_mode == 'IDLE' and event.value == 'PRESS' and keys_pass is False:
@@ -443,7 +477,7 @@ class MI_OT_CurveStretch(bpy.types.Operator):
 
 def reset_params(self):
     # reset base curve_settings
-    self.curve_tool_mode = 'IDLE'
+    self.curve_tool_mode = 'SET_POINTS'
     self.all_curves = []
     self.active_curve = None
     self.deform_mouse_pos = None
@@ -532,4 +566,30 @@ def draw_curve_2d(curves, active_cur, context):
                         handle_2_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
                         if handle_2_pos_2d:
                             c_widget.draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, 3, col_man.cur_handle_2_base)
+
+def draw_text_2d(self, context):
+
+    cur_stretch_settings = context.scene.mi_cur_stretch_settings
+    rh = context.region.height
+    rw = context.region.width
+
+    font_id = 0
+    font_size = 20
+
+    #Set font color
+    bgl.glEnable(bgl.GL_BLEND)
+    #bgl.glColor(1, 0.75, 0.1, 1)
+    blf.color(0, 1, 0.75, 0.1, 1)
+    bgl.glLineWidth(2)
+
+    #Draw text
+    blf.position(font_id, rw - 400, 210 - font_size, 0)
+    blf.size(font_id, font_size, 72)
+    blf.draw(font_id, str(cur_stretch_settings.points_number))
+
+    # restore opengl defaults
+    bgl.glLineWidth(1)
+    blf.color(0, 0.0, 0.0, 0.0, 1.0)
+    bgl.glDisable(bgl.GL_BLEND)
+    #bgl.glColor(0, 0.0, 0.0, 0.0, 1.0)
 
