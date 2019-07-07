@@ -101,6 +101,8 @@ def register():
 
     # alternative gui
     bpy.types.WindowManager.mirawindow = bpy.props.PointerProperty(type = mi_gui.DropdownMiraToolProps)
+    bpy.types.VIEW3D_MT_mesh_add.prepend(mi_gui.mifth_prim_menu)
+
 
     # bpy.types.VIEW3D_PT_tools_curveedit.append(mi_linear_deformer_curve.linear_deform_button)
 
@@ -117,6 +119,7 @@ def unregister():
     del bpy.types.Scene.mi_makearc_settings
 
     del bpy.types.WindowManager.mirawindow
+    bpy.types.VIEW3D_MT_mesh_add.remove(mi_gui.mifth_prim_menu)
 
     # bpy.types.VIEW3D_PT_tools_curveedit.remove(mi_linear_deformer_curve.linear_deform_button)
     try:

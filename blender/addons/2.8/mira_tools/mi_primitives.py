@@ -23,7 +23,11 @@ import bpy
 import bgl
 import blf
 
+import gpu
+#from gpu_extras import presets
+from gpu_extras.batch import batch_for_shader
 from bpy_extras import view3d_utils
+
 import math
 import mathutils as mathu
 import random
@@ -102,7 +106,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
             # Check if it's EDIT MODE
             if context.mode == 'EDIT_MESH':
-                self.edit_obj = context.scene.objects.active
+                self.edit_obj = context.active_object
 
             # get all matrices of visible objects
             self.obj_matrices = ut_base.get_obj_dup_meshes(mi_settings.snap_objects, True, context, add_active_obj=True)
@@ -324,8 +328,8 @@ class MI_MakePrimitive(bpy.types.Operator):
                         bpy.ops.object.select_all(action='DESELECT')
                         self.new_prim.show_wire = True
                         self.new_prim.show_all_edges = True
-                        self.edit_obj.select = True
-                        context.scene.objects.active = self.edit_obj
+                        self.edit_obj.select_set(True)
+                        context.view_layer.objects.active = self.edit_obj
                         bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
                 else:
@@ -351,8 +355,8 @@ class MI_MakePrimitive(bpy.types.Operator):
                         bpy.ops.object.select_all(action='DESELECT')
                         self.new_prim.show_wire = True
                         self.new_prim.show_all_edges = True
-                        self.edit_obj.select = True
-                        context.scene.objects.active = self.edit_obj
+                        self.edit_obj.select_set(True)
+                        context.view_layer.objects.active = self.edit_obj
                         bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
             else:
@@ -367,10 +371,10 @@ class MI_MakePrimitive(bpy.types.Operator):
                 bpy.ops.object.select_all(action='DESELECT')
 
                 for his_obj in self.history_objects:
-                    his_obj[0].select = True
+                    his_obj[0].select_set(True)
 
-                self.edit_obj.select = True
-                context.scene.objects.active = self.edit_obj
+                self.edit_obj.select_set(True)
+                context.view_layer.objects.active = self.edit_obj
 
                 bpy.ops.object.join()
                 bpy.ops.object.mode_set(mode='EDIT', toggle=False)            
@@ -382,11 +386,11 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                 for his_obj in self.history_objects:
                     bpy.ops.object.select_all(action='DESELECT')
-                    his_obj[0].select = True
+                    his_obj[0].select_set(True)
 
                     # apply scale
                     if self.prim_type != 'Clone':
-                        context.scene.objects.active = his_obj[0]
+                        context.view_layer.objects.active = his_obj[0]
                         bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
                     # set object position to hit
@@ -405,7 +409,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
             # clean
             clean(context, self)
-            context.area.header_text_set('')
+            context.area.header_text_set(None)
             bpy.types.SpaceView3D.draw_handler_remove(self._handle, 'WINDOW')
             self.tool_mode == 'IDLE'
 
@@ -482,8 +486,8 @@ class MI_MakePrimitive(bpy.types.Operator):
                         bpy.ops.object.select_all(action='DESELECT')
                         self.new_prim.show_wire = True
                         self.new_prim.show_all_edges = True
-                        self.edit_obj.select = True
-                        context.scene.objects.active = self.edit_obj
+                        self.edit_obj.select_set(True)
+                        context.view_layer.objects.active = self.edit_obj
                         bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
             # Change tool state to Draw_2. Create depth
@@ -508,8 +512,8 @@ class MI_MakePrimitive(bpy.types.Operator):
                     bpy.ops.object.select_all(action='DESELECT')
                     self.new_prim.show_wire = True
                     self.new_prim.show_all_edges = True
-                    self.edit_obj.select = True
-                    context.scene.objects.active = self.edit_obj
+                    self.edit_obj.select_set(True)
+                    context.view_layer.objects.active = self.edit_obj
                     bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
                 self.tool_mode = 'DRAW_2'
@@ -595,7 +599,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                     self.new_prim.scale[2] = new_dist
 
             else:
-                view_front_vec = rv3d.view_rotation * Vector((0.0, 0.0, -1.0)).normalized()
+                view_front_vec = rv3d.view_rotation @ Vector((0.0, 0.0, -1.0)).normalized()
                 plane_pos = ut_base.get_mouse_on_plane(context, self.hit_pos, view_front_vec, m_coords)
                 new_dist = (plane_pos - self.hit_pos).length
 
@@ -636,10 +640,10 @@ class MI_MakePrimitive(bpy.types.Operator):
                     if self.edit_obj:
                         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
                         bpy.ops.object.select_all(action='DESELECT')
-                        act_temp = context.scene.objects.active
+                        act_temp = context.view_layer.objects.active
                         #temp_sel = self.new_prim.select
-                        self.new_prim.select = True
-                        context.scene.objects.active = self.new_prim
+                        self.new_prim.select_set(True)
+                        context.view_layer.objects.active = self.new_prim
 
                     # do rotation
                     bpy.ops.transform.rotate(value=rot_angle, axis=rot_axis)
@@ -647,8 +651,8 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                     # if edit obj
                     if self.edit_obj:
-                        self.new_prim.select = False
-                        context.scene.objects.active = act_temp
+                        self.new_prim.select_set(True)
+                        context.view_layer.objects.active = act_temp
                         bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
         # Rotate Primitive
@@ -708,11 +712,11 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
         elif prim_type == 'Clone':
             orig_obj = self.objects_to_clone[-1]
             bpy.ops.object.select_all(action='DESELECT')
-            orig_obj.select = True
+            orig_obj.select_set(True)
 
             bpy.ops.object.duplicate(linked=True, mode='DUMMY')
             new_clone = context.selected_objects[0]
-            context.scene.objects.active = new_clone
+            context.view_layer.objects.active = new_clone
 
         new_prim = bpy.context.object
 
@@ -721,7 +725,7 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
         z_world_angle = z_neg_vec.angle(normal)
 
         if z_world_angle >= math.radians(180) or z_world_angle <= math.radians(0):
-            view_cam_upvec = (rv3d.view_rotation * Vector((0.0, -1.0, 0.0))).normalized()
+            view_cam_upvec = (rv3d.view_rotation @ Vector((0.0, -1.0, 0.0))).normalized()
             view_upvec = view_cam_upvec.copy()
             view_upvec[2] = 0.0
 
@@ -780,7 +784,7 @@ def replace_prim(old_prim, segments, prim_type, context):
 
     # remove old primitive
     objs = bpy.data.objects
-    objs.remove(objs[old_prim.name], True)
+    objs.remove(old_prim)
 
     # new primitive
     if prim_type == 'Plane':
@@ -809,7 +813,7 @@ def replace_prim(old_prim, segments, prim_type, context):
 def auto_pick(context, center_pos, event):
     region = context.region
     rv3d = context.region_data
-    view_dir_negative = rv3d.view_rotation * Vector((0.0, 0.0, 1.0))
+    view_dir_negative = rv3d.view_rotation @ Vector((0.0, 0.0, 1.0))
     mouse_coords = event.mouse_region_x, event.mouse_region_y
 
     v_x = Vector((1, 0, 0))
@@ -855,8 +859,8 @@ def auto_pick(context, center_pos, event):
 
 def draw_callback_px(self, context):
 
-    rh = bpy.context.region.height
-    rw = bpy.context.region.width
+    rh = context.region.height
+    rw = context.region.width
 
     font_id = 0
     font_size = 20
@@ -877,7 +881,8 @@ def draw_callback_px(self, context):
 
     #Set font color
     bgl.glEnable(bgl.GL_BLEND)
-    bgl.glColor4f(1, 0.75, 0.1, 1)
+    #bgl.glColor(1, 0.75, 0.1, 1)
+    blf.color(0, 1, 0.75, 0.1, 1)
     bgl.glLineWidth(2)
 
     #Draw segments text
@@ -903,6 +908,7 @@ def draw_callback_px(self, context):
 
     # restore opengl defaults
     bgl.glLineWidth(1)
+    blf.color(0, 0.0, 0.0, 0.0, 1.0)
     bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
+    #bgl.glColor(0, 0.0, 0.0, 0.0, 1.0)
 
