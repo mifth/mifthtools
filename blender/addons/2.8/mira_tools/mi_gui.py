@@ -250,6 +250,7 @@ class MI_PT_Panel(bpy.types.Panel):
         row.label(text="CGuide")
 
         row.prop(context.scene.mi_curguide_settings, "points_number", text='')
+        row.prop(context.scene.mi_curguide_settings, "deform_type", text='')
 
         sub = row.row(align=True)
         sub.scale_x = 0.15
