@@ -382,7 +382,7 @@ class MI_MakePrimitive(bpy.types.Operator):
             # For non Edit Mode
             else:
                 #bpy.ops.object.select_all(action='DESELECT')
-                cursor_origin = context.scene.cursor_location.copy()
+                cursor_origin = bpy.context.scene.cursor.location.copy()
 
                 for his_obj in self.history_objects:
                     bpy.ops.object.select_all(action='DESELECT')
@@ -395,7 +395,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                     # set object position to hit
                     if his_obj[0].location != his_obj[1]:
-                        context.scene.cursor_location = his_obj[1].copy()
+                        bpy.context.scene.cursor.location = his_obj[1].copy()
                         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 
                     # apply/fix rotation
@@ -404,7 +404,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                             if round(math.degrees(his_obj[0].rotation_euler.z)) in {-0.0, 0.0, 90.0, 180.0, -180.0, -90.0}:
                                 bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
 
-                context.scene.cursor_location = cursor_origin
+                bpy.context.scene.cursor.location = cursor_origin
                 bpy.ops.object.select_all(action='DESELECT')
 
             # clean
@@ -447,7 +447,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                         ray_result_auto =  auto_pick(context, None, event)
 
                     if self.center_is_cursor:
-                        self.hit_pos = context.scene.cursor_location
+                        self.hit_pos = bpy.context.scene.cursor.location
                     else:
                         self.hit_pos = ray_result_auto[0].copy()
 
@@ -696,9 +696,9 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
         rv3d = context.region_data
 
         if prim_type == 'Plane':
-            bpy.ops.mesh.primitive_plane_add(radius=1)
+            bpy.ops.mesh.primitive_plane_add(size=1)
         elif prim_type == 'Cube':
-            bpy.ops.mesh.primitive_cube_add(radius=1)
+            bpy.ops.mesh.primitive_cube_add(size=1)
         elif prim_type == 'Circle':
             bpy.ops.mesh.primitive_circle_add(radius=1, vertices=segments[0], fill_type='NGON')
         elif prim_type == 'Sphere':
@@ -788,13 +788,13 @@ def replace_prim(old_prim, segments, prim_type, context):
 
     # new primitive
     if prim_type == 'Plane':
-        bpy.ops.mesh.primitive_plane_add(radius=1)
+        bpy.ops.mesh.primitive_plane_add(size=1)
     elif prim_type == 'Cube':
-        bpy.ops.mesh.primitive_cube_add(radius=1)
+        bpy.ops.mesh.primitive_cube_add(size=1)
     elif prim_type == 'Circle':
         bpy.ops.mesh.primitive_circle_add(radius=1, vertices=segments[0], fill_type='NGON')
     elif prim_type == 'Sphere':
-        bpy.ops.mesh.primitive_uv_sphere_add(size=1, segments=segments[0], ring_count=segments[1])
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=1, segments=segments[0], ring_count=segments[1])
     elif prim_type == 'Cylinder':
         bpy.ops.mesh.primitive_cylinder_add(radius=1, vertices=segments[0])
     elif prim_type == 'Cone':
@@ -851,7 +851,7 @@ def auto_pick(context, center_pos, event):
         #hit_world = ut_base.get_mouse_on_plane(context, center_pos, best_dir, event)
         return center_pos, best_dir
     else:
-        new_center_pos = context.scene.cursor_location
+        new_center_pos = bpy.context.scene.cursor.location
         hit_world = ut_base.get_mouse_on_plane(context, new_center_pos, best_dir, mouse_coords)
 
         return hit_world, best_dir
