@@ -744,6 +744,56 @@ class MI_OT_CurveSurfaces(bpy.types.Operator):
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_surf_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_curve_surf_2d, 'WINDOW')
 
+            # snap new points to scene geometries
+            if curve_settings.surface_snap is True and curve_settings.snap_points is True:
+                objects_array = None
+                if curve_settings.snap_objects == 'Selected':
+                    objects_array = [obj for obj in context.selected_objects if obj != active_obj]
+                else:
+                    objects_array = [obj for obj in context.visible_objects if obj != active_obj]
+
+                if objects_array:
+                    vert_pose_list = {}
+                    all_ids = []
+
+                    # get all ids
+                    for surf in self.all_surfs:
+
+                        if self.active_surf.spread_type == 'OnCurve':
+                            for curve in surf.all_curves:
+                                all_ids += curve.curve_verts_ids
+                        else:
+                            for curve in surf.all_curves:
+                                for vert_ids in surf.uniform_loops:
+                                    all_ids += vert_ids
+
+                    verts2 = ut_base.get_verts_from_ids(all_ids, self.id_layer, bm)
+
+                    # get nearest positions
+                    for obj in objects_array:
+                        bvh = mathu.bvhtree.BVHTree.FromObject(obj, context.evaluated_depsgraph_get())
+
+                        for surf in self.all_surfs:
+
+                            for idx, vert in enumerate(verts2):
+                                v_pos = obj.matrix_world.inverted() @ (active_obj.matrix_world @ vert.co)
+                                nearest = bvh.find_nearest(v_pos)
+                                v_pos_near = active_obj.matrix_world.inverted() @ (obj.matrix_world @ nearest[0])
+
+                                if all_ids[idx] in vert_pose_list.keys():
+                                    # if new near position is less
+                                    if (vert.co - vert_pose_list[all_ids[idx]]).length > (vert.co - v_pos_near).length:
+                                        vert_pose_list[all_ids[idx]] = v_pos_near
+                                else:
+                                    vert_pose_list[all_ids[idx]] =  v_pos_near
+
+                    # set nearest positions
+                    for idx, vert in enumerate(verts2):
+                        vert.co = vert_pose_list[all_ids[idx]]
+
+                    bm.normal_update()
+                    bmesh.update_edit_mesh(active_obj.data)
+
             # clear
             finish_work(self, context, bm)
 

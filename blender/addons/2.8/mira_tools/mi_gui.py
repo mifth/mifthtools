@@ -339,6 +339,7 @@ class MI_PT_Panel(bpy.types.Panel):
             row = col_top.column()
             row.prop(context.scene.mi_settings, "surface_snap", text='Surface Snapping')
             row.prop(context.scene.mi_settings, "convert_instances", text='Convert Instances')
+            row.prop(context.scene.mi_settings, "snap_points", text='Snap Points')
             row.prop(context.scene.mi_settings, "snap_objects", text='SnapObjects')
 
             col = layout.column(align=True)

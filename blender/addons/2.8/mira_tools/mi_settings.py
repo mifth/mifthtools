@@ -51,7 +51,9 @@ class MI_Settings(PropertyGroup):
                 ),
         default = 'Visible'
     )
+
     convert_instances: BoolProperty(default=False)  # This feat converts off duplis and group instances into meshes
+    snap_points: BoolProperty(default=True)  # This feat snaps points for CurveSurfaces and CurveStretch
 
     # Curve Settings
     curve_resolution: IntProperty(default=13, min=1, max=128)

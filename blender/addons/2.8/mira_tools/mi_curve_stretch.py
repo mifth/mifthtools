@@ -462,6 +462,49 @@ class MI_OT_CurveStretch(bpy.types.Operator):
             return {'PASS_THROUGH'}
 
         elif event.type in {'RIGHTMOUSE', 'ESC'}:
+
+            # snap new points to scene geometries
+            if curve_settings.surface_snap is True and curve_settings.snap_points is True:
+                objects_array = None
+                if curve_settings.snap_objects == 'Selected':
+                    objects_array = [obj for obj in context.selected_objects if obj != active_obj]
+                else:
+                    objects_array = [obj for obj in context.visible_objects if obj != active_obj]
+
+                if objects_array:
+                    vert_pose_list = {}
+                    all_ids = []
+
+                    # get all ids
+                    for loop in self.loops:
+                        all_ids += loop[0]
+
+                    verts2 = [bm.verts[ind] for ind in all_ids]
+
+                    # get nearest positions
+                    for obj in objects_array:
+                        bvh = mathu.bvhtree.BVHTree.FromObject(obj, context.evaluated_depsgraph_get())
+
+                        for idx, vert in enumerate(verts2):
+                            v_pos = obj.matrix_world.inverted() @ (active_obj.matrix_world @ vert.co)
+                            nearest = bvh.find_nearest(v_pos)
+                            v_pos_near = active_obj.matrix_world.inverted() @ (obj.matrix_world @ nearest[0])
+
+                            if all_ids[idx] in vert_pose_list.keys():
+                                # if new near position is less
+                                if (vert.co - vert_pose_list[all_ids[idx]]).length > (vert.co - v_pos_near).length:
+                                    vert_pose_list[all_ids[idx]] = v_pos_near
+                            else:
+                                vert_pose_list[all_ids[idx]] =  v_pos_near
+
+                    # set nearest positions
+                    for idx, vert in enumerate(verts2):
+                        vert.co = vert_pose_list[all_ids[idx]]
+
+                    bm.normal_update()
+                    bmesh.update_edit_mesh(active_obj.data)
+
+
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_deform_handle_3d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_deform_handle_2d, 'WINDOW')
             bpy.types.SpaceView3D.draw_handler_remove(self.gh_circle_select_handle, 'WINDOW')
@@ -575,7 +618,7 @@ def draw_text_2d(self, context):
     rw = context.region.width
 
     font_id = 0
-    font_size = 20
+    font_size = 30
 
     #Set font color
     bgl.glEnable(bgl.GL_BLEND)
