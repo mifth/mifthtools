@@ -544,7 +544,7 @@ class MI_OT_CurveSurfaces(bpy.types.Operator):
                                         update_curve_line(active_obj, curve, curve_verts, curve_settings.spread_mode, self.active_surf.original_loop_data)
 
                                 self.active_surf.loop_points -= 1
-                                bmesh.ops.delete(bm, geom=verts_to_remove, context=1)
+                                bmesh.ops.delete(bm, geom=verts_to_remove, context='VERTS')
                                 bm.verts.ensure_lookup_table()
 
                             # Interpolate method
