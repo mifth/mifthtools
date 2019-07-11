@@ -31,9 +31,9 @@ from . import mi_looptools as loop_t
 from mathutils import Vector, Matrix
 
 
-# Settings
-class MI_Unbevel_Settings(bpy.types.PropertyGroup):
-    arc_axis: bpy.props.FloatVectorProperty(name="Arc Axis", description="Arc Axis", default=(0.0, 0.0, 1.0), size=3)
+## Settings
+#class MI_Unbevel_Settings(bpy.types.PropertyGroup):
+    #unbevel_value: bpy.props.FloatProperty(name="Unbevel Value", description="Unbevel Value", default=(1.0), hard_min=0)
 
 
 class MI_OT_Unbevel(bpy.types.Operator):
@@ -45,27 +45,13 @@ class MI_OT_Unbevel(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     reset_values: BoolProperty(default=False)
-    reverse_direction: BoolProperty(default=False)
-
-
-    #upvec_offset: FloatProperty(name="Offset", description="Offset Arc", default=0.0)
-    #scale_arc: FloatProperty(name="Scale", description="Scale Arc", default=0.0)
+    unbevel_value: bpy.props.FloatProperty(name="Unbevel Value", description="Unbevel Value", default=1.0, min=0.0)
     #rotate_arc_axis: bpy.props.FloatProperty(name="Rotate", description="Rotate Arc Axis", default=0)
-    #rotate_axis: bpy.props.FloatVectorProperty(name="Rotate Axis", description="Rotate Axis", default=(0.0, 0.0, 1.0), size=3)
+
 
     def reset_all_values(self):
-        self.reverse_direction = False
-        self.spread_mode = 'Normal'
-        self.direction_vector = 'Custom'
-        self.upvec_offset = 0.0
-        self.scale_arc = 0.0
-        self.rotate_arc_axis = 0.0
+        self.unbevel_value = 1
         self.reset_values = False
-
-    #def invoke(self, context, event):
-
-        #self.rotate_axis = context.scene.mi_makearc_settings.arc_axis
-        #return self.execute(context)
 
     def execute(self, context):
 
@@ -86,40 +72,44 @@ class MI_OT_Unbevel(bpy.types.Operator):
             self.report({'WARNING'}, "No Loops!")
             return {'CANCELLED'}
 
-        obj_matrix = active_obj.matrix_world
-        obj_matrix_inv = obj_matrix.inverted()
+        #obj_matrix = active_obj.matrix_world
+        #obj_matrix_inv = obj_matrix.inverted()
 
-        for loop in loops:
-            if loop[1] is True:
-                continue
+        if self.unbevel_value != 1:
 
-            loop_verts = []
+            for loop in loops:
+                if loop[1] is True:
+                    continue
 
-            for ind in loop[0]:
-                loop_verts.append(bm.verts[ind])
+                loop_verts = []
 
-            v1 = (loop_verts[1].co - loop_verts[0].co).normalized()
-            v2 = (loop_verts[2].co - loop_verts[1].co).normalized()
-            angle_1 = v1.angle(v2) / 2
+                for ind in loop[0]:
+                    loop_verts.append(bm.verts[ind])
 
-            v3 = (loop_verts[-2].co - loop_verts[-1].co).normalized()
-            v4 = (loop_verts[-3].co - loop_verts[-2].co).normalized()
-            angle_2 = v1.angle(v2) / 2
-            degree_90 = 1.5708
+                v1 = (loop_verts[1].co - loop_verts[0].co).normalized()
+                v2 = (loop_verts[2].co - loop_verts[1].co).normalized()
+                angle_1 = v1.angle(v2) / 2
 
-            rot_dir = v1.cross(v2).normalized()
-            rot_mat = Matrix.Rotation(-angle_1, 3, rot_dir)
-            rot_mat_2 = Matrix.Rotation((angle_2 - degree_90), 3, rot_dir)
-            v1_nor = ((rot_mat @ v1).normalized() * 10000) + loop_verts[0].co
-            v3_nor = (rot_mat_2 @ v3).normalized()
+                v3 = (loop_verts[-2].co - loop_verts[-1].co).normalized()
+                v4 = (loop_verts[-3].co - loop_verts[-2].co).normalized()
+                angle_2 = v1.angle(v2) / 2
+                degree_90 = 1.5708
 
-            scale_pos = mathu.geometry.intersect_line_plane(loop_verts[0].co, v1_nor, loop_verts[-1].co, v3_nor)
-            loop_verts[1].co = scale_pos
+                rot_dir = v1.cross(v2).normalized()
+                rot_mat = Matrix.Rotation(-angle_1, 3, rot_dir)
+                rot_mat_2 = Matrix.Rotation((angle_2 - degree_90), 3, rot_dir)
+                v1_nor = ((rot_mat @ v1).normalized() * 10000) + loop_verts[0].co
+                v3_nor = (rot_mat_2 @ v3).normalized()
 
-            #for i, vert in enumerate(loop_verts):
-                    #vert.co = active_obj.matrix_world.inverted() @ vert_pos
+                scale_pos = mathu.geometry.intersect_line_plane(loop_verts[0].co, v1_nor, loop_verts[-1].co, v3_nor)
 
-        bm.normal_update()
-        bmesh.update_edit_mesh(active_obj.data)
+                for vert in loop_verts:
+                    vert.co = scale_pos.lerp(vert.co, self.unbevel_value)
+
+            if self.unbevel_value == 0:
+                bpy.ops.mesh.merge(type='COLLAPSE')
+
+            bm.normal_update()
+            bmesh.update_edit_mesh(active_obj.data)
 
         return {'FINISHED'}

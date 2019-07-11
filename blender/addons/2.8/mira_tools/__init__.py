@@ -85,22 +85,15 @@ def register():
         traceback.print_exc()
 
     # bpy.types.Scene.mira_curve_points: PointerProperty( name="Mira Tool Variables", type=mi_curve_test.MR_CurvePoint, description="Mira Curve" )
-
     # bpy.types.Object.mi_curves = CollectionProperty( name="Mira Tool Variables", type=mi_curve_test.MI_CurveObject, description="Mira Curve" )
-
-    bpy.types.Scene.mi_settings= PointerProperty( name="Global Settings", type=mi_settings.MI_Settings, description="Global Settings." )
-
-    bpy.types.Scene.mi_cur_stretch_settings= PointerProperty( name="Curve Stretch Settings", type=mi_curve_stretch.MI_CurveStretchSettings, description="Curve Stretch Settings." )
-
-    bpy.types.Scene.mi_cur_surfs_settings= PointerProperty( name="Curve Surfaces Settings", type=mi_curve_surfaces.MI_CurveSurfacesSettings, description="Curve Surfaces Settings." )
-
-    bpy.types.Scene.mi_extrude_settings= PointerProperty( name="Extrude Variables", type=mi_draw_extrude.MI_ExtrudeSettings, description="Extrude Settings" )
-
-    bpy.types.Scene.mi_ldeformer_settings= PointerProperty( name="Linear Deformer Variables", type=mi_linear_deformer.MI_LDeformer_Settings, description="Linear Deformer Settings" )
-
-    bpy.types.Scene.mi_curguide_settings= PointerProperty( name="Curve Guide Variables", type=mi_curve_guide.MI_CurGuide_Settings, description="Curve Guide Settings" )
-
-    bpy.types.Scene.mi_makearc_settings= PointerProperty( name="Make Arc Variables", type=mi_make_arc.MI_MakeArc_Settings, description="Make Arc Settings" )
+    bpy.types.Scene.mi_settings = PointerProperty( name="Global Settings", type=mi_settings.MI_Settings, description="Global Settings." )
+    bpy.types.Scene.mi_cur_stretch_settings = PointerProperty( name="Curve Stretch Settings", type=mi_curve_stretch.MI_CurveStretchSettings, description="Curve Stretch Settings." )
+    bpy.types.Scene.mi_cur_surfs_settings = PointerProperty( name="Curve Surfaces Settings", type=mi_curve_surfaces.MI_CurveSurfacesSettings, description="Curve Surfaces Settings." )
+    bpy.types.Scene.mi_extrude_settings = PointerProperty( name="Extrude Variables", type=mi_draw_extrude.MI_ExtrudeSettings, description="Extrude Settings" )
+    bpy.types.Scene.mi_ldeformer_settings = PointerProperty( name="Linear Deformer Variables", type=mi_linear_deformer.MI_LDeformer_Settings, description="Linear Deformer Settings" )
+    bpy.types.Scene.mi_curguide_settings = PointerProperty( name="Curve Guide Variables", type=mi_curve_guide.MI_CurGuide_Settings, description="Curve Guide Settings" )
+    bpy.types.Scene.mi_makearc_settings = PointerProperty( name="Make Arc Variables", type=mi_make_arc.MI_MakeArc_Settings, description="Make Arc Settings" )
+    #bpy.types.Scene.mi_unbevel_settings = PointerProperty( name="Unbevel Settings", type=mi_unbevel.MI_Unbevel_Settings, description="Unbevel Settings" )
 
     # alternative gui
     bpy.types.WindowManager.mirawindow = bpy.props.PointerProperty(type = mi_gui.DropdownMiraToolProps)
