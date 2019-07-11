@@ -48,6 +48,8 @@ if "bpy" in locals():
     imp.reload(mi_wrap_master)
     imp.reload(mi_primitives)
     imp.reload(mi_simple_extrude)
+    imp.reload(mi_unbevel)
+
 else:
     from . import mi_curve_test
     from . import mi_curve_stretch
@@ -65,6 +67,7 @@ else:
     from . import mi_wrap_master
     from . import mi_primitives
     from . import mi_simple_extrude
+    from . import mi_unbevel
 
 
 import bpy
