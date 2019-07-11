@@ -44,19 +44,18 @@ class MI_OT_Unbevel(bpy.types.Operator):
     bl_description = "Unbevel"
     bl_options = {'REGISTER', 'UNDO'}
 
-    reset_values: BoolProperty(default=False)
+    #reset_values: BoolProperty(default=False)
     unbevel_value: bpy.props.FloatProperty(name="Unbevel Value", description="Unbevel Value", default=1.0, min=0.0)
-    #rotate_arc_axis: bpy.props.FloatProperty(name="Rotate", description="Rotate Arc Axis", default=0)
 
 
-    def reset_all_values(self):
-        self.unbevel_value = 1
-        self.reset_values = False
+    #def reset_all_values(self):
+        #self.unbevel_value = 1
+        #self.reset_values = False
 
     def execute(self, context):
 
-        if self.reset_values is True:
-            self.reset_all_values()
+        #if self.reset_values is True:
+            #self.reset_all_values()
 
         active_obj = context.active_object
 

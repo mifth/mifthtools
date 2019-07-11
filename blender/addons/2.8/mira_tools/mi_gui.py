@@ -35,7 +35,7 @@ class DropdownMiraToolProps(bpy.types.PropertyGroup):
     display_mira_guide: bpy.props.BoolProperty(name="Curve Guide", description="UI Curve Guide Tools", default=False)
     display_mira_modify: bpy.props.BoolProperty(name="Modify Tools", description="UI Modify Tools", default=False)
     display_mira_deform: bpy.props.BoolProperty(name="Deform Tools", description="UI Deform Tools", default=False)
-    display_mira_extrude: bpy.props.BoolProperty(name="Draw Extrude", description="UI Draw Extrude", default=False)
+    display_mira_modify: bpy.props.BoolProperty(name="Modify", description="UI Modify", default=False)
     display_mira_settings: bpy.props.BoolProperty(name="Settings", description="UI Settings", default=False)
 
     display_mira_wrap: bpy.props.BoolProperty(name="Wrap", description="UI Wrap", default=False)
@@ -61,17 +61,17 @@ class MI_PT_Panel(bpy.types.Panel):
 # --------------------------------------------------
 
         #col = layout.column(align = True)
-        if mt.display_mira_extrude:
+        if mt.display_mira_modify:
             box = layout.box()
             row = box.row(align=True)
-            row.prop(mt, "display_mira_extrude", text="", icon='TRIA_DOWN')
+            row.prop(mt, "display_mira_modify", text="", icon='TRIA_DOWN')
 
         else:
             box = layout.box()
             row = box.row(align=True)
-            row.prop(mt, "display_mira_extrude", text="", icon='TRIA_RIGHT')
+            row.prop(mt, "display_mira_modify", text="", icon='TRIA_RIGHT')
 
-        row.label(text="Extrude")
+        row.label(text="Modify")
         if context.scene.mi_settings.surface_snap is False:
             row.prop(context.scene.mi_extrude_settings, "do_symmetry", text='', icon="UV_ISLANDSEL")
             if context.scene.mi_extrude_settings.do_symmetry:
@@ -82,7 +82,7 @@ class MI_PT_Panel(bpy.types.Panel):
         row.operator("mira.draw_extrude", text="", icon="VPAINT_HLT")
 
         ###space###
-        if mt.display_mira_extrude:
+        if mt.display_mira_modify:
             ###space###
             col = layout.column(align=True)
             box = col.column(align=True).box().column()
@@ -109,6 +109,9 @@ class MI_PT_Panel(bpy.types.Panel):
             row.separator()
             row.operator("mira.simple_extrude", text="Simple Extrude", icon="VPAINT_HLT")
 
+            row.separator()
+            row.operator("mira.unbevel", text="Unbevel", icon="VPAINT_HLT")
+
             box.separator()
 
 # --------------------------------------------------
@@ -127,9 +130,9 @@ class MI_PT_Panel(bpy.types.Panel):
         row.label(text="Surfaces")
 
         row.operator("mira.poly_loop", text="", icon="MESH_GRID")
-        sub = row.row(align=True)
-        sub.scale_x = 0.15
-        sub.prop(context.scene.mi_cur_surfs_settings, "spread_loops_type", text='', icon="COLLAPSEMENU")
+        #sub = row.row(align=True)
+        #sub.scale_x = 0.15
+        row.prop(context.scene.mi_cur_surfs_settings, "spread_loops_type", text='', icon="COLLAPSEMENU")
         row.operator("mira.curve_surfaces", text="", icon="SURFACE_NCURVE")
 
         ###space###
@@ -252,9 +255,9 @@ class MI_PT_Panel(bpy.types.Panel):
         row.prop(context.scene.mi_curguide_settings, "points_number", text='')
         row.prop(context.scene.mi_curguide_settings, "deform_type", text='')
 
-        sub = row.row(align=True)
-        sub.scale_x = 0.15
-        sub.prop(context.scene.mi_curguide_settings, "deform_type", text='', icon="COLLAPSEMENU")
+        #sub = row.row(align=True)
+        #sub.scale_x = 0.15
+        #sub.prop(context.scene.mi_curguide_settings, "deform_type", text='', icon="COLLAPSEMENU")
         row.operator("mira.curve_guide", text='', icon="RNA")
 
         ###space###
