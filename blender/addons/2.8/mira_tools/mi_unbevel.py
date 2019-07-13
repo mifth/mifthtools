@@ -31,11 +31,6 @@ from . import mi_looptools as loop_t
 from mathutils import Vector, Matrix
 
 
-## Settings
-#class MI_Unbevel_Settings(bpy.types.PropertyGroup):
-    #unbevel_value: bpy.props.FloatProperty(name="Unbevel Value", description="Unbevel Value", default=(1.0), hard_min=0)
-
-
 class MI_OT_Unbevel(bpy.types.Operator):
 
     """Draw a line with the mouse"""
@@ -46,11 +41,6 @@ class MI_OT_Unbevel(bpy.types.Operator):
 
     #reset_values: BoolProperty(default=False)
     unbevel_value: bpy.props.FloatProperty(name="Unbevel Value", description="Unbevel Value", default=1.0, min=0.0)
-
-
-    #def reset_all_values(self):
-        #self.unbevel_value = 1
-        #self.reset_values = False
 
     def execute(self, context):
 
@@ -68,47 +58,105 @@ class MI_OT_Unbevel(bpy.types.Operator):
         loops = loop_t.check_loops(loops, bm)
 
         if not loops:
-            self.report({'WARNING'}, "No Loops!")
-            return {'CANCELLED'}
+            #self.report({'WARNING'}, "No Loops!")
+            #return {'CANCELLED'}
+
+            b_edges = [edge for edge in bm.edges if edge.select]
 
         #obj_matrix = active_obj.matrix_world
         #obj_matrix_inv = obj_matrix.inverted()
 
         if self.unbevel_value != 1:
 
-            for loop in loops:
-                if loop[1] is True:
-                    continue
+            degree_90 = 1.5708
 
-                loop_verts = []
+            if loops:
+                for loop in loops:
+                    if loop[1] is True:
+                        continue
 
-                for ind in loop[0]:
-                    loop_verts.append(bm.verts[ind])
+                    loop_verts = []
 
-                v1 = (loop_verts[1].co - loop_verts[0].co).normalized()
-                v2 = (loop_verts[2].co - loop_verts[1].co).normalized()
-                angle_1 = v1.angle(v2) / 2
+                    for ind in loop[0]:
+                        loop_verts.append(bm.verts[ind])
 
-                v3 = (loop_verts[-2].co - loop_verts[-1].co).normalized()
-                v4 = (loop_verts[-3].co - loop_verts[-2].co).normalized()
-                angle_2 = v1.angle(v2) / 2
-                degree_90 = 1.5708
+                    v1 = (loop_verts[1].co - loop_verts[0].co).normalized()
+                    v2 = (loop_verts[2].co - loop_verts[1].co).normalized()
+                    angle_1 = v1.angle(v2) / 2
 
-                rot_dir = v1.cross(v2).normalized()
-                rot_mat = Matrix.Rotation(-angle_1, 3, rot_dir)
-                rot_mat_2 = Matrix.Rotation((angle_2 - degree_90), 3, rot_dir)
-                v1_nor = ((rot_mat @ v1).normalized() * 10000) + loop_verts[0].co
-                v3_nor = (rot_mat_2 @ v3).normalized()
+                    v3 = (loop_verts[-2].co - loop_verts[-1].co).normalized()
+                    v4 = (loop_verts[-3].co - loop_verts[-2].co).normalized()
+                    angle_2 = v1.angle(v2) / 2
 
-                scale_pos = mathu.geometry.intersect_line_plane(loop_verts[0].co, v1_nor, loop_verts[-1].co, v3_nor)
+                    rot_dir = v1.cross(v2).normalized()
+                    rot_mat = Matrix.Rotation(-angle_1, 3, rot_dir)
+                    rot_mat_2 = Matrix.Rotation((angle_2 - degree_90), 3, rot_dir)
+                    v1_nor = ((rot_mat @ v1).normalized() * 10000) + loop_verts[0].co
+                    v3_nor = (rot_mat_2 @ v3).normalized()
 
-                for vert in loop_verts:
-                    vert.co = scale_pos.lerp(vert.co, self.unbevel_value)
+                    scale_pos = mathu.geometry.intersect_line_plane(loop_verts[0].co, v1_nor, loop_verts[-1].co, v3_nor)
 
-            if self.unbevel_value == 0:
-                bpy.ops.mesh.merge(type='COLLAPSE')
+                    for vert in loop_verts:
+                        vert.co = scale_pos.lerp(vert.co, self.unbevel_value)
 
-            bm.normal_update()
-            bmesh.update_edit_mesh(active_obj.data)
+                if self.unbevel_value == 0:
+                    bpy.ops.mesh.merge(type='COLLAPSE')
+
+                bm.normal_update()
+                bmesh.update_edit_mesh(active_obj.data)
+
+            elif b_edges:
+                b_edges_pos = []
+                for edge in b_edges:
+                    verts = edge.verts
+
+                    # fix normals
+                    if len(edge.link_faces) > 1:
+                        if len(edge.link_faces[0].verts) > 4:
+                            ed_normal = edge.link_faces[1].normal
+                        elif len(edge.link_faces[1].verts) > 4:
+                            ed_normal = edge.link_faces[0].normal
+                        else:
+                            ed_normal = edge.link_faces[0].normal.lerp(edge.link_faces[1].normal, 0.5)
+
+                        fix_dir = ed_normal.cross( (verts[0].co - verts[1].co).normalized() )
+                        v0_nor = mathu.geometry.intersect_line_plane(verts[0].normal + (fix_dir * 2), verts[0].normal - (fix_dir * 2), Vector((0,0,0)), fix_dir).normalized()
+                        v1_nor = mathu.geometry.intersect_line_plane(verts[1].normal + (fix_dir * 2), verts[1].normal - (fix_dir * 2), Vector((0,0,0)), fix_dir).normalized()
+                        #nor_dir = ed_normal
+
+                    else:
+                        v0_nor = verts[0].normal
+                        v1_nor = verts[1].normal
+                        #nor_dir = v0_nor.lerp(v1_nor, 0.5).normalized()
+
+                    # base math
+                    nor_dir = v0_nor.lerp(v1_nor, 0.5).normalized()
+                    side_dir_2 = (verts[0].co - verts[1].co).normalized()
+                    side_dir_2.negate()
+                    side_dir_1 = nor_dir.cross(side_dir_2).normalized()
+                    #side_dir_2 = (verts[0].co - verts[1].co).normalized()
+                    #side_dir_2 = nor_dir.cross(side_dir_1).normalized()
+
+                    pos_between = verts[0].co.lerp(verts[1].co, 0.5)
+                    angle_between_1 = v0_nor.angle(nor_dir)
+                    angle_between_2 = v1_nor.angle(nor_dir)
+
+                    rot_mat = Matrix.Rotation((-angle_between_1 * 2) - degree_90, 3, side_dir_1)
+                    rot_mat_2 = Matrix.Rotation((angle_between_1 * 2) + (degree_90 * 2), 3, side_dir_1)
+                    dir_1 = ((rot_mat @ nor_dir).normalized() * 10000) + verts[0].co
+                    dir_2 = (rot_mat_2 @ nor_dir).normalized()
+
+                    scale_pos = mathu.geometry.intersect_line_plane(verts[0].co, dir_1, verts[1].co, dir_2)
+                    b_edges_pos.append((verts[0], scale_pos))
+                    b_edges_pos.append((verts[1], scale_pos))
+
+                for v_data in b_edges_pos:
+                    v_data[0].co = v_data[1].lerp(v_data[0].co, self.unbevel_value)
+
+                if self.unbevel_value == 0:
+                    bpy.ops.mesh.merge(type='COLLAPSE')
+
+                bm.normal_update()
+                bmesh.update_edit_mesh(active_obj.data)
 
         return {'FINISHED'}
