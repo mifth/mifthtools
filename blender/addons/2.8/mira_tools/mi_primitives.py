@@ -196,7 +196,7 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                 # remove old primitive
                 objs = bpy.data.objects
-                objs.remove(objs[del_obj.name], True)
+                objs.remove(objs[del_obj.name], do_unlink=True)
 
                 self.new_prim = None
                 self.hit_pos = None
@@ -206,7 +206,10 @@ class MI_MakePrimitive(bpy.types.Operator):
 
                 self.tool_mode = 'IDLE'
 
-                context.scene.update()
+                #context.scene.update()
+                dg = context.evaluated_depsgraph_get()
+                dg.update()
+                #context.view_layer.update()
                 context.area.tag_redraw()
 
             return {'RUNNING_MODAL'}
@@ -532,7 +535,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                         # remove primitive with 0,0,0 scale
                         objs = bpy.data.objects
                         del self.history_objects[-1]
-                        objs.remove(objs[self.new_prim.name], True)
+                        objs.remove(objs[self.new_prim.name], do_unlink=True)
                         self.new_prim = None
                         self.prim_side_vec = None
                         self.prim_front_vec = None

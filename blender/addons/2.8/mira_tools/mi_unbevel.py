@@ -107,14 +107,27 @@ class MI_OT_Unbevel(bpy.types.Operator):
 
             elif b_edges:
                 b_edges_pos = []
+                b_edgess_ids = [edge.index for edge in b_edges]
+
                 for edge in b_edges:
                     verts = edge.verts
 
                     # fix normals
                     if len(edge.link_faces) > 1:
-                        if len(edge.link_faces[0].verts) > 4:
+                        linked_edges_0 = 0
+                        linked_edges_1 = 0
+
+                        for edge2 in edge.link_faces[0].edges:
+                            if edge2.index in b_edgess_ids:
+                                linked_edges_0 += 1
+
+                        for edge2 in edge.link_faces[1].edges:
+                            if edge2.index in b_edgess_ids:
+                                linked_edges_1 += 1                            
+
+                        if len(edge.link_faces[0].verts) > 4 or linked_edges_0 < 2:
                             ed_normal = edge.link_faces[1].normal
-                        elif len(edge.link_faces[1].verts) > 4:
+                        elif len(edge.link_faces[1].verts) > 4 or linked_edges_1 < 2:
                             ed_normal = edge.link_faces[0].normal
                         else:
                             ed_normal = edge.link_faces[0].normal.lerp(edge.link_faces[1].normal, 0.5)
