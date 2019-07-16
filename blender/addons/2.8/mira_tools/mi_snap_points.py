@@ -40,7 +40,7 @@ class MI_OT_Unbevel(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     #reset_values: BoolProperty(default=False)
-    unbevel_value: bpy.props.FloatProperty(name="Snap Points", description="Snap Points", default=1000, min=0.0)
+    #unbevel_value: bpy.props.FloatProperty(name="Snap Points", description="Snap Points", default=1000, min=0.0)
 
     def execute(self, context):
 
