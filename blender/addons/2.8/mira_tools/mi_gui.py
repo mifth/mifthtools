@@ -39,6 +39,7 @@ class DropdownMiraToolProps(bpy.types.PropertyGroup):
     display_mira_settings: bpy.props.BoolProperty(name="Settings", description="UI Settings", default=False)
 
     display_mira_wrap: bpy.props.BoolProperty(name="Wrap", description="UI Wrap", default=False)
+    display_mira_obj_retopology: bpy.props.BoolProperty(name="Object Retopology", description="UI Object Retopology", default=False)
 
 
 ############-----------------------------############
@@ -127,7 +128,7 @@ class MI_PT_Panel(bpy.types.Panel):
             row = box.row(align=True)
             row.prop(mt, "display_mira_sface", text="", icon='TRIA_RIGHT')
 
-        row.label(text="Surfaces")
+        row.label(text="Retopo")
 
         row.operator("mira.poly_loop", text="", icon="MESH_GRID")
         #sub = row.row(align=True)
@@ -146,15 +147,23 @@ class MI_PT_Panel(bpy.types.Panel):
             row = col_top.column(align=True)
             row.operator("mira.poly_loop", text="Poly Loop", icon="MESH_GRID")
 
-            col = layout.column(align=True)
-            box = col.column(align=True).box().column()
-            col_top = box.column(align=True)
+            row.separator()
+            #col = layout.column(align=True)
+            #box = col.column(align=True).box().column()
+            #col_top = box.column(align=True)
 
             row = col_top.column()
             row.operator("mira.curve_surfaces", text="CurveSurfaces", icon="SURFACE_NCURVE")
             row.prop(context.scene.mi_cur_surfs_settings, "spread_loops_type", text='Points')
 
-            box.separator()
+            #box.separator()
+
+            row.separator()
+
+            row = col_top.column()
+            row.operator("mira.snap_points", text="Snap Points", icon="SURFACE_NCURVE")
+
+
             
             
 # --------------------------------------------------
@@ -361,7 +370,7 @@ class MI_PT_Panel(bpy.types.Panel):
 
 class MI_PT_Object_Panel(bpy.types.Panel):
     bl_idname = "MI_PT_Object_Panel"
-    bl_label = "Wrap"
+    bl_label = "Mira Tools"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_context = "objectmode"
@@ -400,9 +409,37 @@ class MI_PT_Object_Panel(bpy.types.Panel):
             col_top = box.column(align=True)
             row = col_top.column()
 
-            row.operator("mira.wrap_object", text="WrapObject")
-            row.operator("mira.wrap_scale", text="WrapScale")
-            row.operator("mira.wrap_master", text="WrapMaster")
+            row.operator("mira.wrap_object", text="Wrap Object")
+            row.operator("mira.wrap_scale", text="Wrap Scale")
+            row.operator("mira.wrap_master", text="Wrap Master")
+
+        # Object Retopology
+        if mt.display_mira_obj_retopology:
+
+            box = layout.box()
+            row = box.row(align=True)
+            row.prop(mt, "display_mira_obj_retopology", text="", icon='TRIA_DOWN')
+        else:
+            box = layout.box()
+            row = box.row(align=True)
+            row.prop(mt, "display_mira_obj_retopology", text="", icon='TRIA_RIGHT')
+
+        row.label(text="Retopo")
+
+        #row.operator("mira.wrap_object", text="", icon ="MOD_LATTICE")
+        #row.operator("mira.wrap_scale", text="", icon ="KEYFRAME")
+        #row.operator("mira.wrap_master", text="", icon ="MOD_SHRINKWRAP")
+
+        ###space###    
+        if mt.display_mira_obj_retopology:          
+            ###space###
+
+            box = layout.box().column(align=True)
+
+            col_top = box.column(align=True)
+            row = col_top.column()
+
+            row.operator("mira.retopo_loops", text="Retopo Loops")
 
 
 # PRIMITIVES MENU

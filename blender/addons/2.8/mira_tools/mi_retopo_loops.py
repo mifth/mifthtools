@@ -46,6 +46,7 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
     #reset_values: BoolProperty(default=False)
     cuts_number: bpy.props.IntProperty(name="Cuts Number", description="Cuts Number for Generic Mode", default=10, min=2)
     verts_number: bpy.props.IntProperty(name="Verts Number", description="Verts Number for Cuts", default=8, min=3)
+    rotate_loops: bpy.props.IntProperty(name="Rotate Loops", description="Cuts Number for Generic Mode", default=0, min=-360, max=360)
 
 
     def execute(self, context):
@@ -131,14 +132,21 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
                     bpy.ops.object.select_all(action='DESELECT')
                     bpy.ops.mesh.primitive_circle_add(vertices=self.verts_number, radius=1.0, enter_editmode=False)
                     new_gen_obj = context.active_object
-                    new_gen_obj.location = obj.location
-                    new_gen_obj.rotation_euler = obj.rotation_euler
-                    new_gen_obj.scale = obj.scale
+                    new_gen_obj.location = obj.location.copy()
+                    new_gen_obj.rotation_euler = obj.rotation_euler.copy()
+                    new_gen_obj.scale = obj.scale.copy()
                     generic_sel_objs.append(new_gen_obj)
+
+            if self.rotate_loops != 0:
+                for obj in generic_sel_objs:
+                    bpy.ops.object.select_all(action='DESELECT')
+                    obj.select_set(True)
+                    bpy.ops.transform.rotate(value=math.radians(self.rotate_loops), orient_axis='Z', orient_type='LOCAL', orient_matrix_type='LOCAL', constraint_axis=(False, False, True), use_proportional_edit=False, release_confirm=False)
 
             bpy.ops.object.select_all(action='DESELECT')
             for obj in generic_sel_objs:
                 obj.select_set(True)
+
             context.view_layer.objects.active = context.selected_objects[0]
 
             bpy.ops.object.make_single_user(type='SELECTED_OBJECTS', object=True, obdata=True, material=False, animation=False)
@@ -147,6 +155,7 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
 
             retop_obj = context.active_object
             retop_obj.show_in_front = True
+            retop_obj.show_wire = True
             #dg = bpy.context.evaluated_depsgraph_get() 
             #dg.update()
 
