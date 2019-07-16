@@ -49,6 +49,7 @@ if "bpy" in locals():
     imp.reload(mi_primitives)
     imp.reload(mi_simple_extrude)
     imp.reload(mi_unbevel)
+    imp.reload(mi_retopo_loops)
 
 else:
     from . import mi_curve_test
@@ -68,6 +69,7 @@ else:
     from . import mi_primitives
     from . import mi_simple_extrude
     from . import mi_unbevel
+    from . import mi_retopo_loops
 
 
 import bpy
