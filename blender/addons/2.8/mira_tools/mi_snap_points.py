@@ -72,7 +72,7 @@ class MI_OT_Unbevel(bpy.types.Operator):
 
                         if vert in vert_pose_list.keys():
                             # if new near position is less
-                            if (vert.co - vert_pose_list[all_ids[idx]]).length > (vert.co - v_pos_near).length:
+                            if (vert.co - vert_pose_list[vert]).length > (vert.co - v_pos_near).length:
                                 vert_pose_list[vert] = v_pos_near
                         else:
                             vert_pose_list[vert] =  v_pos_near
