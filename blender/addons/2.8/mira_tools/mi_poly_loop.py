@@ -134,7 +134,7 @@ class MI_OT_PolyLoop(bpy.types.Operator):
         #print(context.active_operator)
         context.area.tag_redraw()
 
-        context.area.header_text_set("Shift+A: NewLoops, A: NewLoop, LeftClick: CreatePoint, X: DeletePoint, C: CreateTriangle, Ctrl+LeftClick: CreateTriangle2, Shift+Tab: SurfaceSnap")
+        context.area.header_text_set("Shift+A: NewLoops, A: NewLoop, LeftClick: CreatePoint, Ctrl+Z: Undo, C: CreateTriangle, Ctrl+LeftClick: CreateTriangle2, Shift+Tab: SurfaceSnap")
 
         preferences = context.preferences
         addon_prefs = preferences.addons[__package__].preferences
@@ -315,43 +315,51 @@ class MI_OT_PolyLoop(bpy.types.Operator):
                     self.all_loops_ids.clear()
                     self.all_loops_ids.append(MI_PL_LoopObject(False))  # add another empty loop
                     self.previous_loop_id = 0
-                    id_to_index = None
+                    self.id_to_index = None
                 # new loop
                 else:
                     last_ids = self.all_loops_ids[-1].loop_ids
                     if len(last_ids) > 1:
                         self.all_loops_ids.append(MI_PL_LoopObject(False))  # add another empty loop
                         self.previous_loop_id = 0
-                        id_to_index = None
+                        self.id_to_index = None
 
-            elif event.type in {'X'}:
-                if self.all_loops_ids and self.all_loops_ids[-1].loop_ids:
-                    # remove last vert
-                    last_vert = ut_base.get_verts_from_ids([self.all_loops_ids[-1].loop_ids[-1]], self.id_layer, bm)[0]
-                    self.all_loops_ids[-1].loop_ids.remove(self.all_loops_ids[-1].loop_ids[-1])
+            elif event.type in {'Z'} and event.ctrl is True:
+                if self.all_loops_ids:
+                    # remove previous loop object
+                    if len(self.all_loops_ids) > 1 and not self.all_loops_ids[-1].loop_ids:
+                        self.all_loops_ids.remove(self.all_loops_ids[-1])
 
-                    bmesh.ops.delete(bm, geom=[last_vert], context=1)
-                    bmesh.update_edit_mesh(active_obj.data)
+                    if self.all_loops_ids[-1].loop_ids:
+                        # remove last vert
+                        last_vert = ut_base.get_verts_from_ids([self.all_loops_ids[-1].loop_ids[-1]], self.id_layer, bm)[0]
+                        self.all_loops_ids[-1].loop_ids.remove(self.all_loops_ids[-1].loop_ids[-1])
 
-                    # set new previous index
-                    if len(self.all_loops_ids) > 1 and self.all_loops_ids[-1].loop_ids:
-                        new_last_vert = ut_base.get_verts_from_ids([self.all_loops_ids[-1].loop_ids[-1]], self.id_layer, bm)[0]
-                        linked_edges = new_last_vert.link_edges
+                        bmesh.ops.delete(bm, geom=[last_vert], context='VERTS')
+                        bmesh.update_edit_mesh(active_obj.data)
 
-                        new_prev_loop_id = 0
+                        # set new previous index
+                        if len(self.all_loops_ids) > 1 and self.all_loops_ids[-1].loop_ids:
+                            new_last_vert = ut_base.get_verts_from_ids([self.all_loops_ids[-1].loop_ids[-1]], self.id_layer, bm)[0]
+                            linked_edges = new_last_vert.link_edges
 
-                        prev_loop_ids = self.all_loops_ids[-2].loop_ids
-                        if self.all_loops_ids[-1].revert_prev_loops is True:
-                            prev_loop_ids = prev_loop_ids.copy()
-                            prev_loop_ids.reverse()
+                            new_prev_loop_id = 0
 
-                        for edge in linked_edges:
-                            for vert in edge.verts:
-                                if vert[self.id_layer] in prev_loop_ids:
-                                    if vert[self.id_layer] > new_prev_loop_id:
-                                        new_prev_loop_id = prev_loop_ids.index(vert[self.id_layer])
+                            prev_loop_ids = self.all_loops_ids[-2].loop_ids
+                            if self.all_loops_ids[-1].revert_prev_loops is True:
+                                prev_loop_ids = prev_loop_ids.copy()
+                                prev_loop_ids.reverse()
 
-                        self.previous_loop_id = new_prev_loop_id
+                            for edge in linked_edges:
+                                for vert in edge.verts:
+                                    if vert[self.id_layer] in prev_loop_ids:
+                                        if vert[self.id_layer] > new_prev_loop_id:
+                                            new_prev_loop_id = prev_loop_ids.index(vert[self.id_layer])
+
+                            self.previous_loop_id = new_prev_loop_id
+
+                        #else:
+                            #self.previous_loop_id = 0
 
                     else:
                         self.previous_loop_id = 0

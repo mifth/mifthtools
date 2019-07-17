@@ -53,7 +53,12 @@ class MI_OT_Unbevel(bpy.types.Operator):
         bm.verts.ensure_lookup_table()
         sel_verts = [v for v in bm.verts if v.select]
 
-        objects_array = [obj for obj in context.visible_objects if obj != active_obj]
+        curve_settings = context.scene.mi_settings
+
+        if curve_settings.snap_objects == 'Selected':
+            objects_array = [obj for obj in context.selected_objects if obj != active_obj]
+        else:
+            objects_array = [obj for obj in context.visible_objects if obj != active_obj]
 
         # do snapping
         if sel_verts and objects_array:
