@@ -217,7 +217,7 @@ class MI_OT_StartDraw(bpy.types.Operator):
     def modal(self, context, event):
         context.area.tag_redraw()
 
-        context.area.header_text_set("S: Scale, Shift-S: ScaleAll, R: Rotate, Shift-R: RotateAll")
+        context.area.header_text_set("S: Scale, Shift-S: ScaleAll, R: Rotate, Shift-R: RotateAll, Ctrl+Z: Undo")
 
         preferences = context.preferences
         addon_prefs = preferences.addons[__package__].preferences
