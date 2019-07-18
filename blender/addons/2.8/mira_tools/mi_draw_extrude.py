@@ -122,6 +122,8 @@ class MI_OT_StartDraw(bpy.types.Operator):
     scale_all = None
     rotate_all = None
 
+    history_list = None
+
     def invoke(self, context, event):
         if context.area.type == 'VIEW_3D':
             # the arguments we pass the the callbackection
@@ -185,6 +187,9 @@ class MI_OT_StartDraw(bpy.types.Operator):
                 new_point = MI_Extrude_Point(extrude_center, None, [], camera_dir)
                 self.extrude_points.append(new_point)
 
+                # create histore history history list
+                self.history_list = []
+
                 # max_obj_scale
                 self.max_obj_scale = active_obj.scale.x
                 if active_obj.scale.y > self.max_obj_scale:
@@ -226,7 +231,15 @@ class MI_OT_StartDraw(bpy.types.Operator):
         # make undo
         if event.type == 'Z' and event.ctrl is True and self.tool_mode == 'IDLE':
             if event.value == 'PRESS':
-                bpy.ops.ed.undo()
+                if self.history_list:
+                    bpy.ops.ed.undo()
+                    self.extrude_points = self.history_list[-1][0]
+                    self.raycast_offset = self.history_list[-1][1]
+                    self.deform_mouse_pos = self.history_list[-1][2]
+                    self.scale_all = self.history_list[-1][3]
+                    self.rotate_all = self.history_list[-1][4]
+
+                    self.history_list.remove(self.history_list[-1])
 
             return {'RUNNING_MODAL'}
 
@@ -241,7 +254,7 @@ class MI_OT_StartDraw(bpy.types.Operator):
 
                         if do_pick:
                             self.tool_mode = 'DRAW'
-                            #bpy.ops.ed.undo_push()
+                            add_history(self)
 
                     elif event.type == 'R':
                         self.deform_mouse_pos = m_coords
@@ -251,7 +264,7 @@ class MI_OT_StartDraw(bpy.types.Operator):
                         else:
                             self.tool_mode = 'ROTATE'
 
-                        bpy.ops.ed.undo_push()
+                        add_history(self)
 
                     elif event.type == 'S':
                         self.deform_mouse_pos = m_coords
@@ -261,7 +274,8 @@ class MI_OT_StartDraw(bpy.types.Operator):
                         else:
                             self.tool_mode = 'SCALE'
 
-                        bpy.ops.ed.undo_push()
+                        add_history(self)
+
                     return {'RUNNING_MODAL'}
 
             elif event.value == 'RELEASE':
@@ -271,6 +285,8 @@ class MI_OT_StartDraw(bpy.types.Operator):
 
                     # update normals after changes
                     if self.tool_mode != 'IDLE':
+                        bpy.ops.ed.undo_push() # save history
+
                         bm.normal_update()
 
                     self.tool_mode = 'IDLE'
@@ -450,7 +466,6 @@ class MI_OT_StartDraw(bpy.types.Operator):
 
                 #bm.normal_update()
                 bmesh.update_edit_mesh(active_obj.data)
-                bpy.ops.ed.undo_push()  # save history
 
             return {'RUNNING_MODAL'}
 
@@ -540,6 +555,18 @@ def reset_params(self):
     self.scale_all = 0.0
     self.rotate_all = 0.0
 
+    self.history_list = None
+
+
+def add_history(self):
+    # Add History
+    raycast_offset_tmp = None
+    deform_mouse_pos_tmp = None
+
+    if self.deform_mouse_pos:
+        deform_mouse_pos_tmp = tuple(self.deform_mouse_pos)
+
+    self.history_list.append((self.extrude_points.copy(), self.raycast_offset, deform_mouse_pos_tmp, self.scale_all, self.rotate_all))
 
 def finish_extrude(self, context):
     context.space_data.show_gizmo = self.manipulator
