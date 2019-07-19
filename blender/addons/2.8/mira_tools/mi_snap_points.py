@@ -56,9 +56,9 @@ class MI_OT_Unbevel(bpy.types.Operator):
         curve_settings = context.scene.mi_settings
 
         if curve_settings.snap_objects == 'Selected':
-            objects_array = [obj for obj in context.selected_objects if obj != active_obj]
+            objects_array = [obj for obj in context.selected_objects if obj != active_obj and obj.type == 'MESH']
         else:
-            objects_array = [obj for obj in context.visible_objects if obj != active_obj]
+            objects_array = [obj for obj in context.visible_objects if obj != active_obj and obj.type == 'MESH']
 
         # do snapping
         if sel_verts and objects_array:
