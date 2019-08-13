@@ -430,7 +430,7 @@ keyconfig_data = \
      ),
     ("mesh.flip_normals", {"type": 'N', "value": 'PRESS', "alt": True}, None),
     ("wm.tool_set_by_id",
-     {"type": 'E', "value": 'PRESS', "shift": True},
+     {"type": 'E', "value": 'PRESS', "shift": True, "ctrl": True},
      {"properties":
       [("name", 'builtin.extrude_along_normals'),
        ],
@@ -621,6 +621,7 @@ keyconfig_data = \
        ],
       },
      ),
+    ("mira.simple_extrude", {"type": 'E', "value": 'PRESS', "shift": True}, None),
     ],
    },
   ),
