@@ -467,9 +467,9 @@ class MI_OT_CurveStretch(bpy.types.Operator):
             if curve_settings.surface_snap is True and curve_settings.snap_points is True:
                 objects_array = None
                 if curve_settings.snap_objects == 'Selected':
-                    objects_array = [obj for obj in context.selected_objects if obj != active_obj]
+                    objects_array = [obj for obj in context.selected_objects if obj != active_obj and obj.type == 'MESH']
                 else:
-                    objects_array = [obj for obj in context.visible_objects if obj != active_obj]
+                    objects_array = [obj for obj in context.visible_objects if obj != active_obj and obj.type == 'MESH']
 
                 if objects_array:
                     vert_pose_list = {}
