@@ -12,6 +12,7 @@
     <memberTool name="hard_gun_obj_lock_selected"/>
     <memberTool name="hard_gun_obj_rename"/>
     <memberTool name="hard_gun_obj_id_material"/>
+    <memberTool name="tool_4"/>
   </toolshelf>
 
   <tool name="hard_gun_obj_id_material" label="IDMat" icon="PLASMA_App">
@@ -333,5 +334,34 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
         for node_path in sel_nodes3:
             hou.node(node_path).destroy()]]></script>
+  </tool>
+
+  <tool name="tool_4" label="Delete Attrib" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+
+if sel_nodes:
+
+    mess = hou.ui.readMultiInput("Attributes to Delete:", ('Vertex', 'Point', 'Primitive', 'Detail'), buttons=('OK', 'Cancel'))
+
+    if mess[0] == 0 and (mess[1][0] != '' or mess[1][1] != '' or mess[1][2] != '' or mess[1][3] != ''):
+        for node in sel_nodes:
+            sop_node = node.displayNode()
+            del_node = sop_node.createOutputNode("attribdelete")
+    
+            if mess[1][0]:
+                del_node.parm('vtxdel').set(mess[1][0])
+            if mess[1][1]:
+                del_node.parm('ptdel').set(mess[1][1])
+            if mess[1][2]:
+                del_node.parm('primdel').set(mess[1][2])
+            if mess[1][3]:
+                del_node.parm('dtldel').set(mess[1][3])
+    
+            del_node.setDisplayFlag(True)
+            del_node.setRenderFlag(True)
+
+else:
+    msg = 'Select Object Nodes!'
+    hou.ui.displayMessage(msg)]]></script>
   </tool>
 </shelfDocument>
