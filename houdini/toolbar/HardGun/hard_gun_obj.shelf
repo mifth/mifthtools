@@ -336,7 +336,7 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
             hou.node(node_path).destroy()]]></script>
   </tool>
 
-  <tool name="tool_4" label="Delete Attrib" icon="PLASMA_App">
+  <tool name="tool_4" label="Delete Attrib" icon="SOP_attribdelete">
     <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
 
 if sel_nodes:

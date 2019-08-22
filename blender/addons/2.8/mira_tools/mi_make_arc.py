@@ -66,8 +66,8 @@ class MI_OT_Make_Arc(bpy.types.Operator):
     bl_description = "Make Arc"
     bl_options = {'REGISTER', 'UNDO'}
 
-    reset_values: BoolProperty(default=False)
-    reverse_direction: BoolProperty(default=False)
+    reset_values: BoolProperty(name="Reset Values", default=False)
+    reverse_direction: BoolProperty(name="Reverse Direction", default=False)
 
     spread_mode: EnumProperty(
         items=(('Normal', 'Normal', ''),
