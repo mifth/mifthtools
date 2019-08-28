@@ -25,7 +25,7 @@ bl_info = {
     "description": "Transfer data between Blender and other packages",
     "warning": "",
     "wiki_url": "",
-    "support": '',
+    "support": 'COMMUNITY',
     "category": "Object",
 }
 
