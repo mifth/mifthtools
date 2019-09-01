@@ -70,7 +70,7 @@ class MI_PT_Panel(bpy.types.Panel):
 
         row.label(text="Modify")
         if context.scene.mi_settings.surface_snap is False:
-            row.prop(context.scene.mi_extrude_settings, "do_symmetry", text='', icon="UV_ISLANDSEL")
+            row.prop(context.scene.mi_extrude_settings, "do_symmetry", text='', icon="MOD_MIRROR")
             if context.scene.mi_extrude_settings.do_symmetry:
                 sub = row.row(align=True)
                 sub.scale_x = 0.35
@@ -101,10 +101,14 @@ class MI_PT_Panel(bpy.types.Panel):
             else:
                 row.prop(context.scene.mi_extrude_settings, "relative_extrude_step", text='')
 
-            row = box.column()
-            if context.scene.mi_settings.surface_snap is False:
-                row.prop(context.scene.mi_extrude_settings, "do_symmetry", text='Symmetry')
+            box.separator()   
 
+            row = box.row()
+            if context.scene.mi_settings.surface_snap is False:
+                row.label(text='', icon="MOD_MIRROR")
+                row.prop(context.scene.mi_extrude_settings, "do_symmetry", text='Symmetry')
+                
+                row = box.column()
                 if context.scene.mi_extrude_settings.do_symmetry:
                     row.prop(context.scene.mi_extrude_settings, "symmetry_axys", text='Axys')
 
@@ -132,7 +136,8 @@ class MI_PT_Panel(bpy.types.Panel):
 
         row.label(text="Retopo")
 
-        row.operator("mira.poly_loop", text="", icon="MESH_GRID")
+        row.operator("mira.snap_points", text="", icon="MOD_VERTEX_WEIGHT")
+        row.operator("mira.poly_loop", text="", icon="OUTLINER_DATA_GP_LAYER")
         sub = row.row(align=True)
         sub.scale_x = 0.35
         sub.prop(context.scene.mi_cur_surfs_settings, "spread_loops_type", text='', icon="COLLAPSEMENU")
@@ -145,7 +150,7 @@ class MI_PT_Panel(bpy.types.Panel):
             box.separator()   
 
             row = box.column(align=True)
-            row.operator("mira.poly_loop", text="Poly Loop", icon="MESH_GRID")
+            row.operator("mira.poly_loop", text="Poly Loop", icon="OUTLINER_DATA_GP_LAYER")
 
             box.separator()   
             box = col.box().column(align=True)
@@ -160,7 +165,7 @@ class MI_PT_Panel(bpy.types.Panel):
             box.separator()  
 
             row = box.column()
-            row.operator("mira.snap_points", text="Snap Points", icon="SURFACE_NCURVE")
+            row.operator("mira.snap_points", text="Snap Points", icon="MOD_VERTEX_WEIGHT")
 
             box.separator()  
             
@@ -332,7 +337,7 @@ class MI_PT_Panel(bpy.types.Panel):
         row.label(text="Settings")
         row.prop(context.scene.mi_settings, "convert_instances", text='', icon="BOIDS")
         sub = row.row(align=True)
-        sub.scale_x = 0.15
+        sub.scale_x = 0.35
         sub.prop(context.scene.mi_settings, "snap_objects", text='', icon="HIDE_OFF")
         row.prop(context.scene.mi_settings, "surface_snap", text='', icon="SNAP_ON")
 
@@ -342,11 +347,21 @@ class MI_PT_Panel(bpy.types.Panel):
             box = col.box().column(align=True)
             box.separator()   
 
-            row = box.column()
+            row = box.row()
+            row.label(text='', icon="SNAP_ON")
             row.prop(context.scene.mi_settings, "surface_snap", text='Surface Snapping')
+
+            row = box.row()
+            row.label(text='', icon="BOIDS")
             row.prop(context.scene.mi_settings, "convert_instances", text='Convert Instances')
+
+            row = box.row()
+            row.label(text='', icon="MOD_VERTEX_WEIGHT")
             row.prop(context.scene.mi_settings, "snap_points", text='Snap Points')
-            row.prop(context.scene.mi_settings, "snap_objects", text='SnapObjects')
+
+            row = box.row()
+            row.label(text='SnapObjects')
+            row.prop(context.scene.mi_settings, "snap_objects", text='')
 
             box.separator()   
             box = col.box().column(align=True)
@@ -437,9 +452,9 @@ class MI_PT_Object_Panel(bpy.types.Panel):
             
             row = box.column()
             row.operator("mira.retopo_loops", text="Retopo Loops", icon ="XRAY")
-            
+
             box.separator()  
-            
+           
 
 
 # PRIMITIVES MENU
