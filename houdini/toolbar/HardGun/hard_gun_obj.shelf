@@ -8,6 +8,7 @@
   <toolshelf name="hard_gun_obj" label="HGObj">
     <memberTool name="hard_gun_obj_instance"/>
     <memberTool name="hard_gun_obj_geom_converter"/>
+    <memberTool name="hard_gun_obj_merge_obj"/>
     <memberTool name="hard_gun_obj_poly_reducer"/>
     <memberTool name="hard_gun_obj_lock_selected"/>
     <memberTool name="hard_gun_obj_rename"/>
@@ -363,5 +364,39 @@ if sel_nodes:
 else:
     msg = 'Select Object Nodes!'
     hou.ui.displayMessage(msg)]]></script>
+  </tool>
+
+  <tool name="hard_gun_obj_merge_obj" label="Merge Objects" icon="SOP_object_merge">
+    <script scriptType="python"><![CDATA[main_obj = hou.node('/obj')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+sel_nodes = hou.selectedNodes()
+
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+    new_node = cur_obj.createNode('geo', 'mereged_objects', run_init_scripts=True)
+    new_node.moveToGoodPosition()
+    new_node.parm('use_dcolor').set(False)
+    final_merge = new_node.createNode("merge")
+
+    for node in sel_nodes:
+        merge_path = node.path()
+
+        merge_node = new_node.createNode("object_merge", node_name=node.name())
+        merge_node.parm('objpath1').set(merge_path)
+        merge_node.parm('xformtype').set(1)
+
+        final_merge.setNextInput(merge_node)
+        merge_node.moveToGoodPosition()
+
+    final_merge.moveToGoodPosition()
+    final_merge.setDisplayFlag(True)
+    final_merge.setRenderFlag(True)
+    final_merge.setHardLocked(True)
+
+    for node in sel_nodes:
+        node.destroy()
+
+    new_node.setCurrent(True)
+    new_node.setSelected(True)]]></script>
   </tool>
 </shelfDocument>
