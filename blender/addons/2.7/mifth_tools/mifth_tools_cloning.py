@@ -46,85 +46,85 @@ def getGroups(scene, context):
 
 class MFTCloneProperties(bpy.types.PropertyGroup):
     # Draw Cloned Settings
-    drawClonesDirectionRotate = BoolProperty(
+    drawClonesDirectionRotate : BoolProperty(
         name="drawClonesDirectionRotate",
         description="drawClonesDirectionRotate...",
         default=False
     )
 
-    drawClonesRadialRotate = BoolProperty(
+    drawClonesRadialRotate : BoolProperty(
         name="drawClonesRadialRotate",
         description="drawClonesRadialRotate...",
         default=True
     )
 
-    drawClonesNormalRotate = BoolProperty(
+    drawClonesNormalRotate : BoolProperty(
         name="drawClonesNormalRotate",
         description="drawClonesNormalRotate...",
         default=True
     )
 
-    drawClonesOptimize = BoolProperty(
+    drawClonesOptimize : BoolProperty(
         name="drawClonesOptimize",
         description="drawClonesOptimize...",
         default=True
     )
 
-    drawStrokeLength = FloatProperty(
+    drawStrokeLength : FloatProperty(
         default=0.5,
         min=0.001,
         max=500.0
     )
 
-    drawRandomStrokeScatter = FloatProperty(
+    drawRandomStrokeScatter : FloatProperty(
         default=0.0,
         min=0.0,
         max=500.0
     )
 
-    randNormalRotateClone = FloatProperty(
+    randNormalRotateClone : FloatProperty(
         default=0.0,
         min=0.0,
         max=180.0
     )
 
-    randDirectionRotateClone = FloatProperty(
+    randDirectionRotateClone : FloatProperty(
         default=0.0,
         min=0.0,
         max=180.0
     )
 
-    randScaleClone = FloatProperty(
+    randScaleClone : FloatProperty(
         default=0.0,
         min=0.0,
         max=0.99
     )
 
-    drawPressure = FloatProperty(
+    drawPressure : FloatProperty(
         default=0.7,
         min=0.0,
         max=0.95
     )
 
-    drawPressureRelativeStroke = BoolProperty(
+    drawPressureRelativeStroke : BoolProperty(
         name="drawPressureRelativeStroke",
         description="Relative Stroke To Scale and Pressure",
         default=True
     )
 
-    drawPressureScale = BoolProperty(
+    drawPressureScale : BoolProperty(
         name="drawPressureScale",
         description="Pressure for Scale",
         default=True
     )
 
-    drawPressureScatter = BoolProperty(
+    drawPressureScatter : BoolProperty(
         name="drawPressureScatter",
         description="Pressure for Scatter",
         default=True
     )
 
-    drawClonesAxis = EnumProperty(
+    drawClonesAxis : EnumProperty(
         items=(('X', 'X', ''),
                ('-X', '-X', ''),
                ('Y', 'Y', ''),
@@ -136,7 +136,7 @@ class MFTCloneProperties(bpy.types.PropertyGroup):
     )
 
     # Radial Clone Settings
-    radialClonesAxis = EnumProperty(
+    radialClonesAxis : EnumProperty(
         items=(('X', 'X', ''),
                ('Y', 'Y', ''),
                ('Z', 'Z', '')
@@ -144,7 +144,7 @@ class MFTCloneProperties(bpy.types.PropertyGroup):
         default = 'Z'
     )
 
-    radialClonesAxisType = EnumProperty(
+    radialClonesAxisType : EnumProperty(
         items=(('Global', 'Global', ''),
                ('Local', 'Local', '')
                ),
@@ -152,15 +152,15 @@ class MFTCloneProperties(bpy.types.PropertyGroup):
     )
 
     # GroupInstance to Cursor
-    getGroupsLst = EnumProperty(name='Get Groups',
+    getGroupsLst : EnumProperty(name='Get Groups',
                                 description='Get Groups.',
                                 items=getGroups)
 
 
-class MFTPanelCloning(bpy.types.Panel):
+class MFT_PT_PanelCloning(bpy.types.Panel):
     bl_label = "Cloning"
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_context = "objectmode"
     bl_category = 'Mifth'
     # bl_options = {'DEFAULT_CLOSED'}
@@ -716,18 +716,18 @@ class MFTRadialClone(bpy.types.Operator):
     bl_description = "Radial Clone"
     bl_options = {'REGISTER', 'UNDO'}
 
-    create_last_clone = BoolProperty(
+    create_last_clone : BoolProperty(
         name="Create Last Clone",
         description="create last clone...",
         default=False
     )
 
-    radialClonesAngle = FloatProperty(
+    radialClonesAngle : FloatProperty(
         default=360.0,
         min=-360.0,
         max=360.0
     )
-    clonez = IntProperty(
+    clonez : IntProperty(
         default=8,
         min=2,
         max=300

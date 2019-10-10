@@ -36,7 +36,7 @@ drawForClonesObj = []  # Array of Objects Names
 def getGroups(scene, context):
 
     lst = []
-    obj = context.scene.objects.active
+    obj = context.active_object
     for group in bpy.data.groups:
         if obj is not None and obj.name in group.objects:
             lst.append((group.name, group.name, ""))
@@ -46,85 +46,85 @@ def getGroups(scene, context):
 
 class MFTCloneProperties(bpy.types.PropertyGroup):
     # Draw Cloned Settings
-    drawClonesDirectionRotate = BoolProperty(
+    drawClonesDirectionRotate : BoolProperty(
         name="drawClonesDirectionRotate",
         description="drawClonesDirectionRotate...",
         default=False
     )
 
-    drawClonesRadialRotate = BoolProperty(
+    drawClonesRadialRotate : BoolProperty(
         name="drawClonesRadialRotate",
         description="drawClonesRadialRotate...",
         default=True
     )
 
-    drawClonesNormalRotate = BoolProperty(
+    drawClonesNormalRotate : BoolProperty(
         name="drawClonesNormalRotate",
         description="drawClonesNormalRotate...",
         default=True
     )
 
-    drawClonesOptimize = BoolProperty(
+    drawClonesOptimize : BoolProperty(
         name="drawClonesOptimize",
         description="drawClonesOptimize...",
         default=True
     )
 
-    drawStrokeLength = FloatProperty(
+    drawStrokeLength : FloatProperty(
         default=0.5,
         min=0.001,
         max=500.0
     )
 
-    drawRandomStrokeScatter = FloatProperty(
+    drawRandomStrokeScatter : FloatProperty(
         default=0.0,
         min=0.0,
         max=500.0
     )
 
-    randNormalRotateClone = FloatProperty(
+    randNormalRotateClone : FloatProperty(
         default=0.0,
         min=0.0,
         max=180.0
     )
 
-    randDirectionRotateClone = FloatProperty(
+    randDirectionRotateClone : FloatProperty(
         default=0.0,
         min=0.0,
         max=180.0
     )
 
-    randScaleClone = FloatProperty(
+    randScaleClone : FloatProperty(
         default=0.0,
         min=0.0,
         max=0.99
     )
 
-    drawPressure = FloatProperty(
+    drawPressure : FloatProperty(
         default=0.7,
         min=0.0,
         max=0.95
     )
 
-    drawPressureRelativeStroke = BoolProperty(
+    drawPressureRelativeStroke : BoolProperty(
         name="drawPressureRelativeStroke",
         description="Relative Stroke To Scale and Pressure",
         default=True
     )
 
-    drawPressureScale = BoolProperty(
+    drawPressureScale : BoolProperty(
         name="drawPressureScale",
         description="Pressure for Scale",
         default=True
     )
 
-    drawPressureScatter = BoolProperty(
+    drawPressureScatter : BoolProperty(
         name="drawPressureScatter",
         description="Pressure for Scatter",
         default=True
     )
 
-    drawClonesAxis = EnumProperty(
+    drawClonesAxis : EnumProperty(
         items=(('X', 'X', ''),
                ('-X', '-X', ''),
                ('Y', 'Y', ''),
@@ -136,7 +136,7 @@ class MFTCloneProperties(bpy.types.PropertyGroup):
     )
 
     # Radial Clone Settings
-    radialClonesAxis = EnumProperty(
+    radialClonesAxis : EnumProperty(
         items=(('X', 'X', ''),
                ('Y', 'Y', ''),
                ('Z', 'Z', '')
@@ -144,7 +144,7 @@ class MFTCloneProperties(bpy.types.PropertyGroup):
         default = 'Z'
     )
 
-    radialClonesAxisType = EnumProperty(
+    radialClonesAxisType : EnumProperty(
         items=(('Global', 'Global', ''),
                ('Local', 'Local', '')
                ),
@@ -152,71 +152,9 @@ class MFTCloneProperties(bpy.types.PropertyGroup):
     )
 
     # GroupInstance to Cursor
-    getGroupsLst = EnumProperty(name='Get Groups',
+    getGroupsLst : EnumProperty(name='Get Groups',
                                 description='Get Groups.',
                                 items=getGroups)
-
-
-class MFTPanelCloning(bpy.types.Panel):
-    bl_label = "Cloning"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
-    bl_context = "objectmode"
-    bl_category = 'Mifth'
-    # bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mifthTools = bpy.context.scene.mifthTools
-        mifthCloneTools = bpy.context.scene.mifthCloneTools
-
-        layout.label(text="Draw Clones:")
-        layout.operator("mft.draw_clones", text="DrawClones")
-        layout.operator("mft.pick_obj_to_clone_draw", text="PickObjects")
-        layout.prop(
-            mifthCloneTools, "drawClonesDirectionRotate", text='DirectionRotate')
-        layout.prop(
-            mifthCloneTools, "drawClonesRadialRotate", text='RadialRotate')
-        layout.prop(
-            mifthCloneTools, "drawClonesNormalRotate", text='NormalRotate')
-        layout.prop(mifthCloneTools, "drawClonesOptimize", text='Optimize')
-
-        layout.prop(mifthCloneTools, "drawStrokeLength", text='Stroke')
-
-        layout.prop(mifthCloneTools, "drawRandomStrokeScatter", text='Scatter')
-        layout.prop(
-            mifthCloneTools, "randNormalRotateClone", text='RandNormal')
-        layout.prop(
-            mifthCloneTools, "randDirectionRotateClone", text='RandDirection')
-        layout.prop(mifthCloneTools, "randScaleClone", text='RandScale')
-
-        layout.prop(mifthCloneTools, "drawPressure", text='DrawPressure')
-        row = layout.row()
-        row.prop(mifthCloneTools, "drawPressureRelativeStroke", text='S')
-        row.prop(mifthCloneTools, "drawPressureScale", text='S')
-        row.prop(mifthCloneTools, "drawPressureScatter", text='S')
-
-        layout.prop(mifthCloneTools, "drawClonesAxis", text='Axis')
-        layout.separator()
-
-        layout.label(text="Clone Selected:")
-        layout.operator("mft.clonetoselected", text="CloneToSelected")
-        layout.separator()
-
-        layout.label(text="Radial Clone:")
-        layout.operator("mft.radialclone", text="Radial Clone")
-        # layout.prop(mifthTools, "radialClonesNumber", text='')
-        row = layout.row()
-        row.prop(mifthCloneTools, "radialClonesAxis", text='')
-        row.prop(mifthCloneTools, "radialClonesAxisType", text='')
-        layout.separator()
-
-        layout.label(text="Position Group:")
-        layout.operator("mft.group_instance_to_cursor", text="Position Group")
-        layout.prop(mifthCloneTools, "getGroupsLst", text='')
-        layout.separator()
-
-        layout.operator("mft.group_to_mesh", text="Groups To Mesh")
 
 
 class MFTDrawClones(bpy.types.Operator):
@@ -315,7 +253,7 @@ def prepare_drawing(self, context):
     self.drawOnObjects = context.selected_objects
     for obj in self.drawOnObjects:
         obj.select = False
-    self.obj_Active_True = context.scene.objects.active
+    self.obj_Active_True = context.active_object
 
     self.dupliList = mft_selected_objects_and_duplis(self, context)
     self.allStrokesList = []
@@ -325,7 +263,7 @@ def prepare_drawing(self, context):
 def finish_drawing(self, context):
     for obj in self.drawOnObjects:
         obj.select = True
-    context.scene.objects.active = self.obj_Active_True
+    context.active_object = self.obj_Active_True
     self.drawOnObjects = None
     self.dupliList = None
 
@@ -528,7 +466,7 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
 
         context.scene.objects.link(newDup)
         newDup.select = True
-        context.scene.objects.active = newDup
+        context.active_object = newDup
 
         # Rotation To Normal
         if mifthCloneTools.drawClonesNormalRotate is True:
@@ -537,27 +475,27 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
             angleRotate = newDupZAxis.angle(best_obj_nor)
             rotateAxis = newDupZAxis.cross(best_obj_nor).normalized()
 
-            bpy.ops.transform.rotate(value=angleRotate, axis=(
+            bpy.ops.transform.rotate(value=angleRotate, orient_axis=(
                 (rotateAxis.x, rotateAxis.y, rotateAxis.z)), proportional='DISABLED')
 
         # Change Axis
         if mifthCloneTools.drawClonesAxis == 'Y':
             bpy.ops.transform.rotate(value=math.radians(
-                90), axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
+                90), orient_axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
         elif mifthCloneTools.drawClonesAxis == '-Y':
             bpy.ops.transform.rotate(value=math.radians(
-                -90), axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
+                -90), orient_axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
             bpy.ops.transform.rotate(value=math.radians(
-                180), axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
+                180), orient_axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
         elif mifthCloneTools.drawClonesAxis == '-Z':
             bpy.ops.transform.rotate(
-                value=math.radians(180), axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
+                value=math.radians(180), orient_axis=get_obj_axis(newDup, 'X'), proportional='DISABLED')
         elif mifthCloneTools.drawClonesAxis == 'X':
             bpy.ops.transform.rotate(
-                value=math.radians(-90), axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
+                value=math.radians(-90), orient_axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
         elif mifthCloneTools.drawClonesAxis == '-X':
             bpy.ops.transform.rotate(value=math.radians(
-                90), axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
+                90), orient_axis=get_obj_axis(newDup, 'Y'), proportional='DISABLED')
 
         # Other rotate
         if mifthCloneTools.drawClonesRadialRotate is True or mifthCloneTools.drawClonesDirectionRotate is True:
@@ -605,8 +543,7 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
                     if tempYCross.angle(tempY) > math.radians(90.0):
                         xyAngleRotate = -xyAngleRotate
 
-                    bpy.ops.transform.rotate(
-                        value=xyAngleRotate, axis=best_obj_nor, proportional='DISABLED')
+                    bpy.ops.transform.rotate(value=xyAngleRotate, orient_axis=best_obj_nor, proportional='DISABLED')
 
                 # newDupMatrix2 = newDup.matrix_world
                 # newDupZAxisTuple2 = (
@@ -622,7 +559,7 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
                     # newDirRotAngle = - \
                         # newDirRotAngle  # As we do it in negative axis
                 # Main rotation
-                # bpy.ops.transform.rotate(value=newDirRotAngle, axis=(
+                # bpy.ops.transform.rotate(value=newDirRotAngle, orient_axis=(
                     #(best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)), proportional='DISABLED')
         # set PreviousClone position
         # self.prevClonePos = best_obj_hit
@@ -633,19 +570,15 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
             randNorAxis = (best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)
             if mifthCloneTools.drawClonesRadialRotate is False and mifthCloneTools.drawClonesNormalRotate is False:
                 randNorAxis = (0.0, 0.0, 1.0)
-            bpy.ops.transform.rotate(
-                value=randNorAngle, axis=(randNorAxis), proportional='DISABLED')
+            bpy.ops.transform.rotate(value=randNorAngle, orient_axis=(randNorAxis), proportional='DISABLED')
 
         # Random rotation along Picked Normal
         if mifthCloneTools.randDirectionRotateClone > 0.0:
             randDirX, randDirY, randDirZ = random.uniform(
                 0.0, 1.0), random.uniform(0.0, 1.0), random.uniform(0.0, 1.0)
-            randDirVec = (
-                Vector((randDirX, randDirY, randDirZ))).normalized()
-            randDirAngle = random.uniform(
-                math.radians(-mifthCloneTools.randDirectionRotateClone), math.radians(mifthCloneTools.randDirectionRotateClone))
-            bpy.ops.transform.rotate(
-                value=randDirAngle, axis=(randDirVec), proportional='DISABLED')
+            randDirVec = (Vector((randDirX, randDirY, randDirZ))).normalized()
+            randDirAngle = random.uniform(math.radians(-mifthCloneTools.randDirectionRotateClone), math.radians(mifthCloneTools.randDirectionRotateClone))
+            bpy.ops.transform.rotate(value=randDirAngle, orient_axis=(randDirVec), proportional='DISABLED')
 
         # change Size
         if mifthCloneTools.drawPressure > 0.0 or mifthCloneTools.randScaleClone > 0.0:
@@ -679,7 +612,7 @@ class MFTCloneToSelected(bpy.types.Operator):
     def execute(self, context):
 
         if len(bpy.context.selected_objects) > 1:
-            objToClone = bpy.context.scene.objects.active
+            objToClone = context.active_object
             objectsToClone = []
 
             for obj in bpy.context.selected_objects:
@@ -716,18 +649,18 @@ class MFTRadialClone(bpy.types.Operator):
     bl_description = "Radial Clone"
     bl_options = {'REGISTER', 'UNDO'}
 
-    create_last_clone = BoolProperty(
+    create_last_clone : BoolProperty(
         name="Create Last Clone",
         description="create last clone...",
         default=False
     )
 
-    radialClonesAngle = FloatProperty(
+    radialClonesAngle : FloatProperty(
         default=360.0,
         min=-360.0,
         max=360.0
     )
-    clonez = IntProperty(
+    clonez : IntProperty(
         default=8,
         min=2,
         max=300
@@ -736,7 +669,7 @@ class MFTRadialClone(bpy.types.Operator):
     def execute(self, context):
 
         if len(bpy.context.selected_objects) > 0:
-            activeObj = bpy.context.scene.objects.active
+            activeObj = context.active_object
             selObjects = bpy.context.selected_objects
             mifthCloneTools = bpy.context.scene.mifthCloneTools
             # self.clonez = mifthCloneTools.radialClonesNumber
@@ -756,35 +689,31 @@ class MFTRadialClone(bpy.types.Operator):
 
                 if mifthCloneTools.radialClonesAxis == 'X':
                     if mifthCloneTools.radialClonesAxisType == 'Local':
-                        theAxis = (
-                            activeObjMatrix[0][0], activeObjMatrix[1][0], activeObjMatrix[2][0])
+                        theAxis = (activeObjMatrix[0][0], activeObjMatrix[1][0], activeObjMatrix[2][0])
                     else:
                         theAxis = (1, 0, 0)
 
                 elif mifthCloneTools.radialClonesAxis == 'Y':
                     if mifthCloneTools.radialClonesAxisType == 'Local':
-                        theAxis = (
-                            activeObjMatrix[0][1], activeObjMatrix[1][1], activeObjMatrix[2][1])
+                        theAxis = (activeObjMatrix[0][1], activeObjMatrix[1][1], activeObjMatrix[2][1])
                     else:
                         theAxis = (0, 1, 0)
 
                 elif mifthCloneTools.radialClonesAxis == 'Z':
                     if mifthCloneTools.radialClonesAxisType == 'Local':
-                        theAxis = (
-                            activeObjMatrix[0][2], activeObjMatrix[1][2], activeObjMatrix[2][2])
+                        theAxis = (activeObjMatrix[0][2], activeObjMatrix[1][2], activeObjMatrix[2][2])
                     else:
                         theAxis = (0, 0, 1)
 
-                rotateValue = (
-                    math.radians(self.radialClonesAngle) / float(self.clonez))
-                bpy.ops.transform.rotate(value=rotateValue, axis=theAxis)
+                rotateValue = (math.radians(self.radialClonesAngle) / float(self.clonez))
+                bpy.ops.transform.rotate(value=rotateValue, orient_axis=theAxis)
 
             bpy.ops.object.select_all(action='DESELECT')
 
             for obj in selObjects:
                 obj.select = True
             selObjects = None
-            bpy.context.scene.objects.active = activeObj
+            context.active_object = activeObj
         else:
             self.report({'INFO'}, "Select Objects!")
 
@@ -837,7 +766,7 @@ class MFTGroupToMesh(bpy.types.Operator):
                     for face in obj.data.polygons:
                         face.select = True
 
-                    context.scene.objects.active = obj
+                    context.active_object = obj
                     bpy.ops.object.mode_set(mode = 'EDIT')
                     bpy.ops.mesh.flip_normals()
                     bpy.ops.object.mode_set(mode = 'OBJECT')
