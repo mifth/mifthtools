@@ -637,7 +637,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                     if v1.cross(v2)[2] < 0:
                         rot_angle = -rot_angle
 
-                    rot_axis = (new_prim_mat[0][2], new_prim_mat[1][2], new_prim_mat[2][2])
+                    #rot_axis = (new_prim_mat[0][2], new_prim_mat[1][2], new_prim_mat[2][2])
 
                     # if edit obj
                     if self.edit_obj:
@@ -649,7 +649,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                         context.view_layer.objects.active = self.new_prim
 
                     # do rotation
-                    bpy.ops.transform.rotate(value=rot_angle, axis=rot_axis)
+                    bpy.ops.transform.rotate(value=rot_angle, orient_axis='Z', orient_matrix=new_prim_mat.to_3x3())
                     self.deform_mouse_pos = m_coords
 
                     # if edit obj
@@ -699,9 +699,9 @@ def create_prim(context, event, hit_world, normal, segments, is_autoaxis, prim_t
         rv3d = context.region_data
 
         if prim_type == 'Plane':
-            bpy.ops.mesh.primitive_plane_add(size=1)
+            bpy.ops.mesh.primitive_plane_add(size=2)
         elif prim_type == 'Cube':
-            bpy.ops.mesh.primitive_cube_add(size=1)
+            bpy.ops.mesh.primitive_cube_add(size=2)
         elif prim_type == 'Circle':
             bpy.ops.mesh.primitive_circle_add(radius=1, vertices=segments[0], fill_type='NGON')
         elif prim_type == 'Sphere':
@@ -791,9 +791,9 @@ def replace_prim(old_prim, segments, prim_type, context):
 
     # new primitive
     if prim_type == 'Plane':
-        bpy.ops.mesh.primitive_plane_add(size=1)
+        bpy.ops.mesh.primitive_plane_add(size=2)
     elif prim_type == 'Cube':
-        bpy.ops.mesh.primitive_cube_add(size=1)
+        bpy.ops.mesh.primitive_cube_add(size=2)
     elif prim_type == 'Circle':
         bpy.ops.mesh.primitive_circle_add(radius=1, vertices=segments[0], fill_type='NGON')
     elif prim_type == 'Sphere':
