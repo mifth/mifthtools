@@ -48,7 +48,7 @@ if mess[0] == 0 and (mess[1][0] != '' or mess[1][1] != ''):
     for node in sel_nodes:
         if mess[1][1] != '':
             if node.parent() == sel_nodes[0].parent():
-                node.setName(mess[1][1] + '_hi', unique_name=True)
+                node.setName(mess[1][1] + '_high', unique_name=True)
             else:
                 node.setName(mess[1][1] + '_low', unique_name=True)
 
