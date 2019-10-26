@@ -14,6 +14,7 @@
     <memberTool name="hard_gun_obj_rename"/>
     <memberTool name="hard_gun_obj_id_material"/>
     <memberTool name="tool_4"/>
+    <memberTool name="del_other"/>
   </toolshelf>
 
   <tool name="hard_gun_obj_id_material" label="IDMat" icon="PLASMA_App">
@@ -398,5 +399,24 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
     new_node.setCurrent(True)
     new_node.setSelected(True)]]></script>
+  </tool>
+
+  <tool name="del_other" label="Clean Sop" icon="SOP_delete">
+    <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
+out_obj = hou.node('/out')
+cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
+
+    for obj_node in sel_nodes:
+        if obj_node.type().name() == "geo":
+            ch = list(obj_node.children())
+            ch2 = []
+            ch.remove(obj_node.displayNode())
+            obj_node.deleteItems(ch)
+
+else:
+    msg = 'Select Object Nodes!'
+    hou.ui.displayMessage(msg)]]></script>
   </tool>
 </shelfDocument>
