@@ -79,7 +79,8 @@ class MI_OT_Make_Arc(bpy.types.Operator):
     direction_vector: EnumProperty(
         items=(('Custom', 'Custom', ''),
                ('Middle', 'Middle', ''),
-               ('MiddleCrossed', 'MiddleCrossed', '')
+               ('MiddleCrossed', 'MiddleCrossed', ''),
+               ('Auto', 'Auto', '')
                ),
         default='Custom'
     )
@@ -171,12 +172,16 @@ class MI_OT_Make_Arc(bpy.types.Operator):
                 if not self.reverse_direction:
                     rot_dir.negate()
 
-            else:
+            elif self.direction_vector == 'Middle':
                 middle_nor = loop_verts[int(len(loop_verts) / 2)].normal.copy().normalized()
                 middle_nor = ut_base.get_normal_world(middle_nor, obj_matrix, obj_matrix_inv)
                 middle_nor = middle_nor.cross(sidevec).normalized()
                 rot_dir = middle_nor.cross(sidevec).normalized()
                 rot_dir.negate()
+
+            # Auto direction
+            else:
+                rot_dir = (loop_verts[0].co - loop_verts[1].co).cross(loop_verts[0].co - loop_verts[-1].co).normalized()
 
             upvec = rot_dir.cross(sidevec).normalized()
             loop_centr = (self.upvec_offset * upvec * relative_dist) + loop_centr_orig
