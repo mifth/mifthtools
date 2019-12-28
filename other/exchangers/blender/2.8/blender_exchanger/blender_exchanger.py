@@ -55,6 +55,12 @@ class EX_MainPanel(bpy.types.Panel):
         op = col.operator("ex_import.exchanger", text="ImportHoudini")
         op.world_scale = 100.0
 
+        layout.separator()
+        op = col.operator("ex_export.exchanger", text="Export Obj")
+        op.export_type = 'OBJ'
+        op = col.operator("ex_import.exchanger", text="Import Obj")
+        op.import_type = 'OBJ'
+
         row = layout.row()
         row.prop(b_exchanger, "doApplyModifiers", text="Apply Modifiers")
         row = layout.row()
@@ -89,7 +95,14 @@ class EX_ExportScene(bpy.types.Operator):
     bl_description = "Export your custom property"
     bl_options = {'UNDO'}
 
-    world_scale = FloatProperty( default=1.0 )
+    world_scale : FloatProperty( default=1.0 )
+
+    export_type : EnumProperty(
+        items=(('FBX', 'FBX', ''),
+               ('OBJ', 'OBJ', '')
+               ),
+        default = 'FBX'
+    )
 
     def invoke(self, context, event):
         # Addon Preferences
@@ -106,11 +119,11 @@ class EX_ExportScene(bpy.types.Operator):
         if len(bpy.context.selected_objects) > 0 and os.path.isdir(addon_prefs.exchangedir):
 
             # change render levl of susurf and multires for good export
-            fix_modidiers = []
+            fix_modifiers = []
             for obj in bpy.context.selected_objects:
                 for mod in obj.modifiers:
                     if mod.type in {'SUBSURF', 'MULTIRES'}:
-                        fix_modidiers.append((mod, mod.render_levels))
+                        fix_modifiers.append((mod, mod.render_levels))
 
                         if mod.show_viewport is False:
                             mod.render_levels = 0
@@ -118,16 +131,25 @@ class EX_ExportScene(bpy.types.Operator):
                             mod.render_levels = mod.levels
     
             # Export setings
-            model_path = exchange_dir + "exchange.fbx"
+            if self.export_type == 'FBX':
+                extension = 'fbx'
+            else:
+                extension = 'OBJ'
+
+            model_path = exchange_dir + "exchange." + extension
             apply_modifiers = b_exchanger.doApplyModifiers
 
             # Export Model
-            bpy.ops.export_scene.fbx(filepath=model_path, check_existing=True, axis_forward='-Z', axis_up='Y', use_selection=True, global_scale=self.world_scale, apply_unit_scale=True, bake_space_transform=True, use_mesh_modifiers=apply_modifiers, use_custom_props=True, primary_bone_axis='Y', secondary_bone_axis='X')
+            if self.export_type == 'FBX':
+                bpy.ops.export_scene.fbx(filepath=model_path, check_existing=True, axis_forward='-Z', axis_up='Y', use_selection=True, global_scale=self.world_scale, apply_unit_scale=True, bake_space_transform=True, use_mesh_modifiers=apply_modifiers, use_custom_props=True)
+            else:
+                bpy.ops.export_scene.obj(filepath=model_path, check_existing=True, use_selection=True, use_mesh_modifiers=apply_modifiers, use_edges=True, use_normals=True, use_uvs=True, use_vertex_groups=False, use_blen_objects=True, keep_vertex_order=True, global_scale=self.world_scale)
+
 
             # revert render level of modifiers back
-            for mod_stuff in fix_modidiers:
+            for mod_stuff in fix_modifiers:
                 mod_stuff[0].render_levels = mod_stuff[1]
-            fix_modidiers = None  # clear array
+            fix_modifiers = None  # clear array
 
         else:
             self.report(
@@ -143,6 +165,13 @@ class EX_ImportScene(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     world_scale = FloatProperty( default=1.0 )
+
+    import_type : EnumProperty(
+        items=(('FBX', 'FBX', ''),
+               ('OBJ', 'OBJ', '')
+               ),
+        default = 'FBX'
+    )
 
     def invoke(self, context, event):
         # Addon Preferences
@@ -164,11 +193,19 @@ class EX_ImportScene(bpy.types.Operator):
                 #scene_objects.append(obj.name)
 
             # Import setings
-            model_path = exchange_dir + "exchange.fbx"
+            if self.import_type == 'FBX':
+                extension = 'fbx'
+            else:
+                extension = 'OBJ'
+
+            model_path = exchange_dir + "exchange." + extension
             importNormals = b_exchanger.importNormals
 
             # IMPORT
-            bpy.ops.import_scene.fbx(filepath=model_path, axis_forward='-Z', axis_up='Y', global_scale=self.world_scale, bake_space_transform=True, use_custom_normals=importNormals, force_connect_children=False, primary_bone_axis='Y', secondary_bone_axis='X', use_prepost_rot=True)
+            if self.import_type == 'FBX':
+                bpy.ops.import_scene.fbx(filepath=model_path, axis_forward='-Z', axis_up='Y', global_scale=self.world_scale, bake_space_transform=True, use_custom_normals=importNormals, force_connect_children=False, primary_bone_axis='Y', secondary_bone_axis='X', use_prepost_rot=True)
+            else:
+                bpy.ops.import_scene.obj(filepath=model_path, use_edges=True, use_smooth_groups=True, use_split_objects=False, use_split_groups=False, use_groups_as_vgroups=False, use_image_search=False, split_mode='OFF')
 
             ## remove animatrins. Fix for Modo
             #for obj in scene.objects:
