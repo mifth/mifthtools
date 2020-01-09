@@ -74,8 +74,7 @@ kwargs['ordered'] = True
 node = soptoolutils.genericTool(kwargs, 'mifth_merge_verts')
 
 node.parm('merge_type').set('last')
-#node.parm('grouptype').set('points')
-]]></script>
+node.parm('grouptype').set('points')]]></script>
   </tool>
 
   <tool name="symmetry_extrude" label="SymExtrude" icon="SOP_polyextrude">
