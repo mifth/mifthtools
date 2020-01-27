@@ -180,7 +180,7 @@ class MI_OT_Make_Arc(bpy.types.Operator):
                 rot_dir = middle_nor.cross(sidevec).normalized()
                 rot_dir.negate()
 
-            # Auto direction
+            # Auto Direction
             else:
                 auto_loop_vec = (loop_verts[0].co - loop_verts[1].co).normalized()
                 test_auto_vec = (loop_verts[0].co - loop_verts[-1].co).normalized()
@@ -195,6 +195,11 @@ class MI_OT_Make_Arc(bpy.types.Operator):
                             auto_loop_vec_angle = auto_loop_vec_angle_2
 
                 rot_dir = (auto_loop_vec).cross(test_auto_vec).normalized()
+
+                # If Reverse Direction is True
+                if self.reverse_direction:
+                    rot_dir.negate()
+
 
             upvec = rot_dir.cross(sidevec).normalized()
             loop_centr = (self.upvec_offset * upvec * relative_dist) + loop_centr_orig
