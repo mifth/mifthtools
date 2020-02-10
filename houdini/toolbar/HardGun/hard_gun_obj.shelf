@@ -408,10 +408,10 @@ cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 
-    cur_obj.displayNode().setHardLocked(True)
-
     for obj_node in sel_nodes:
         if obj_node.type().name() == "geo":
+            obj_node.displayNode().setHardLocked(True)
+
             ch = list(obj_node.children())
             ch2 = []
             ch.remove(obj_node.displayNode())
