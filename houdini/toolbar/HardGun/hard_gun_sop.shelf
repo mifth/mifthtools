@@ -635,6 +635,7 @@ elif cur_obj.type().category().name() == 'Object':
     <memberTool name="hard_gun_extract_to_object"/>
     <memberTool name="hard_gun_view_subdive"/>
     <memberTool name="hard_gun_view_subdive_2"/>
+    <memberTool name="deselect_hlf"/>
   </toolshelf>
 
   <tool name="hg_clean_topology" label="Clean Mesh" icon="SOP_clean">
@@ -750,14 +751,28 @@ else:
 
 # OBJ
 if sel_nodes and sel_nodes[-1].type().category().name() == 'Object':
-    display_val = sel_nodes[-1].parm('viewportlod').eval()
 
-    if display_val == 0:
-        for node in sel_nodes:
-            node.parm('viewportlod').set(5)
-    else:
-        for node in sel_nodes:
-            node.parm('viewportlod').set(0)
+    for sel_node in sel_nodes:
+        sel_node.parm('viewportlod').set(0)
+
+        if sel_node.displayNode().type().name() == 'subdivide':
+            sel_node.deleteItems([sel_node.displayNode()])
+
+        else:
+            sub_node = sel_node.displayNode().createOutputNode('subdivide')
+            sub_node.parm('iterations').set(2)
+        
+            sub_node.setDisplayFlag(True)
+            sub_node.setRenderFlag(True)
+
+#        sub_node.setCurrent(True, clear_all_selected=True)
+
+#    if display_val == 0:
+#        for node in sel_nodes:
+#            node.parm('viewportlod').set(5)
+#    else:
+#        for node in sel_nodes:
+#            node.parm('viewportlod').set(0)
 
 # SOP
 elif cur_obj.type().category().name() == 'Object':
@@ -784,5 +799,28 @@ elif cur_obj.type().category().name() == 'Object':
     else:
         cur_node.inputConnections()[0].inputNode().setCurrent(True, clear_all_selected=False)
         cur_node.destroy()]]></script>
+  </tool>
+
+  <tool name="deselect_hlf" label="Deselect_Half" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+viewer = toolutils.sceneViewer()
+geos = viewer.selectGeometry()
+#sel_str = geos.mergedSelectionString()
+sel_nodes = hou.selectedNodes()
+
+if sel_nodes and geos.geometryType() == hou.geometryType.Primitives:
+
+    for el in geos.selections():
+        prims = el.prims(sel_nodes[0].geometry())
+        numz = ""
+
+        for prim in prims:
+            if prim.boundingBox().center()[0] < 0:
+                numz += " " + str(prim.number())
+
+        viewer.selectGeometry(use_existing_selection=False, initial_selection=numz, initial_selection_type=hou.geometryType.Primitives, consume_selections=False, ordered=True)
+                ]]></script>
   </tool>
 </shelfDocument>
