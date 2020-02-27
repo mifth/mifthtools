@@ -21,7 +21,7 @@ bl_info = {
     "author": "Pavel Geraskin",
     "version": (0, 1),
     "blender": (2, 80, 0),
-    "location": "3D View",
+    "location": "3D Viewport",
     "description": "Transfer data between Blender and other packages",
     "warning": "",
     "wiki_url": "",
