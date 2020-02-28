@@ -92,21 +92,16 @@ class MFT_PT_PanelCloning(bpy.types.Panel):
         layout.label(text="Draw Clones:")
         layout.operator("mft.draw_clones", text="DrawClones")
         layout.operator("mft.pick_obj_to_clone_draw", text="PickObjects")
-        layout.prop(
-            mifthCloneTools, "drawClonesDirectionRotate", text='DirectionRotate')
-        layout.prop(
-            mifthCloneTools, "drawClonesRadialRotate", text='RadialRotate')
-        layout.prop(
-            mifthCloneTools, "drawClonesNormalRotate", text='NormalRotate')
-        layout.prop(mifthCloneTools, "drawClonesOptimize", text='Optimize')
+        layout.prop(mifthCloneTools, "drawClonesDirectionRotate", text='DirectionRotate')
+        layout.prop(mifthCloneTools, "drawClonesRadialRotate", text='RadialRotate')
+        layout.prop(mifthCloneTools, "drawClonesNormalRotate", text='NormalRotate')
+        #layout.prop(mifthCloneTools, "drawClonesOptimize", text='Optimize')
 
         layout.prop(mifthCloneTools, "drawStrokeLength", text='Stroke')
 
         layout.prop(mifthCloneTools, "drawRandomStrokeScatter", text='Scatter')
-        layout.prop(
-            mifthCloneTools, "randNormalRotateClone", text='RandNormal')
-        layout.prop(
-            mifthCloneTools, "randDirectionRotateClone", text='RandDirection')
+        layout.prop(mifthCloneTools, "randNormalRotateClone", text='RandNormal')
+        layout.prop(mifthCloneTools, "randDirectionRotateClone", text='RandDirection')
         layout.prop(mifthCloneTools, "randScaleClone", text='RandScale')
 
         layout.prop(mifthCloneTools, "drawPressure", text='DrawPressure')
