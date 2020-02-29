@@ -35,6 +35,7 @@ global drawForClonesObj
 drawForClonesObj = []  # Array of Objects Names
 
 
+# Math to convert vector into Rotation Matrix 3x3. Taken from Animation Nodes project.
 def create_z_orient(rot_vec):
     x_dir_p = Vector(( 1.0,  0.0,  0.0))
     y_dir_p = Vector(( 0.0,  1.0,  0.0))
@@ -596,7 +597,7 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
             randNorAxis = (best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)
             if mifthCloneTools.drawClonesRadialRotate is False and mifthCloneTools.drawClonesNormalRotate is False:
                 randNorAxis = (0.0, 0.0, 1.0)
-            bpy.ops.transform.rotate(value=randNorAngle, orient_matrix=create_z_orient(randNorAxis))
+            bpy.ops.transform.rotate(value=randNorAngle, orient_matrix=create_z_orient(Vector(randNorAxis)))
 
         # Random rotation along Picked Normal
         if mifthCloneTools.randDirectionRotateClone > 0.0:
