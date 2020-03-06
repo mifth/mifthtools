@@ -45,33 +45,43 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
             return {'CANCELLED'}
         else:
             uvs = wrap_obj.data.uv_layers.active.data
+            #wrap_obj.select_set(True)
 
-            new_mesh = bpy.data.meshes.new(wrap_obj.data.name + '_WRAP')
-            new_obj = bpy.data.objects.new(wrap_obj.name + '_WRAP', new_mesh)
+            # create mesh
+            #new_mesh = bpy.data.meshes.new(wrap_obj.data.name + '_WRAP')
+            new_obj = bpy.data.objects.new(wrap_obj.name + '_WRAP', wrap_obj.data.copy())
             new_obj.show_wire = True
             context.scene.collection.objects.link(new_obj)
 
             new_obj.select_set(True)
+            #bpy.ops.object.material_slot_copy()  # copy materials to new_obj
             context.view_layer.objects.active = new_obj
-                        
+
+            bpy.ops.object.modifier_add(type='EDGE_SPLIT')
+            bpy.context.object.modifiers["EdgeSplit"].split_angle = 0
+            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="EdgeSplit")
+
             # get verts and faces
             out_verts=[]
             out_faces=[]
-            for face in wrap_obj.data.polygons:
-                oface=[]   
+            for face in new_obj.data.polygons:
 
                 for vert, loop in zip(face.vertices, face.loop_indices):
-                    coord = wrap_obj.data.vertices[vert].normal
-                    normal = wrap_obj.data.vertices[vert].co
-                    uv = wrap_obj.data.uv_layers.active.data[loop].uv
-                    out_verts.append((uv.x, 0, uv.y))
-                    oface.append(loop)
+                    coord = new_obj.data.vertices[vert].normal
+                    normal = new_obj.data.vertices[vert].co
+                    uv = new_obj.data.uv_layers.active.data[loop].uv
+                    new_obj.data.vertices[vert].co = (uv.x, 0, uv.y)
+                    #out_verts.append((uv.x, 0, uv.y))
+                    #oface.append(loop)
 
-                out_faces.append(oface)
+                #out_faces.append(oface)
 
-            # create mesh
-            new_obj.data.from_pydata(out_verts, [], out_faces)
+
+            #new_obj.data.from_pydata(out_verts, [], out_faces)
             new_obj.data.update()
+
+            #for face in new_obj.data.polygons:
+                #wrap_obj.data.polygons[]
 
         return {'FINISHED'}
 
