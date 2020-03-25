@@ -100,7 +100,7 @@ out_obj = hou.node('/out')
 cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
 
 if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
-    choice = hou.ui.displayMessage("Save the current hip file?", buttons=("Lock", "Unlock"))
+    choice = hou.ui.displayMessage("Lock?", buttons=("Lock", "Unlock"))
 
     for obj_node in sel_nodes:
         if obj_node.type().name() == "geo":
