@@ -240,7 +240,7 @@ class MFTMorfCreator(bpy.types.Operator):
         mifthTools = scene.mifthTools
 
         if len(context.selected_objects):
-            objAct = scene.objects.active
+            objAct = context.active_object
             morfIndex = 1
 
             # print(objAct.data.shape_keys)
