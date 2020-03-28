@@ -6,17 +6,17 @@ from bpy.types import Menu, Panel, UIList, PropertyGroup
 from bpy.props import StringProperty, BoolProperty, IntProperty, CollectionProperty, BoolVectorProperty, PointerProperty
 
 
-class MFTVertexPaintMenu(bpy.types.Menu):
-    bl_idname = "mftv.vertex_paint_menu"
-    bl_label = "Mifth VertexPaint"
-    bl_description = "Mifth Vertex Paint Menu"
+#class MFTVertexPaintMenu(bpy.types.Menu):
+    #bl_idname = "mftv.vertex_paint_menu"
+    #bl_label = "Mifth VertexPaint"
+    #bl_description = "Mifth Vertex Paint Menu"
 
-    def draw(self, context):
-        layout = self.layout
+    #def draw(self, context):
+        #layout = self.layout
 
-        #layout.separator()
-        layout.operator(MFTSetColorToSelected.bl_idname)
-        layout.operator(MFTInvertColors.bl_idname)
+        ##layout.separator()
+        #layout.operator(MFTSetColorToSelected.bl_idname)
+        #layout.operator(MFTInvertColors.bl_idname)
 
 
 class MFTSetColorToSelected(bpy.types.Operator):
@@ -40,7 +40,7 @@ class MFTSetColorToSelected(bpy.types.Operator):
 
     def execute(self, context):
 
-        obj = context.scene.objects.active
+        obj = context.view_layer.objects.active
         color_layer = obj.data.vertex_colors.active
 
         if self.ch_col is False:
@@ -81,7 +81,7 @@ class MFTInvertColors(bpy.types.Operator):
 
     def execute(self, context):
 
-        obj = context.scene.objects.active
+        obj = context.view_layer.objects.active
         color_layer = obj.data.vertex_colors.active
 
         i = 0

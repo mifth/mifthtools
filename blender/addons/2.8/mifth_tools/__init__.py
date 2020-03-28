@@ -47,30 +47,9 @@ from bpy.props import *
 
 
 # registration
-def menu_vertex_paint_func(self, context):
-    self.layout.separator()
-    self.layout.menu(mifth_vertex_paint.MFTVertexPaintMenu.bl_idname)
-
-
-#def register():
-    #bpy.types.VIEW3D_MT_paint_vertex.append(menu_vertex_paint_func)
-
-
-
-#def unregister():
-    #import bpy
-
-    #bpy.types.VIEW3D_MT_object_specials.remove(menu_vertex_paint_func)
-
-    #del bpy.types.Scene.mifthTools
-    #del bpy.types.Scene.mifthCloneTools
-    ## del bpy.mifthTools
-    ## del bpy.mifthCloneTools
-    #bpy.utils.unregister_module(__name__)
-
-
-#if __name__ == "__main__":
-    #register()
+#def menu_vertex_paint_func(self, context):
+    #self.layout.separator()
+    #self.layout.menu(mifth_vertex_paint.MFTVertexPaintMenu.bl_idname)
 
 
 class MFTProperties(bpy.types.PropertyGroup):
@@ -162,6 +141,7 @@ classes = (
     mifth_tools_ui.MFT_PT_PanelAnimation,
     mifth_tools_ui.MFT_PT_PanelPlaykot,
     mifth_tools_ui.MFT_PT_PanelCloning,
+    mifth_tools_ui.MFT_PT_PanelVertexPaint,
     mifth_tools_base.MFTOutputCreator,
     mifth_tools_base.MFTSceneRender2X,
     mifth_tools_base.MFTCropNodeRegion,
@@ -175,6 +155,8 @@ classes = (
     mifth_tools_cloning.MFTRadialClone,
     mifth_tools_cloning.MFTGroupInstance,
     mifth_tools_cloning.MFTGroupToMesh,
+    mifth_vertex_paint.MFTSetColorToSelected,
+    mifth_vertex_paint.MFTInvertColors,
     MFTProperties,
 )
 

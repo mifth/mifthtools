@@ -777,8 +777,8 @@ class MFTGroupToMesh(bpy.types.Operator):
     def execute(self, context):
 
         bpy.ops.object.duplicates_make_real()
-        bpy.ops.object.make_single_user(object=True, obdata=True, material=False, texture=False, animation=False)
-        
+        bpy.ops.object.make_single_user(object=True, obdata=True)
+
         objs = context.selected_objects
         objs_names = [i.name for i in objs]
 
@@ -791,7 +791,7 @@ class MFTGroupToMesh(bpy.types.Operator):
             elif obj.type == 'MESH':
                 if obj.scale[0] < 0 or obj.scale[1] < 0 or obj.scale[2] < 0:
                     for face in obj.data.polygons:
-                        face.select_set(True)
+                        face.select = True
 
                     context.view_layer.objects.active = obj
                     bpy.ops.object.mode_set(mode = 'EDIT')
@@ -799,6 +799,5 @@ class MFTGroupToMesh(bpy.types.Operator):
                     bpy.ops.object.mode_set(mode = 'OBJECT')
 
         bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-
 
         return {'FINISHED'}

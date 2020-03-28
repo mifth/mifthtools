@@ -131,3 +131,19 @@ class MFT_PT_PanelCloning(bpy.types.Panel):
         layout.separator()
 
         layout.operator("mft.group_to_mesh", text="Groups To Mesh")
+
+
+class MFT_PT_PanelVertexPaint(bpy.types.Panel):
+    bl_label = "Vertex Paint"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_context = "vertexpaint"
+    bl_category = 'Mifth'
+    # bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mifthTools = bpy.context.scene.mifthTools
+
+        layout.operator("mftv.set_colors_to_selected", text="Set Colors")
+        layout.operator("mftv.invert_colors", text="Invert Colors")

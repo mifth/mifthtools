@@ -267,12 +267,14 @@ class MFTMorfCreator(bpy.types.Operator):
 
                         modifiedMesh = obj.data
                         if mifthTools.morfApplyModifiers is True:
-                            modifiedMesh = obj.to_mesh(
-                                scene=context.scene, apply_modifiers=True, settings='PREVIEW')
+                            #modifiedMesh = obj.to_mesh()
+                            depsgraph = bpy.context.evaluated_depsgraph_get()
+                            object_eval = obj.evaluated_get(depsgraph)
+                            modifiedMesh = bpy.data.meshes.new_from_object(object_eval)
 
                         for vert in modifiedMesh.vertices:
                             if mifthTools.morfUseWorldMatrix:
-                                shapeKey.data[vert.index].co = obj.matrix_world * vert.co
+                                shapeKey.data[vert.index].co = obj.matrix_world @ vert.co
                             else:
                                 shapeKey.data[vert.index].co = vert.co
                             # print(vert.co)  # this is a vertex coord of the
