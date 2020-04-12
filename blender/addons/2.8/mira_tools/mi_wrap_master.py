@@ -189,7 +189,12 @@ class MI_OT_Wrap_Master(bpy.types.Operator):
 
                 if self.copy_objects:
                     # create new object
-                    new_mesh = bpy.data.meshes.new_from_object(the_obj, preserve_all_data_layers=True)
+                    #new_mesh = bpy.data.meshes.new_from_object(the_obj, preserve_all_data_layers=True)
+
+                    depsgraph = bpy.context.evaluated_depsgraph_get()
+                    object_eval = the_obj.evaluated_get(depsgraph)
+                    new_mesh = bpy.data.meshes.new_from_object(object_eval)
+
                     new_obj = bpy.data.objects.new(wrap_obj.name + '_WRAP', new_mesh)
                     context.scene.collection.objects.link(new_obj)
                     new_obj.select_set(True)
