@@ -51,7 +51,7 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
 
     def execute(self, context):
         # check issues
-        if not context.selected_objects and not meshes_array:
+        if not context.selected_objects:
             self.report({'WARNING'}, "Please, Select Circle Objects for Loops and Add Some Hipoly Objects!")
             return {'CANCELLED'}
         elif len(context.selected_objects) == 1:
@@ -70,6 +70,11 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
 
             for obj in sel_objs:
                 obj.hide_viewport = False
+
+        # check issues
+        if not meshes_array:
+            self.report({'WARNING'}, "Please, Select Circle Objects for Loops and Add Some Hipoly Objects!")
+            return {'CANCELLED'}
 
         generic_sel_objs = []
 
