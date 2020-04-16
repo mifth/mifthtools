@@ -56,6 +56,8 @@ class MI_Simple_Extrude(bpy.types.Operator):
 
     tool_mode = 'IDLE'  # IDLE, EXTRUDE, INSET
 
+    old_auto_merge = None  # fix for crash
+
 
     def invoke(self, context, event):
         clean(self)
@@ -65,6 +67,8 @@ class MI_Simple_Extrude(bpy.types.Operator):
             args = (self, context)
 
             active_obj = context.active_object
+            self.old_auto_merge = bpy.context.scene.tool_settings.use_mesh_automerge
+            context.scene.tool_settings.use_mesh_automerge = False
 
             # fix some essues. Just go to ObjectMode then o Edit Mode
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
@@ -308,6 +312,8 @@ class MI_Simple_Extrude(bpy.types.Operator):
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
             bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
+            context.scene.tool_settings.use_mesh_automerge = self.old_auto_merge
+
             bpy.types.SpaceView3D.draw_handler_remove(self.mi_extrude_handle_2d, 'WINDOW')
             context.area.header_text_set(None)
 
@@ -329,6 +335,8 @@ def clean(self):
     self.zero_x_verts = []
     self.zero_y_verts = []
     self.zero_z_verts = []
+
+    self.old_auto_merge = None
 
 
 # calculate Move Size
