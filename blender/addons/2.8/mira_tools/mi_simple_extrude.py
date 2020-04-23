@@ -71,8 +71,8 @@ class MI_Simple_Extrude(bpy.types.Operator):
             context.scene.tool_settings.use_mesh_automerge = False
 
             # fix some essues. Just go to ObjectMode then o Edit Mode
-            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-            bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+            #bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            #bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
             bm = bmesh.from_edit_mesh(active_obj.data)
 
