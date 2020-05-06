@@ -13,6 +13,7 @@ import math
 import mathutils as mathu
 import random
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 
 def get_obj_dup_meshes(obj_snap_mode, convert_instances, context, add_active_obj=False):
@@ -30,13 +31,15 @@ def get_obj_dup_meshes(obj_snap_mode, convert_instances, context, add_active_obj
         objects_array.append(active_obj)
 
     listObjMatrix = []
+    depsgraph = context.evaluated_depsgraph_get()
+
     for obj in objects_array:
+        BVHTree.FromObject(obj, depsgraph)  # Update BVHTree (FIX)
         if obj.type == 'MESH':
             listObjMatrix.append((obj, obj.matrix_world.copy()))
 
     # convert particles and dupligroups
     if convert_instances is True:
-        depsgraph = context.evaluated_depsgraph_get()
         for dup in depsgraph.object_instances:
             if dup.is_instance:  # Real dupli instance
                 obj_dupli = dup.instance_object

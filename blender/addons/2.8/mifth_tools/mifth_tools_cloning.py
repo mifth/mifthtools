@@ -28,6 +28,7 @@ from mathutils import *
 
 from math import isclose
 from mathutils import Matrix, Vector
+from mathutils.bvhtree import BVHTree
 
 # bpy.mifthCloneTools = dict()
 
@@ -313,12 +314,14 @@ def mft_selected_objects_and_duplis(self, context):
     """Loop over (object, matrix) pairs (mesh only)"""
 
     listObjMatrix = []
+    depsgraph = context.evaluated_depsgraph_get()
+
     for obj in self.drawOnObjects:
+        BVHTree.FromObject(obj, depsgraph)  # Update BVHTree (FIX)
         if obj.type == 'MESH':
             listObjMatrix.append((obj, obj.matrix_world.copy()))
 
         # convert particles and dupligroups
-        depsgraph = context.evaluated_depsgraph_get()
         for dup in depsgraph.object_instances:
             if dup.is_instance:  # Real dupli instance
                 obj_dupli = dup.instance_object
