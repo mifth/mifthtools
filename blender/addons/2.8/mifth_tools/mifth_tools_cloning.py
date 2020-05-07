@@ -317,8 +317,8 @@ def mft_selected_objects_and_duplis(self, context):
     depsgraph = context.evaluated_depsgraph_get()
 
     for obj in self.drawOnObjects:
-        BVHTree.FromObject(obj, depsgraph)  # Update BVHTree (FIX)
         if obj.type == 'MESH':
+            #BVHTree.FromObject(obj, depsgraph)  # Update BVHTree (FIX)
             listObjMatrix.append((obj, obj.matrix_world.copy()))
 
         # convert particles and dupligroups

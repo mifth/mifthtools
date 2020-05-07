@@ -21,6 +21,8 @@ def get_obj_dup_meshes(obj_snap_mode, convert_instances, context, add_active_obj
 
     objects_array = None
     active_obj = context.active_object
+    sel_objs = context.selected_objects
+
     if obj_snap_mode == 'Selected':
         objects_array = [obj for obj in context.selected_objects if obj != active_obj]
     else:
@@ -33,9 +35,12 @@ def get_obj_dup_meshes(obj_snap_mode, convert_instances, context, add_active_obj
     listObjMatrix = []
     depsgraph = context.evaluated_depsgraph_get()
 
+    # Add objects for raycast
     for obj in objects_array:
-        BVHTree.FromObject(obj, depsgraph)  # Update BVHTree (FIX)
         if obj.type == 'MESH':
+            if context.mode == 'EDIT_MESH' and obj in sel_objs:
+                BVHTree.FromObject(obj, depsgraph)  # Update BVHTree for selected objects in Edit Mode (FIX)
+
             listObjMatrix.append((obj, obj.matrix_world.copy()))
 
     # convert particles and dupligroups
