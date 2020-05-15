@@ -8,7 +8,7 @@ h.pane.gview.toggle_wireshaded	"Toggle Wireframe/Shaded"	"Toggle wireframe/shade
 h.pane.gview.state.select.move	"Move Tool"	"Invoke the move tool"	 W
 h.pane.gview.tool:sop_polybevel::2.0	PolyBevel	"Shelf Tool: PolyBevel"	 Ctrl+B
 h.pane.gview.tool:sop_edgeloop	"Edge Loop"	"Shelf Tool: Edge Loop"	 Ctrl+R
-h.pane.gview.tool:hard_gun_prim	Prim	"Shelf Tool: Prim"	 Shift+A
+h.pane.gview.tool:hard_gun_prim	Prim	"Shelf Tool: Prim"	 Alt+A
 HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines	sidefx_rbdconstraintsfromlines	""
 HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate	"sidefx_rbdconstraintsfromlines.pystate Operation"	"These keys apply to the sidefx_rbdconstraintsfromlines.pystate operation."
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate.toggle_tweak	"Toggle Transform Handle"	"Toggle Transform Handle"	 2
@@ -38,6 +38,7 @@ h.pane.gview.state.sop.sidefx_rbdconstraintsfromcurves.pystate.toggle_draw	"Togg
 h.pane.gview.state.sop.sidefx_bend.bend	Bending	"Modulate bend parameter with mouse wheel"	 1
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate.toggle_edit	"Toggle Hinge Edits"	"Toggle Hinge Edits"	 4
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate.toggle_draw	"Toggle Curve/Hinge Mode"	"Toggle Curve/Hinge Mode"	 1
+h.pane.gview.model.seltypegroups	"Select Groups"	"Select geometry groups"	 9 Pad9 Alt+D
 h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.cycle_brushes	"Cycle brushes"	"Cycle stroke tools"	 1
 h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.set_viewport_brush	"Set viewport brush"	"Set viewport brush"	 3
 h.pane.gview.tool:sop_polysplit::2.0	PolySplit	"Shelf Tool: PolySplit"	 Alt+R
