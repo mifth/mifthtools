@@ -194,7 +194,7 @@ if cur_obj.childTypeCategory().name() == 'Object':
 
     is_new_obj = True
 
-choice = hou.ui.displayMessage("Mirror?", buttons=("Curve", "Box", "Tube", "Sphere", "Grid", "Circle"))
+choice = hou.ui.displayMessage("Primitive:", buttons=("Curve", "Box", "Tube", "Sphere", "Grid", "Circle"))
 
 cur_snap = viewer.snappingMode()
 viewer.setSnappingMode(hou.snappingMode.Prim)

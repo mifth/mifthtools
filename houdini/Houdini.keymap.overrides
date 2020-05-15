@@ -1,72 +1,58 @@
-h.pane.closetab	"Close Tab"	"Close tab"	
-HCONTEXT	h.pane.gview.state.sop.sidefx_bend	"sidefx_bend Operation"	"These keys apply to the sidefx_bend operation."
-h.pane.gview.state.sop.sidefx_bend.squish	Squishing	"Modulate squish parameter with mouse wheel"	 5
-h.pane.gview.state.sop.sidefx_bend.length	"Length Scaling"	"Modulate length scale parameter with mouse wheel"	 3
-h.pane.gview.state.sop.sidefx_bend.twist	Twisting	"Modulate twist parameter with mouse wheel"	 2
-HCONTEXT	h.pane.gview.state.sop.sidefx_rbdpaintstroke	sidefx_rbdpaintstroke	""
-HCONTEXT	h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate	"sidefx_rbdpaintstroke.pystate Operation"	"These keys apply to the sidefx_rbdpaintstroke.pystate operation."
-h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.log_state	"Log state"	"Log state attributes"	 8
-h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.set_wireframe_brush	"Set wireframe brush"	"Set wireframe brush"	 2
-h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.realtime_mode	realtime	"Enable realtime mode"	 0
+h.pane.gview.state.view.set_pivot_and_center	"Set Pivot And Center"	"Set pivot and center view to geometry under the cursor"	
+gplay.quit	Quit	Quit	 Ctrl+Q
+mplay.quit	Quit	Quit	 Ctrl+Q
+h.pane.gview.tool:edges_to_face	EdgesToFace	"Shelf Tool: EdgesToFace"	 Ctrl+F
+h.pane.gview.repeat_current_branch	"Repeat Current Operation Branched"	"Quick-repeat current operation branched"	 Ctrl+Shift+Q
+h.pane.gview.repeat_current	"Repeat Current Operation"	"Quick-repeat current operation"	 Shift+Q
+h.pane.gview.toggle_wireshaded	"Toggle Wireframe/Shaded"	"Toggle wireframe/shaded"	 Ctrl+W
+h.pane.gview.state.select.move	"Move Tool"	"Invoke the move tool"	 W
+h.pane.gview.tool:sop_polybevel::2.0	PolyBevel	"Shelf Tool: PolyBevel"	 Ctrl+B
+h.pane.gview.tool:sop_edgeloop	"Edge Loop"	"Shelf Tool: Edge Loop"	 Ctrl+R
+h.pane.gview.tool:hard_gun_prim	Prim	"Shelf Tool: Prim"	 Shift+A
+HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines	sidefx_rbdconstraintsfromlines	""
+HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate	"sidefx_rbdconstraintsfromlines.pystate Operation"	"These keys apply to the sidefx_rbdconstraintsfromlines.pystate operation."
+h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate.toggle_tweak	"Toggle Transform Handle"	"Toggle Transform Handle"	 2
+h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate.toggle_enable	"Toggle Enable Line"	"Toggle Enable Line"	 3
 HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromcurves	sidefx_rbdconstraintsfromcurves	""
 HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromcurves.pystate	"sidefx_rbdconstraintsfromcurves.pystate Operation"	"These keys apply to the sidefx_rbdconstraintsfromcurves.pystate operation."
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromcurves.pystate.toggle_tweak	"Toggle Transform Handle"	"Toggle Transform Handle"	 2
-HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines	sidefx_rbdconstraintsfromlines	""
-HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate	"sidefx_rbdconstraintsfromlines.pystate Operation"	"These keys apply to the sidefx_rbdconstraintsfromlines.pystate operation."
-h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate.toggle_enable	"Toggle Enable Line"	"Toggle Enable Line"	 3
-h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate.toggle_tweak	"Toggle Transform Handle"	"Toggle Transform Handle"	 2
-h.pane.gview.tool:sop_edgeloop	"Edge Loop"	"Shelf Tool: Edge Loop"	 Ctrl+R
-h.pane.gview.tool:sop_polybevel::2.0	PolyBevel	"Shelf Tool: PolyBevel"	 Ctrl+B
-h.pane.gview.state.select.move	"Move Tool"	"Invoke the move tool"	 W
-h.pane.gview.toggle_wireshaded	"Toggle Wireframe/Shaded"	"Toggle wireframe/shaded"	 Ctrl+W
-h.pane.gview.repeat_current	"Repeat Current Operation"	"Quick-repeat current operation"	 Shift+Q
-h.pane.gview.repeat_current_branch	"Repeat Current Operation Branched"	"Quick-repeat current operation branched"	 Ctrl+Shift+Q
-h.pane.gview.tool:edges_to_face	EdgesToFace	"Shelf Tool: EdgesToFace"	 Ctrl+F
-mplay.quit	Quit	Quit	 Ctrl+Q
-gplay.quit	Quit	Quit	 Ctrl+Q
-HCONTEXT	h.pane.gview.state.lop.sidefx_lop_edit	"sidefx_lop_edit Operation"	"These keys apply to the sidefx_lop_edit operation."
-h.pane.gview.state.lop.sidefx_lop_edit.start_prim_selector	start_prim_selector	start_prim_selector	 1
-h.pane.gview.state.lop.sidefx_lop_edit.collisions	Collisions	"Collide Against Other Primitives"	 Shift+C
-h.pane.gview.state.lop.sidefx_lop_edit.trace	"Trace callbacks"	"Enable trace for callbacks"	 6
-h.pane.gview.state.lop.sidefx_lop_edit.log_state	"Log state"	"Log state attributes"	 8
-HCONTEXT	h.pane.gview.state.lop.stagemanager	"stagemanager Operation"	"These keys apply to the stagemanager operation."
-h.pane.gview.state.lop.stagemanager.log_state	"Log state"	"Log state attributes"	 8
-HCONTEXT	h.pane.gview.state.sop.sidefx_stroke	"sidefx_stroke Operation"	"These keys apply to the sidefx_stroke operation."
+HCONTEXT	h.pane.gview.state.sop.sidefx_rbdpaintstroke	sidefx_rbdpaintstroke	""
+HCONTEXT	h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate	"sidefx_rbdpaintstroke.pystate Operation"	"These keys apply to the sidefx_rbdpaintstroke.pystate operation."
+h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.realtime_mode	realtime	"Enable realtime mode"	 0
+h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.set_wireframe_brush	"Set wireframe brush"	"Set wireframe brush"	 2
+h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.log_state	"Log state"	"Log state attributes"	 8
+HCONTEXT	h.pane.gview.state.sop.sidefx_bend	"sidefx_bend Operation"	"These keys apply to the sidefx_bend operation."
+h.pane.gview.state.sop.sidefx_bend.twist	Twisting	"Modulate twist parameter with mouse wheel"	 2
+h.pane.gview.state.sop.sidefx_bend.length	"Length Scaling"	"Modulate length scale parameter with mouse wheel"	 3
+h.pane.gview.state.sop.sidefx_bend.squish	Squishing	"Modulate squish parameter with mouse wheel"	 5
+h.pane.closetab	"Close Tab"	"Close tab"	
 h.pane.gview.state.sop.sidefx_stroke.set_viewport_brush	"Set viewport brush"	"Set viewport brush"	 3
 HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromrules	sidefx_rbdconstraintsfromrules	""
 HCONTEXT	h.pane.gview.state.sop.sidefx_rbdconstraintsfromrules.pystate	"sidefx_rbdconstraintsfromrules.pystate Operation"	"These keys apply to the sidefx_rbdconstraintsfromrules.pystate operation."
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromrules.pystate.show_hinge_edit	"Toggle Transform Handle"	"Toggle Transform Handle"	 2
 h.pane.gview.tool:sop_polyextrude::2.0	PolyExtrude	"Shelf Tool: PolyExtrude"	 Ctrl+E
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromrules.pystate.show_bbox_handle	"Toggle BBox Handle"	"Toggle BBox Handle"	 3
-h.pane.gview.state.lop.sidefx_lop_edit.duplicate	Duplicate	"Duplicate the Selected Primitives"	 Shift+D
 h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.debug_msg	"Debug messages"	"Enable debug messages"	 7
-h.pane.gview.state.lop.sidefx_lop_edit.reload_state	"Reload state"	"Reload state"	 9
 h.pane.gview.state.sop.sidefx_bend.taper	Tapering	"Modulate taper parameter with mouse wheel"	 4
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromcurves.pystate.toggle_draw	"Toggle Curve/Hinge Mode"	"Toggle Curve/Hinge Mode"	 1
 h.pane.gview.state.sop.sidefx_bend.bend	Bending	"Modulate bend parameter with mouse wheel"	 1
-h.pane.gview.state.view.set_pivot_and_center	"Set Pivot And Center"	"Set pivot and center view to geometry under the cursor"	
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate.toggle_edit	"Toggle Hinge Edits"	"Toggle Hinge Edits"	 4
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromlines.pystate.toggle_draw	"Toggle Curve/Hinge Mode"	"Toggle Curve/Hinge Mode"	 1
 h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.cycle_brushes	"Cycle brushes"	"Cycle stroke tools"	 1
 h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.set_viewport_brush	"Set viewport brush"	"Set viewport brush"	 3
-h.pane.gview.state.lop.sidefx_lop_edit.prune	Prune	"Prune the Selected Primitives"	 Del
 h.pane.gview.tool:sop_polysplit::2.0	PolySplit	"Shelf Tool: PolySplit"	 Alt+R
 h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.reload_state	"Reload state"	"Reload state"	 9
 h.pane.gview.tool:merge_verts	"Merge Verts"	"Shelf Tool: Merge Verts"	 Alt+C
-h.pane.gview.state.lop.stagemanager.reload_state	"Reload state"	"Reload state"	 9
 h.pane.gview.state.new_select	"Select Tool"	"Invoke the select tool"	 Q
 h.pane.gview.tool:object_pose	"Pose Tool"	"Invoke the pose tool"	 Ctrl+Shift+R
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromcurves.pystate.toggle_enable	"Toggle Enable Curve"	"Toggle Enable Curve"	 3
-h.pane.gview.state.sop.sidefx_stroke.cycle_brushes	"Cycle brushes"	"Cycle stroke tools"	 1
 h.pane.gview.state.view.set_pivot	"Set Pivot"	"Set pivot to geometry under the cursor"	 Z
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromrules.pystate.toggle	"Toggle Handles"	"Toggle Handles"	 Z
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromrules.pystate.toggle_edit	"Toggle Hinge Edits"	"Toggle Hinge Edits"	 4
 h.pane.copytab	"Copy Tab"	"Copy tab"	
 h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.trace	"Trace callbacks"	"Enable trace for callbacks"	 6
 h.find	"Find Operator"	"Find operator"	 Alt+F
-h.pane.gview.state.lop.stagemanager.debug_msg	"Debug messages"	"Enable debug messages"	 7
 h.pane.maximize_full	Maximize	"Toggle pane full screen"	 Alt+\\'
-h.pane.gview.state.lop.stagemanager.trace	"Trace callbacks"	"Enable trace for callbacks"	 6
 h.pane.wsheet.bypass_mode	"Set Bypass Flag"	"Hold this key and select a node to toggle the bypass flag value"	 B
 h.pane.gview.state.sop.sidefx_stroke.set_wireframe_brush	"Set wireframe brush"	"Set wireframe brush"	 2
 h.pane.gview.tool:hard_gun_view_subdive	"View Subdive"	"Shelf Tool: View Subdive"	 Ctrl+~
@@ -74,8 +60,6 @@ h.pane.gview.tool:hard_gun_view_subdive_2	"View Subdive 2"	"Shelf Tool: View Sub
 h.pane.gview.state.sop.sidefx_rbdconstraintsfromcurves.pystate.toggle_edit	"Toggle Hinge Edits"	"Toggle Hinge Edits"	 4
 h.pane.gview.state.view.cycle_view_context	"Cycle View Context"	"Cycle view context"	 Alt+Z
 h.copy	Copy	"Copy selection"	 Ctrl+C
-h.pane.gview.state.lop.sidefx_lop_edit.debug_msg	"Debug messages"	"Enable debug messages"	 7
 h.pane.gview.state.select.scale	"Scale Tool"	"Invoke the scale tool"	 R
 h.pane.gview.state.select.rotate	"Rotate Tool"	"Invoke the rotate tool"	 E
-h.pane.gview.state.sop.sidefx_stroke.realtime_mode	realtime	"Enable realtime mode"	 0
 h.quit	Quit	"Quit the appication"	 Ctrl+Q
