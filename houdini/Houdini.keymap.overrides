@@ -52,6 +52,7 @@ h.pane.gview.state.sop.sidefx_rbdconstraintsfromrules.pystate.toggle_edit	"Toggl
 h.pane.copytab	"Copy Tab"	"Copy tab"	
 h.pane.gview.state.sop.sidefx_rbdpaintstroke.pystate.trace	"Trace callbacks"	"Enable trace for callbacks"	 6
 h.find	"Find Operator"	"Find operator"	 Alt+F
+h.pane.gview.tool:hard_gun_merge	Merge	"Shelf Tool: Merge"	 Shift+M
 h.pane.maximize_full	Maximize	"Toggle pane full screen"	 Alt+\\'
 h.pane.wsheet.bypass_mode	"Set Bypass Flag"	"Hold this key and select a node to toggle the bypass flag value"	 B
 h.pane.gview.state.sop.sidefx_stroke.set_wireframe_brush	"Set wireframe brush"	"Set wireframe brush"	 2

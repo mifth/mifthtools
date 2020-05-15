@@ -441,6 +441,9 @@ dis.setCurrent(True, clear_all_selected=True)]]></script>
     <toolMenuContext name="cop_viewer">
       <contextNetType>COP2</contextNetType>
     </toolMenuContext>
+    <toolMenuContext name="network">
+      <contextNetType>SOP</contextNetType>
+    </toolMenuContext>
     <script scriptType="python"><![CDATA[sel_nodes = hou.selectedNodes()
 
 if sel_nodes and len(sel_nodes) > 1:
