@@ -143,7 +143,7 @@ class EX_ExportScene(bpy.types.Operator):
             if self.export_type == 'FBX':
                 bpy.ops.export_scene.fbx(filepath=model_path, check_existing=True, axis_forward='-Z', axis_up='Y', use_selection=True, global_scale=self.world_scale, apply_unit_scale=True, bake_space_transform=True, use_mesh_modifiers=apply_modifiers, use_custom_props=True)
             else:
-                bpy.ops.export_scene.obj(filepath=model_path, check_existing=True, use_selection=True, use_mesh_modifiers=apply_modifiers, use_edges=True, use_normals=True, use_uvs=True, use_vertex_groups=False, use_blen_objects=True, keep_vertex_order=True, global_scale=self.world_scale)
+                bpy.ops.export_scene.obj(filepath=model_path, check_existing=True, use_selection=True, use_mesh_modifiers=apply_modifiers, use_edges=True, use_normals=True, use_uvs=True, use_vertex_groups=False, use_blen_objects=True, keep_vertex_order=True, global_scale=self.world_scale, bake_anim=False, bake_anim_use_all_actions=False)
 
 
             # revert render level of modifiers back
