@@ -402,10 +402,11 @@ class MI_MakePrimitive(bpy.types.Operator):
                         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 
                     # apply/fix rotation
-                    if round(math.degrees(his_obj[0].rotation_euler.x)) in {-0.0, 0.0, 90.0, 180.0, -180.0, -90.0}:
-                        if round(math.degrees(his_obj[0].rotation_euler.y)) in {-0.0, 0.0, 90.0, 180.0, -180.0, -90.0}:
-                            if round(math.degrees(his_obj[0].rotation_euler.z)) in {-0.0, 0.0, 90.0, 180.0, -180.0, -90.0}:
-                                bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+                    if self.prim_type != 'Clone':
+                        if round(math.degrees(his_obj[0].rotation_euler.x)) in {-0.0, 0.0, 90.0, 180.0, -180.0, -90.0}:
+                            if round(math.degrees(his_obj[0].rotation_euler.y)) in {-0.0, 0.0, 90.0, 180.0, -180.0, -90.0}:
+                                if round(math.degrees(his_obj[0].rotation_euler.z)) in {-0.0, 0.0, 90.0, 180.0, -180.0, -90.0}:
+                                    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
 
                 bpy.context.scene.cursor.location = cursor_origin
                 bpy.ops.object.select_all(action='DESELECT')
