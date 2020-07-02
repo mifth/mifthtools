@@ -51,11 +51,12 @@ class EX_MainPanel(bpy.types.Panel):
 
         row = layout.row()
         op = col.operator("ex_export.exchanger", text="ExportHoudini")
-        op.import_type = 'FBX'
+        op.export_type = 'FBX'
         op.world_scale = 0.01
         op = col.operator("ex_import.exchanger", text="ImportHoudini")
-        op.world_scale = 100.0
         op.import_type = 'FBX'
+        op.world_scale = 100.0
+        
 
         layout.separator()
         op = col.operator("ex_export.exchanger", text="Export Obj")
