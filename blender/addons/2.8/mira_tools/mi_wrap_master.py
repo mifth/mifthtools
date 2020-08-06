@@ -59,7 +59,7 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
 
             bpy.ops.object.modifier_add(type='EDGE_SPLIT')
             bpy.context.object.modifiers["EdgeSplit"].split_angle = 0
-            bpy.ops.object.modifier_apply(apply_as='DATA', modifier="EdgeSplit")
+            bpy.ops.object.modifier_apply(modifier="EdgeSplit")
 
             # get verts and faces
             out_verts=[]

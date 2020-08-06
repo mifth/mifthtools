@@ -10,6 +10,8 @@
     <memberTool name="tool_2"/>
     <memberTool name="goz_fix"/>
     <memberTool name="recook1"/>
+    <memberTool name="increase_fov"/>
+    <memberTool name="decrease_fov"/>
   </toolshelf>
 
   <tool name="scale_100" label="Scale100" icon="SOP_xform">
@@ -142,5 +144,32 @@ if cur_obj.childTypeCategory().name() == 'Object' and sel_nodes:
 else:
     msg = 'Select Object Nodes!'
     hou.ui.displayMessage(msg)]]></script>
+  </tool>
+
+  <tool name="increase_fov" label="Increase FOV" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+cam = toolutils.sceneViewer().curViewport().defaultCamera()
+#sel_nodes = hou.selectedNodes()
+#geo = viewer.selectGeometry()
+#sel_str = geo.mergedSelectionString()
+#cur_obj = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).pwd()
+
+
+
+cam.setFocalLength(cam.focalLength() + 5)
+print(cam.focalLength())
+]]></script>
+  </tool>
+
+  <tool name="decrease_fov" label="Decrease FOV" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import soptoolutils
+import toolutils
+
+cam = toolutils.sceneViewer().curViewport().defaultCamera()
+
+cam.setFocalLength(cam.focalLength() - 5)
+print(cam.focalLength())]]></script>
   </tool>
 </shelfDocument>
