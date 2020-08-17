@@ -296,11 +296,11 @@ class MI_Simple_Extrude(bpy.types.Operator):
 
                         if self.zero_y_verts:
                             for v_id in self.zero_y_verts:
-                                zero_verts = bm.verts[v_id].co[0] = 0.0
+                                zero_verts = bm.verts[v_id].co[1] = 0.0
 
                         if self.zero_z_verts:
                             for v_id in self.zero_z_verts:
-                                zero_verts = bm.verts[v_id].co[0] = 0.0
+                                zero_verts = bm.verts[v_id].co[2] = 0.0
 
 
                     bm.normal_update()
