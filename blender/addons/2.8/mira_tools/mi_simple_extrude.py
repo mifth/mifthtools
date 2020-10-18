@@ -71,8 +71,8 @@ class MI_Simple_Extrude(bpy.types.Operator):
             context.scene.tool_settings.use_mesh_automerge = False
 
             # fix some essues. Just go to ObjectMode then o Edit Mode
-            #bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-            #bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+            bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
             bm = bmesh.from_edit_mesh(active_obj.data)
 
@@ -119,8 +119,6 @@ class MI_Simple_Extrude(bpy.types.Operator):
             # BASE
             #bpy.ops.mesh.inset(depth=0.0, thickness=0.0)
             bpy.ops.mesh.extrude_region_shrink_fatten(MESH_OT_extrude_region={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_shrink_fatten={"value":0, "use_even_offset":True})
-
-
 
             bm = bmesh.from_edit_mesh(active_obj.data)
             #bm.verts.index_update()
@@ -214,7 +212,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
                 self.tool_mode = 'EXTRUDE'
 
             elif self.tool_mode == 'EXTRUDE':
-                self.depth += delta
+                self.depth -= delta
 
                 #bm = bmesh.from_edit_mesh(active_obj.data)
                 #sel_faces = [f for f in bm.faces if f.select]
@@ -276,7 +274,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
                         vert_idx = self.extrude_verts_ids[i]
                         ex_dir = self.extrude_dirs[i][0].copy()
                         if self.tool_mode == 'EXTRUDE':
-                            ex_dir *= (self.depth + delta)
+                            ex_dir *= (self.depth - delta)
                         else:
                             ex_dir *= (self.depth)
 
