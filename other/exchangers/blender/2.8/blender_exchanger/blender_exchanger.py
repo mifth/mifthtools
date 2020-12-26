@@ -42,10 +42,10 @@ class EX_MainPanel(bpy.types.Panel):
 
         col = row.column()
 
-        col.operator("ex_export.exchanger", text="Export")
-        #op.world_scale = 1.0
-        col.operator("ex_import.exchanger", text="Import")
-        #op.world_scale = 1.0
+        op = col.operator("ex_export.exchanger", text="Export")
+        op.world_scale = 1.0
+        op = col.operator("ex_import.exchanger", text="Import")
+        op.world_scale = 1.0
 
         layout.separator()
 
