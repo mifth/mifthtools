@@ -25,7 +25,7 @@ class MFTSetColorToSelected(bpy.types.Operator):
     bl_description = "Set Colors to Selected"
     bl_options = {'REGISTER', 'UNDO'}
 
-    strength = FloatVectorProperty(
+    strength : FloatVectorProperty(
         name="Color",
         subtype='COLOR',
         default=(0.5, 0.5, 0.5),
@@ -33,8 +33,7 @@ class MFTSetColorToSelected(bpy.types.Operator):
         description="wire color of the group"
     )
 
-    selected_faces_only = BoolProperty(
-        name="Selected Faces Only", default=False)
+    selected_faces_only : BoolProperty(name="Selected Faces Only", default=False)
 
     ch_col = False
 
@@ -75,9 +74,8 @@ class MFTInvertColors(bpy.types.Operator):
     bl_description = "Invert Colors"
     bl_options = {'REGISTER', 'UNDO'}
 
-    selected_faces_only = BoolProperty(
-        name="Selected Vertices Only", default=True)
-    split_points = BoolProperty(name="Split Points", default=False)
+    selected_faces_only : BoolProperty(name="Selected Vertices Only", default=True)
+    split_points : BoolProperty(name="Split Points", default=False)
 
     def execute(self, context):
 
