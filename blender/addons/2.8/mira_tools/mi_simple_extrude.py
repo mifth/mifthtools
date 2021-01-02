@@ -345,7 +345,7 @@ def calc_move_size(self, context):
 
     view_dir_neg = rv3d.view_rotation @ Vector((0.0, 0.0, 1.0))
     move_test_1 = ut_base.get_mouse_on_plane(context, self.center, view_dir_neg, (reg_w / 2, reg_h / 2))
-    move_test_2 = ut_base.get_mouse_on_plane(context, self.center, view_dir_neg, ((reg_w / 2) + 1.0, reg_h / 2))
+    move_test_2 = ut_base.get_mouse_on_plane(context, self.center, view_dir_neg, ((reg_w / 2) + 4.0, reg_h / 2))  # Plus 4 pixels by X to change a horizontal distance
 
     return (move_test_1 - move_test_2).length
 
