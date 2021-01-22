@@ -347,7 +347,7 @@ def calc_move_size(self, context):
     move_test_1 = ut_base.get_mouse_on_plane(context, self.center, view_dir_neg, (reg_w / 2, reg_h / 2))
     move_test_2 = ut_base.get_mouse_on_plane(context, self.center, view_dir_neg, ((reg_w / 2) + 4.0, reg_h / 2))  # Plus 4 pixels by X to change a horizontal distance
 
-    return (move_test_1 - move_test_2).length
+    return (move_test_1 - move_test_2).length / 4.0  # It's divided to 4 because of 4 pixels offset in the move_test_2
 
 
 # Draw point in Viewport
