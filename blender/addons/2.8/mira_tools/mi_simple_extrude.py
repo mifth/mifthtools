@@ -81,7 +81,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
             # EXTRUDE TEST
             bpy.ops.ed.undo_push()
             #bpy.ops.mesh.inset(depth=1.0, thickness=0.0)
-            bpy.ops.mesh.extrude_region_shrink_fatten(MESH_OT_extrude_region={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_shrink_fatten={"value":-1, "use_even_offset":True})
+            bpy.ops.mesh.extrude_region_shrink_fatten(MESH_OT_extrude_region={"use_normal_flip":False, "mirror":False}, TRANSFORM_OT_shrink_fatten={"value":0.001, "use_even_offset":True})
             #bm = bmesh.from_edit_mesh(active_obj.data)
             bm.verts.ensure_lookup_table()
 
@@ -101,7 +101,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
 
             # INSET TEST
             bpy.ops.ed.undo_push()
-            bpy.ops.mesh.inset(depth=0.0, thickness=1.0)
+            bpy.ops.mesh.inset(depth=0.0, thickness=0.001)
             bm = bmesh.from_edit_mesh(active_obj.data)
             bm.verts.ensure_lookup_table()
 
@@ -163,8 +163,8 @@ class MI_Simple_Extrude(bpy.types.Operator):
                 p3 = verts_temp_3[i]
 
                 # set Extrude Dirs
-                dir_ex = p1 - p3
-                dir_ins = p2 - p3
+                dir_ex = (p1 - p3) * 1000.0
+                dir_ins = (p2 - p3) * 1000.0
                 self.extrude_dirs.append((dir_ex, dir_ins, p3))
 
             # Center Calculation
@@ -212,7 +212,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
                 self.tool_mode = 'EXTRUDE'
 
             elif self.tool_mode == 'EXTRUDE':
-                self.depth -= delta
+                self.depth += delta
 
                 #bm = bmesh.from_edit_mesh(active_obj.data)
                 #sel_faces = [f for f in bm.faces if f.select]
@@ -274,7 +274,7 @@ class MI_Simple_Extrude(bpy.types.Operator):
                         vert_idx = self.extrude_verts_ids[i]
                         ex_dir = self.extrude_dirs[i][0].copy()
                         if self.tool_mode == 'EXTRUDE':
-                            ex_dir *= (self.depth - delta)
+                            ex_dir *= (self.depth + delta)
                         else:
                             ex_dir *= (self.depth)
 
