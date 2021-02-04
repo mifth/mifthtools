@@ -873,6 +873,9 @@ def draw_callback_px(self, context):
     seg_1 = 0
     seg_2 = 0
 
+    c_orange = (1, 0.75, 0.1)
+    c_green = (0.1, 1, 0.1)
+
     if self.prim_type == 'Sphere':
         seg_1 = self.sphere_segments[0]
         seg_2 = self.sphere_segments[1]
@@ -885,8 +888,7 @@ def draw_callback_px(self, context):
 
     #Set font color
     bgl.glEnable(bgl.GL_BLEND)
-    #bgl.glColor(1, 0.75, 0.1, 1)
-    blf.color(0, 1, 0.75, 0.1, 1)
+    blf.color(0, c_orange[0], c_orange[1], c_orange[2], 1)
     bgl.glLineWidth(2)
 
     #Draw segments text
@@ -898,14 +900,26 @@ def draw_callback_px(self, context):
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, str(seg_2))
 
+    if self.orient_on_surface:
+        blf.color(0, c_green[0], c_green[1], c_green[2], 1)
+    else:
+        blf.color(0, c_orange[0], c_orange[1], c_orange[2], 1)
     blf.position(font_id, rw - 400, 210 - (font_size * 3 + 10), 0)
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, "Orient " + str(self.orient_on_surface))
 
+    if self.median_center:
+        blf.color(0, c_green[0], c_green[1], c_green[2], 1)
+    else:
+        blf.color(0, c_orange[0], c_orange[1], c_orange[2], 1)
     blf.position(font_id, rw - 400, 210 - (font_size * 4 + 10), 0)
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, "Median Center " + str(self.median_center))
 
+    if self.center_is_cursor:
+        blf.color(0, c_green[0], c_green[1], c_green[2], 1)
+    else:
+        blf.color(0, c_orange[0], c_orange[1], c_orange[2], 1)
     blf.position(font_id, rw - 400, 210 - (font_size * 5 + 10), 0)
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, "Center is 3D Cursor " + str(self.center_is_cursor))
