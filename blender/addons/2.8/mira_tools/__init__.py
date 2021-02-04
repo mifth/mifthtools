@@ -51,6 +51,7 @@ if "bpy" in locals():
     imp.reload(mi_unbevel)
     imp.reload(mi_retopo_loops)
     imp.reload(mi_snap_points)
+    imp.reload(mi_simple_modeling)
 
 else:
     from . import mi_curve_test
@@ -72,6 +73,7 @@ else:
     from . import mi_unbevel
     from . import mi_retopo_loops
     from . import mi_snap_points
+    from . import mi_simple_modeling
 
 
 import bpy
