@@ -68,7 +68,7 @@ def getGroups(scene, context):
 
     lst = []
     obj = context.active_object
-    for group in bpy.data.groups:
+    for group in bpy.data.collections:
         if obj is not None and obj.name in group.objects:
             lst.append((group.name, group.name, ""))
 
@@ -760,7 +760,7 @@ class MFTGroupInstance(bpy.types.Operator):
         scene = bpy.context.scene
         mifthCloneTools = scene.mifthCloneTools
 
-        obj_group = bpy.data.groups.get(mifthCloneTools.getGroupsLst)
+        obj_group = bpy.data.collections.get(mifthCloneTools.getGroupsLst)
         if obj_group is not None:
             obj_group.dupli_offset[
                 0] = bpy.context.space_data.cursor_location[0]
