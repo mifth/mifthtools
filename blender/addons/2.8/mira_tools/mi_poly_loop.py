@@ -454,6 +454,7 @@ def finish_work(self, context, bm):
 
 def mi_pl_draw_2d(self, context):
     active_obj = context.active_object
+    addon_prefs = context.preferences.addons[__package__].preferences
     if self.id_to_index:
-        c_widget.draw_2d_point(self.id_to_index[1][0], self.id_to_index[1][1], p_size=6, p_col=col_man.pl_point_col)
+        c_widget.draw_2d_point(self.id_to_index[1][0], self.id_to_index[1][1], p_size=addon_prefs.point_size, p_col=col_man.pl_point_col)
 

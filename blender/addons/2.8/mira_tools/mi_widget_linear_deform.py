@@ -111,6 +111,7 @@ shader2d = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 def draw_lw(context, lw, cross_up_dir, draw_faloff):
     region = context.region
     rv3d = context.region_data
+    addon_prefs = context.preferences.addons[__package__].preferences
 
     start_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, lw.start_point.position)
     end_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, lw.end_point.position)
@@ -122,8 +123,8 @@ def draw_lw(context, lw, cross_up_dir, draw_faloff):
 
     if start_2d and end_2d and end_p1 and end_p2:
         bgl.glEnable(bgl.GL_BLEND)
-        bgl.glLineWidth(1)
-        bgl.glPointSize(6)
+        bgl.glLineWidth(addon_prefs.line_size)
+        bgl.glPointSize(addon_prefs.point_size)
 
         coords = ((start_2d[0], start_2d[1]), (end_2d[0], end_2d[1]))
         batch = batch_for_shader(shader2d, 'LINE_STRIP', {"pos": coords})

@@ -355,7 +355,8 @@ def mi_extrude_draw_2d(self, context):
     if self.center:
         rv3d = context.region_data
         region = context.region
+        addon_prefs = context.preferences.addons[__package__].preferences
         point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.center)
 
         p_col = col_man.dre_point_base
-        c_widget.draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
+        c_widget.draw_2d_point(point_pos_2d.x, point_pos_2d.y, addon_prefs.point_size, p_col)

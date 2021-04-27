@@ -578,10 +578,11 @@ def mi_extrude_draw_2d(self, context):
     active_obj = context.active_object
     region = context.region
     rv3d = context.region_data
+    addon_prefs = context.preferences.addons[__package__].preferences
     point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, self.extrude_points[-1].position)
 
     p_col = col_man.dre_point_base
-    c_widget.draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
+    c_widget.draw_2d_point(point_pos_2d.x, point_pos_2d.y, addon_prefs.point_size, p_col)
 
 
 def get_previous_extrude_verts(bm, context, selected_verts):

@@ -60,9 +60,9 @@ def draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
     bgl.glDisable(bgl.GL_BLEND)
 
 
-def draw_3d_polyline(points, p_size, p_col, x_ray):
+def draw_3d_polyline(points, p_size, l_size, p_col, x_ray):
     bgl.glEnable(bgl.GL_BLEND)
-    bgl.glLineWidth(1)
+    bgl.glLineWidth(l_size)
 
     if x_ray is True:
         bgl.glDisable(bgl.GL_DEPTH_TEST)

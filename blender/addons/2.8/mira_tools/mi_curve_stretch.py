@@ -564,6 +564,7 @@ def mi_curve_draw_2d(self, context):
 
 def mi_curve_draw_3d(self, context):
     active_obj = context.active_object
+    addon_prefs = context.preferences.addons[__package__].preferences
     if self.all_curves:
         # test1
         region = context.region
@@ -571,13 +572,15 @@ def mi_curve_draw_3d(self, context):
         for curve in self.all_curves:
             for cur_point in curve.curve_points:
                 if cur_point.point_id in curve.display_bezier:
-                    c_widget.draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
+                    c_widget.draw_3d_polyline(curve.display_bezier[cur_point.point_id], addon_prefs.point_size, addon_prefs.line_size, col_man.cur_line_base, True)
 
 
 def draw_curve_2d(curves, active_cur, context):
     region = context.region
     rv3d = context.region_data
     curve_settings = context.scene.mi_settings
+    addon_prefs = context.preferences.addons[__package__].preferences
+    
     # coord = event.mouse_region_x, event.mouse_region_y
     for curve in curves:
         for cu_point in curve.curve_points:
@@ -595,7 +598,7 @@ def draw_curve_2d(curves, active_cur, context):
                     p_col = col_man.cur_point_selected
                 if cu_point.point_id == curve.active_point and curve is active_cur:
                     p_col = col_man.cur_point_active
-                c_widget.draw_2d_point(point_pos_2d.x, point_pos_2d.y, 6, p_col)
+                c_widget.draw_2d_point(point_pos_2d.x, point_pos_2d.y, addon_prefs.point_size, p_col)
 
                 # Handlers
                 if curve_settings.draw_handlers:
@@ -603,12 +606,12 @@ def draw_curve_2d(curves, active_cur, context):
                     if cu_point.handle1:
                         handle_1_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
                         if handle_1_pos_2d:
-                            c_widget.draw_2d_point(handle_1_pos_2d.x, handle_1_pos_2d.y, 3, col_man.cur_handle_1_base)
+                            c_widget.draw_2d_point(handle_1_pos_2d.x, handle_1_pos_2d.y, int(addon_prefs.point_size / 2), col_man.cur_handle_1_base)
                 #if curve.curve_points.index(cu_point) > 0:
                     if cu_point.handle2:
                         handle_2_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
                         if handle_2_pos_2d:
-                            c_widget.draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, 3, col_man.cur_handle_2_base)
+                            c_widget.draw_2d_point(handle_2_pos_2d.x, handle_2_pos_2d.y, int(addon_prefs.point_size / 2), col_man.cur_handle_2_base)
 
 
 def draw_text_2d(self, context):
