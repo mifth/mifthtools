@@ -240,6 +240,7 @@ def get_curves_ids(curves):
 def pick_curve_point(curve, context, mouse_coords):
     region = context.region
     rv3d = context.region_data
+    addon_prefs = context.preferences.addons[__package__].preferences
 
     picked_point = None
     picked_point_length = None
@@ -247,7 +248,7 @@ def pick_curve_point(curve, context, mouse_coords):
     for cu_point in curve.curve_points:
         point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
         the_length = (point_pos_2d - mouse_vec).length
-        if the_length <= 9.0:
+        if the_length <= addon_prefs.select_point_radius:
             if picked_point is None:
                 picked_point = cu_point
                 picked_point_length = the_length

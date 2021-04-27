@@ -129,6 +129,7 @@ def draw_lw(context, lw, cross_up_dir, draw_faloff):
 def pick_lw_point(context, m_coords, lw):
     region = context.region
     rv3d = context.region_data
+    addon_prefs = context.preferences.addons[__package__].preferences
 
     return_point = None
     good_distance = None
@@ -139,12 +140,13 @@ def pick_lw_point(context, m_coords, lw):
     for lw_point in lw_points:
         vec_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, lw_point.position)
         dist = (vec_2d - mouse_coords).length
-        if dist <= 9.0:
+        if dist <= addon_prefs.select_point_radius:
             if not return_point:
                 return_point = lw_point
                 good_distance = dist
             elif good_distance > dist:
                 return_point = lw_point
+                good_distance = dist
 
     return return_point
 

@@ -599,11 +599,12 @@ def get_previous_extrude_verts(bm, context, selected_verts):
 def mi_pick_extrude_point(point, context, mouse_coords):
     region = context.region
     rv3d = context.region_data
+    addon_prefs = context.preferences.addons[__package__].preferences
 
     # for cu_point in curve.curve_points:
     point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, point)
     length = (point_pos_2d - Vector(mouse_coords)).length
-    if length <= 9.0:
+    if length <= addon_prefs.select_point_radius:
         return True
 
     return False

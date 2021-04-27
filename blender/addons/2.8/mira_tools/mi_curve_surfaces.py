@@ -1047,6 +1047,7 @@ def pick_all_surfs_point(all_surfs, context, mouse_coords):
 def pick_surf(all_surfs, context, mouse_coords):
     region = context.region
     rv3d = context.region_data
+    addon_prefs = context.preferences.addons[__package__].preferences
 
     picked_surf = None
     picked_point_length = None
@@ -1055,7 +1056,7 @@ def pick_surf(all_surfs, context, mouse_coords):
         if surf.main_loop_center:
             point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, surf.main_loop_center)
             the_length = (point_pos_2d - mouse_vec).length
-            if the_length <= 9.0:
+            if the_length <= addon_prefs.select_point_radius:
                 if picked_surf is None:
                     picked_surf = surf
                     picked_point_length = the_length

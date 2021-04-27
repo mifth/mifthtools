@@ -34,8 +34,9 @@ class MI_Addon_Settings(AddonPreferences):
         default = 'Blender'
     )
 
-    point_size: IntProperty( default = 6)
-    line_size: IntProperty( default = 1)
+    point_size: IntProperty( default = 6, min = 1)
+    line_size: IntProperty( default = 1, min = 1)
+    select_point_radius: FloatProperty( default = 9.0, min = 3.0)
 
     def draw(self, context):
         layout = self.layout
@@ -44,6 +45,7 @@ class MI_Addon_Settings(AddonPreferences):
         layout.prop(self, "key_inputs")
         layout.prop(self, "point_size")
         layout.prop(self, "line_size")
+        layout.prop(self, "select_point_radius")
 
 
 class MI_Settings(PropertyGroup):
