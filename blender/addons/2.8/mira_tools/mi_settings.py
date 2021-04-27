@@ -42,6 +42,8 @@ class MI_Addon_Settings(AddonPreferences):
         #row = layout.row()
         #row.prop(self, "sg_icons_style")
         layout.prop(self, "key_inputs")
+        layout.prop(self, "point_size")
+        layout.prop(self, "line_size")
 
 
 class MI_Settings(PropertyGroup):

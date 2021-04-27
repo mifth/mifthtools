@@ -760,6 +760,7 @@ def cur_guide_draw_3d(self, context):
     rv3d = context.region_data
     curve_settings = context.scene.mi_settings
     curguide_settings = context.scene.mi_curguide_settings
+    addon_prefs = context.preferences.addons[__package__].preferences
 
     if self.curve_tool:
         if curguide_settings.deform_type != 'Deform':
@@ -769,7 +770,7 @@ def cur_guide_draw_3d(self, context):
             end_pos = self.lw_tool.end_point.position + (self.tool_side_vec * self.tool_side_vec_len)
             #end_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, end_pos)
             #draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.3, 0.6, 0.99, 1.0))
-            c_widget.draw_3d_polyline([start_pos, end_pos], 1, col_man.cur_line_base, True)
+            c_widget.draw_3d_polyline([start_pos, end_pos], addon_prefs.point_size, addon_prefs.line_size, col_man.cur_line_base, True)
 
             # draw points
             for point in self.curve_tool.curve_points:
@@ -779,11 +780,11 @@ def cur_guide_draw_3d(self, context):
                 end_pos = start_pos - (self.tool_side_vec * p_dist)
                 #end_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, end_pos)
                 #draw_polyline_2d([start_pos_2d, end_pos_2d], 1, (0.7, 0.5, 0.95, 1.0))
-                c_widget.draw_3d_polyline([start_pos, end_pos], 1, col_man.cur_line_base, True)
+                c_widget.draw_3d_polyline([start_pos, end_pos], addon_prefs.point_size, addon_prefs.line_size, col_man.cur_line_base, True)
 
         for cur_point in self.curve_tool.curve_points:
             if cur_point.point_id in self.curve_tool.display_bezier:
-                c_widget.draw_3d_polyline(self.curve_tool.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
+                c_widget.draw_3d_polyline(self.curve_tool.display_bezier[cur_point.point_id], addon_prefs.point_size, addon_prefs.line_size, col_man.cur_line_base, True)
         #draw_curve_lines_2d(self.curve_tool, context)
 
 
@@ -791,6 +792,7 @@ def draw_curve_points_2d(curve, context, curve_settings):
     region = context.region
     rv3d = context.region_data
     curve_settings = context.scene.mi_settings
+    addon_prefs = context.preferences.addons[__package__].preferences
 
     for cu_point in curve.curve_points:
         point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.position)
@@ -807,7 +809,7 @@ def draw_curve_points_2d(curve, context, curve_settings):
                 p_col = col_man.cur_point_selected
             if cu_point.point_id == curve.active_point:
                 p_col = col_man.cur_point_active
-            c_widget.draw_2d_point(point_pos_2d[0], point_pos_2d[1], 6, p_col)
+            c_widget.draw_2d_point(point_pos_2d[0], point_pos_2d[1], addon_prefs.point_size, p_col)
 
             # Handlers
             if curve_settings.draw_handlers:
@@ -815,18 +817,19 @@ def draw_curve_points_2d(curve, context, curve_settings):
                 if cu_point.handle1:
                     handle_1_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle1)
                     if handle_1_pos_2d:
-                        c_widget.draw_2d_point(handle_1_pos_2d[0], handle_1_pos_2d[1], 3, col_man.cur_handle_1_base)
+                        c_widget.draw_2d_point(handle_1_pos_2d[0], handle_1_pos_2d[1], addon_prefs.point_size, col_man.cur_handle_1_base)
             #if curve.curve_points.index(cu_point) > 0:
                 if cu_point.handle2:
                     handle_2_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, cu_point.handle2)
                     if handle_2_pos_2d:
-                        c_widget.draw_2d_point(handle_2_pos_2d[0], handle_2_pos_2d[1], 3, col_man.cur_handle_2_base)
+                        c_widget.draw_2d_point(handle_2_pos_2d[0], handle_2_pos_2d[1], addon_prefs.point_size, col_man.cur_handle_2_base)
 
 
 def draw_curve_lines_2d(curve, context):
     region = context.region
     rv3d = context.region_data
     active_obj = context.active_object
+    addon_prefs = context.preferences.addons[__package__].preferences
 
     for cur_point in curve.curve_points:
         if cur_point.point_id in curve.display_bezier:
@@ -835,4 +838,4 @@ def draw_curve_lines_2d(curve, context):
                 #point_pos_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, b_point)
                 #points_2d.append(point_pos_2d)
             #draw_polyline_2d(points_2d, 1, col_man.cur_line_base)
-            c_widget.draw_3d_polyline(curve.display_bezier[cur_point.point_id], 2, col_man.cur_line_base, True)
+            c_widget.draw_3d_polyline(curve.display_bezier[cur_point.point_id], addon_prefs.point_size, addon_prefs.line_size, col_man.cur_line_base, True)

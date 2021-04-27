@@ -1099,9 +1099,9 @@ def draw_surf_2d(surfs, active_surf, context):
             surf_center_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, surf.main_loop_center)
             if surf_center_2d:
                 if surf is active_surf:
-                    c_widget.draw_2d_point(surf_center_2d.x, surf_center_2d.y, 6, (0.7,0.75,0.95,1.0))
+                    c_widget.draw_2d_point(surf_center_2d.x, surf_center_2d.y, addon_prefs.point_size, (0.7,0.75,0.95,1.0))
                 else:
-                    c_widget.draw_2d_point(surf_center_2d.x, surf_center_2d.y, 6, (0.5,0.5,0.8,1.0))
+                    c_widget.draw_2d_point(surf_center_2d.x, surf_center_2d.y, addon_prefs.point_size, (0.5,0.5,0.8,1.0))
 
         # draw curves points
         for curve in surf.all_curves:
