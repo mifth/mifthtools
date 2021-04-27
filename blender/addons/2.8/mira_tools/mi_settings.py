@@ -34,8 +34,8 @@ class MI_Addon_Settings(AddonPreferences):
         default = 'Blender'
     )
 
-    point_size: IntProperty( default = 10)
-    line_size: IntProperty( default = 3)
+    point_size: IntProperty( default = 6)
+    line_size: IntProperty( default = 1)
 
     def draw(self, context):
         layout = self.layout
