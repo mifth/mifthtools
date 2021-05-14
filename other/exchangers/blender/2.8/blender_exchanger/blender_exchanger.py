@@ -78,7 +78,7 @@ class EX_AddonPreferences(AddonPreferences):
     # bl_idname = __name__
     bl_idname = __package__
 
-    exchangedir = StringProperty(
+    exchangedir: StringProperty(
         name="ExchangeFolder",
         subtype="DIR_PATH",
         default="",
@@ -98,9 +98,9 @@ class EX_ExportScene(bpy.types.Operator):
     bl_description = "Export your custom property"
     bl_options = {'UNDO'}
 
-    world_scale : FloatProperty( default=1.0 )
+    world_scale: FloatProperty( default=1.0 )
 
-    export_type : EnumProperty(
+    export_type: EnumProperty(
         items=(('FBX', 'FBX', ''),
                ('OBJ', 'OBJ', '')
                ),
@@ -167,9 +167,9 @@ class EX_ImportScene(bpy.types.Operator):
     bl_description = "import your custom property"
     bl_options = {'UNDO'}
 
-    world_scale = FloatProperty( default=1.0 )
+    world_scale: FloatProperty( default=1.0 )
 
-    import_type : EnumProperty(
+    import_type: EnumProperty(
         items=(('FBX', 'FBX', ''),
                ('OBJ', 'OBJ', '')
                ),
