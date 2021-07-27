@@ -18,7 +18,7 @@
 
 bl_info = {
     "name": "Mifth Tools",
-    "author": "Paul Geraskin",
+    "author": "mifth",
     "version": (0, 1, 0),
     "blender": (2, 80, 0),
     "location": "3D Viewport",
@@ -28,23 +28,25 @@ bl_info = {
     "tracker_url": "",
     "category": "Tools"}
 
-
-if "bpy" in locals():
-    import imp
-    imp.reload(mifth_tools_cloning)
-    imp.reload(mifth_vertex_paint)
-    imp.reload(mifth_tools_base)
-    imp.reload(mifth_tools_ui)
-else:
-    from . import mifth_tools_cloning
-    from . import mifth_vertex_paint
-    from . import mifth_tools_base
-    from . import mifth_tools_ui
-
+# if "bpy" in locals():
+#     import imp
+#     imp.reload(mifth_tools_cloning)
+#     imp.reload(mifth_vertex_paint)
+#     imp.reload(mifth_tools_base)
+#     imp.reload(mifth_tools_ui)
+# else:
+#     from . import mifth_tools_cloning
+#     from . import mifth_vertex_paint
+#     from . import mifth_tools_base
+#     from . import mifth_tools_ui
 
 import bpy
 from bpy.props import *
 
+from . import mifth_tools_cloning
+from . import mifth_vertex_paint
+from . import mifth_tools_base
+from . import mifth_tools_ui
 
 # registration
 #def menu_vertex_paint_func(self, context):
@@ -140,7 +142,8 @@ classes = (
     mifth_tools_ui.MFT_PT_PanelPose,
     mifth_tools_ui.MFT_PT_PanelAnimation,
     mifth_tools_ui.MFT_PT_PanelPlaykot,
-    mifth_tools_ui.MFT_PT_PanelCloning,
+    mifth_tools_ui.MFT_PT_PanelDrawClones,
+    mifth_tools_ui.MFT_PT_PanelOtherTools,
     mifth_tools_ui.MFT_PT_PanelVertexPaint,
     mifth_tools_base.MFTOutputCreator,
     mifth_tools_base.MFTSceneRender2X,

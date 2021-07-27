@@ -9,7 +9,7 @@ class MFT_PT_PanelPose(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_context = "posemode"
     bl_category = 'Mifth'
-    # bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
@@ -27,7 +27,7 @@ class MFT_PT_PanelAnimation(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_context = "objectmode"
     bl_category = 'Mifth'
-    # bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
@@ -56,7 +56,7 @@ class MFT_PT_PanelPlaykot(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_context = "objectmode"
     bl_category = 'Mifth'
-    # bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
@@ -76,13 +76,13 @@ class MFT_PT_PanelPlaykot(bpy.types.Panel):
         layout.prop(mifthTools, "outputSequenceSize")
 
 
-class MFT_PT_PanelCloning(bpy.types.Panel):
-    bl_label = "Cloning"
+class MFT_PT_PanelDrawClones(bpy.types.Panel):
+    bl_label = "Draw Clones"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_context = "objectmode"
     bl_category = 'Mifth'
-    # bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
@@ -92,26 +92,48 @@ class MFT_PT_PanelCloning(bpy.types.Panel):
         layout.label(text="Draw Clones:")
         layout.operator("mft.draw_clones", text="DrawClones")
         layout.operator("mft.pick_obj_to_clone_draw", text="PickObjects")
+        layout.separator()
+
         layout.prop(mifthCloneTools, "drawClonesDirectionRotate", text='DirectionRotate')
         layout.prop(mifthCloneTools, "drawClonesRadialRotate", text='RadialRotate')
         layout.prop(mifthCloneTools, "drawClonesNormalRotate", text='NormalRotate')
-        #layout.prop(mifthCloneTools, "drawClonesOptimize", text='Optimize')
+        layout.separator()
+
+        layout.prop(mifthCloneTools, "drawClonesOffsetNomalBefore", text='OffsetNormal')
+        layout.prop(mifthCloneTools, "drawClonesRotateNomalAfter", text='RotateNormal')
+        layout.separator()
 
         layout.prop(mifthCloneTools, "drawStrokeLength", text='Stroke')
-
         layout.prop(mifthCloneTools, "drawRandomStrokeScatter", text='Scatter')
+        layout.separator()
+
         layout.prop(mifthCloneTools, "randNormalRotateClone", text='RandNormal')
         layout.prop(mifthCloneTools, "randDirectionRotateClone", text='RandDirection')
         layout.prop(mifthCloneTools, "randScaleClone", text='RandScale')
+        layout.separator()
 
         layout.prop(mifthCloneTools, "drawPressure", text='DrawPressure')
         row = layout.row()
         row.prop(mifthCloneTools, "drawPressureRelativeStroke", text='S')
         row.prop(mifthCloneTools, "drawPressureScale", text='S')
         row.prop(mifthCloneTools, "drawPressureScatter", text='S')
+        layout.separator()
 
         layout.prop(mifthCloneTools, "drawClonesAxis", text='Axis')
-        layout.separator()
+
+
+class MFT_PT_PanelOtherTools(bpy.types.Panel):
+    bl_label = "Other Tools"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_context = "objectmode"
+    bl_category = 'Mifth'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mifthTools = bpy.context.scene.mifthTools
+        mifthCloneTools = bpy.context.scene.mifthCloneTools
 
         layout.label(text="Clone Selected:")
         layout.operator("mft.clonetoselected", text="CloneToSelected")
@@ -139,7 +161,7 @@ class MFT_PT_PanelVertexPaint(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_context = "vertexpaint"
     bl_category = 'Mifth'
-    # bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout

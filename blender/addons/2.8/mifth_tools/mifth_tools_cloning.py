@@ -95,11 +95,15 @@ class MFTCloneProperties(bpy.types.PropertyGroup):
         default=True
     )
 
-    #drawClonesOptimize : BoolProperty(
-        #name="drawClonesOptimize",
-        #description="drawClonesOptimize...",
-        #default=True
-    #)
+    drawClonesOffsetNomalBefore: FloatProperty(
+        default=0.0
+    )
+
+    drawClonesRotateNomalAfter: FloatProperty(
+        default=0.0,
+        min=-360,
+        max=360
+    )
 
     drawStrokeLength : FloatProperty(
         default=0.5,
@@ -490,20 +494,11 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
         newDup = context.selected_objects[0]
         context.view_layer.objects.active = newDup
 
-        ## copy draw type
-        #newDup.draw_type = objToClone.draw_type
-        #newDup.show_wire = objToClone.show_wire
-
-        ## copy transformation
-        #newDup.matrix_world = objToClone.matrix_world
+        # Set New Location
         newDup.location = best_obj_pos
-        #newDup.scale = objToClone.scale
-        #newDup.rotation_euler = objToClone.rotation_euler
-        ## bpy.ops.object.rotation_clear()
 
-        #context.scene.objects.link(newDup)
-        #newDup.select_set(True)
-        #context.active_object = newDup
+        if mifthCloneTools.drawClonesOffsetNomalBefore != 0.0:
+            newDup.location += best_obj_nor * mifthCloneTools.drawClonesOffsetNomalBefore
 
         # Rotation To Normal
         if mifthCloneTools.drawClonesNormalRotate is True:
@@ -512,20 +507,23 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
             angleRotate = newDupZAxis.angle(best_obj_nor)
             rotateAxis = newDupZAxis.cross(best_obj_nor).normalized()
 
-            bpy.ops.transform.rotate(value=angleRotate, orient_matrix=create_z_orient(rotateAxis))
+            bpy.ops.transform.rotate(value=-angleRotate, orient_matrix=create_z_orient(rotateAxis))
 
         # Change Axis
         if mifthCloneTools.drawClonesAxis == 'Y':
-            bpy.ops.transform.rotate(value=math.radians(90), orient_matrix=create_z_orient(get_obj_axis(newDup, 'X')))
-        elif mifthCloneTools.drawClonesAxis == '-Y':
             bpy.ops.transform.rotate(value=math.radians(-90), orient_matrix=create_z_orient(get_obj_axis(newDup, 'X')))
             bpy.ops.transform.rotate(value=math.radians(180), orient_matrix=create_z_orient(get_obj_axis(newDup, 'Y')))
+        elif mifthCloneTools.drawClonesAxis == '-Y':
+            bpy.ops.transform.rotate(value=math.radians(90), orient_matrix=create_z_orient(get_obj_axis(newDup, 'X')))
+            # bpy.ops.transform.rotate(value=math.radians(180), orient_matrix=create_z_orient(get_obj_axis(newDup, 'Y')))
         elif mifthCloneTools.drawClonesAxis == '-Z':
-            bpy.ops.transform.rotate(value=math.radians(180), orient_matrix=create_z_orient(get_obj_axis(newDup, 'X')))
+            # bpy.ops.transform.rotate(value=math.radians(180), orient_matrix=create_z_orient(get_obj_axis(newDup, 'X')))
+            bpy.ops.transform.rotate(value=math.radians(180), orient_matrix=create_z_orient(get_obj_axis(newDup, 'Y')))
         elif mifthCloneTools.drawClonesAxis == 'X':
-            bpy.ops.transform.rotate(value=math.radians(-90), orient_matrix=create_z_orient(get_obj_axis(newDup, 'Y')))
-        elif mifthCloneTools.drawClonesAxis == '-X':
             bpy.ops.transform.rotate(value=math.radians(90), orient_matrix=create_z_orient(get_obj_axis(newDup, 'Y')))
+            # bpy.ops.transform.rotate(value=math.radians(180), orient_matrix=create_z_orient(get_obj_axis(newDup, 'X')))
+        elif mifthCloneTools.drawClonesAxis == '-X':
+            bpy.ops.transform.rotate(value=math.radians(-90), orient_matrix=create_z_orient(get_obj_axis(newDup, 'Y')))
 
         # Other rotate
         if mifthCloneTools.drawClonesRadialRotate is True or mifthCloneTools.drawClonesDirectionRotate is True:
@@ -573,34 +571,15 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
                     if tempYCross.angle(tempY) > math.radians(90.0):
                         xyAngleRotate = -xyAngleRotate
 
-                    bpy.ops.transform.rotate(value=xyAngleRotate, orient_matrix=create_z_orient(best_obj_nor))
+                    bpy.ops.transform.rotate(value=-xyAngleRotate, orient_matrix=create_z_orient(best_obj_nor))
 
-                # newDupMatrix2 = newDup.matrix_world
-                # newDupZAxisTuple2 = (
-                    # newDupMatrix2[0][2], newDupMatrix2[1][2], newDupMatrix2[2][2])
-                # newDupZAxis2 = (
-                    # Vector(newDupZAxisTuple2)).normalized()
-                # newDirRotVec2 = (newDirRotLookAtt.cross(best_obj_nor)).normalized().cross(
-                    # best_obj_nor).normalized()
-                # newDirRotAngle = newDirRotVec2.angle(newDupZAxis2)
-                # fixDirRotAngle = newDirRotLookAtt.cross(
-                    # best_obj_nor).angle(newDupZAxis2)
-                # if fixDirRotAngle < math.radians(90.0):
-                    # newDirRotAngle = - \
-                        # newDirRotAngle  # As we do it in negative axis
-                # Main rotation
-                # bpy.ops.transform.rotate(value=newDirRotAngle, orient_axis=(
-                    #(best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)), proportional='DISABLED')
-        # set PreviousClone position
-        # self.prevClonePos = best_obj_hit
-        # Random rotation along Picked Normal
         if mifthCloneTools.randNormalRotateClone > 0.0:
             randNorAngle = random.uniform(
                 math.radians(-mifthCloneTools.randNormalRotateClone), math.radians(mifthCloneTools.randNormalRotateClone))
             randNorAxis = (best_obj_nor.x, best_obj_nor.y, best_obj_nor.z)
             if mifthCloneTools.drawClonesRadialRotate is False and mifthCloneTools.drawClonesNormalRotate is False:
                 randNorAxis = (0.0, 0.0, 1.0)
-            bpy.ops.transform.rotate(value=randNorAngle, orient_matrix=create_z_orient(Vector(randNorAxis)))
+            bpy.ops.transform.rotate(value=-randNorAngle, orient_matrix=create_z_orient(Vector(randNorAxis)))
 
         # Random rotation along Picked Normal
         if mifthCloneTools.randDirectionRotateClone > 0.0:
@@ -608,7 +587,12 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
                 0.0, 1.0), random.uniform(0.0, 1.0), random.uniform(0.0, 1.0)
             randDirVec = (Vector((randDirX, randDirY, randDirZ))).normalized()
             randDirAngle = random.uniform(math.radians(-mifthCloneTools.randDirectionRotateClone), math.radians(mifthCloneTools.randDirectionRotateClone))
-            bpy.ops.transform.rotate(value=randDirAngle, orient_matrix=create_z_orient(randDirVec))
+            bpy.ops.transform.rotate(value=-randDirAngle, orient_matrix=create_z_orient(randDirVec))
+
+        # Rotate Along Axis
+        if mifthCloneTools.drawClonesRotateNomalAfter != 0.0:
+            bpy.ops.transform.rotate(value=math.radians(mifthCloneTools.drawClonesRotateNomalAfter),
+                                     orient_matrix=create_z_orient(best_obj_nor))
 
         # change Size
         if mifthCloneTools.drawPressure > 0.0 or mifthCloneTools.randScaleClone > 0.0:
@@ -625,10 +609,6 @@ def mft_pick_and_clone(self, context, event, ray_max=10000.0):
         # Add this point with all its stuff
         self.currentStrokeList.append(
             MTFDCPoint(newDup, objToClone, best_obj_hit, best_obj_nor))
-
-        ## do optimization for a stroke or not
-        #if mifthCloneTools.drawClonesOptimize is False:
-            #copy_settings_clones(newDup, objToClone)
 
         newDup.select_set(False)  # Clear Selection
 
