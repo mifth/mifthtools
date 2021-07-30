@@ -30,9 +30,8 @@ from math import isclose
 from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
-# bpy.mifthCloneTools = dict()
 
-global drawForClonesObj
+# global drawForClonesObj
 drawForClonesObj = []  # Array of Objects Names
 
 
