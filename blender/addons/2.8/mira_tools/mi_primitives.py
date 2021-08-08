@@ -635,7 +635,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                 if rot_angle != 0:
 
                     # check if negative angle
-                    if v1.cross(v2)[2] < 0:
+                    if v1.cross(v2)[2] > 0:
                         rot_angle = -rot_angle
 
                     #rot_axis = (new_prim_mat[0][2], new_prim_mat[1][2], new_prim_mat[2][2])
@@ -650,7 +650,9 @@ class MI_MakePrimitive(bpy.types.Operator):
                         context.view_layer.objects.active = self.new_prim
 
                     # do rotation
-                    bpy.ops.transform.rotate(value=rot_angle, orient_axis='Z', orient_matrix=new_prim_mat.to_3x3())
+                    bpy.ops.transform.rotate(value=rot_angle, orient_axis='Z',
+                                             orient_matrix=new_prim_mat.to_3x3(),
+                                             orient_type='LOCAL')
                     self.deform_mouse_pos = m_coords
 
                     # if edit obj
@@ -659,7 +661,7 @@ class MI_MakePrimitive(bpy.types.Operator):
                         context.view_layer.objects.active = act_temp
                         bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
-        # Rotate Primitive
+        # Scale Primitive
         elif self.tool_mode == 'SCALE':
             obj_pos_2d = view3d_utils.location_3d_to_region_2d(context.region, rv3d, self.new_prim.location)
 

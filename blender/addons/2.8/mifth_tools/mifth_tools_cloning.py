@@ -276,7 +276,7 @@ class MFTPickObjToDrawClone(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MTFDCPoint:
+class MTFDCPoint():
 
     def __init__(self, objNew, objOriginal, hitPoint, hitNormal):
         self.objNew, self.objOriginal, self.hitPoint, self.hitNormal = objNew, objOriginal, hitPoint, hitNormal
