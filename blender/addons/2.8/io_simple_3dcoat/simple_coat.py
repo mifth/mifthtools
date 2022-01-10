@@ -32,7 +32,7 @@ class SimpleSceneCoat3D(bpy.types.PropertyGroup):
                ('FBX', 'FBX', ''),
                # ('DAE', 'DAE', ''),
                ),
-        default='OBJ'
+        default='FBX'
     )
 
     doApplyModifiers: BoolProperty(
@@ -178,14 +178,16 @@ class S3DC_OP_ExportScene(bpy.types.Operator):
             modelExportPath = simple3DCoatDir + blenderExportName + exportModelExtension
             
             tspace = False
-            if simple3Dcoat.type == 'ppp':
+            export_normals = False
+            if simple3Dcoat.type in {'ppp', 'mv', 'ptex', 'uv'}:
                 tspace = True
+                export_normals = True
 
             # Export Model
             if simple3Dcoat.exportModelType == 'OBJ':
                 bpy.ops.export_scene.obj(filepath=modelExportPath, use_selection=True,
                                          use_mesh_modifiers=simple3Dcoat.doApplyModifiers,
-                                         use_blen_objects=True, use_normals=True,
+                                         use_blen_objects=True, use_normals=export_normals,
                                          use_materials=simple3Dcoat.exportMaterials,
                                          keep_vertex_order=True, axis_forward='-Z',
                                          axis_up='Y')
