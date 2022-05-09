@@ -484,7 +484,7 @@ class MI_OT_StartDraw(bpy.types.Operator):
                 # main stuff
                 if self.tool_mode in {'SCALE', 'SCALE_ALL'}:
                     # scale epoint
-                    if self.tool_mode is 'SCALE':
+                    if self.tool_mode == 'SCALE':
                         new_scale = (m_coords[0] - self.deform_mouse_pos[0]) * 0.01
                         scale_epoint(active_obj, bm, self.extrude_points[-1], new_scale)
 
@@ -503,7 +503,7 @@ class MI_OT_StartDraw(bpy.types.Operator):
 
                 elif self.tool_mode in {'ROTATE', 'ROTATE_ALL'}:
                     # rotate epoint
-                    if self.tool_mode is 'ROTATE':
+                    if self.tool_mode == 'ROTATE':
                         new_rot_angle = math.radians((m_coords[0] - self.deform_mouse_pos[0]) * 0.3)
                         rotate_epoint(active_obj, bm, self.extrude_points[-1], new_rot_angle)
 
