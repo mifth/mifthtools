@@ -21,10 +21,10 @@
 import bpy
 
 
-pass_keys = ['NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
+pass_keys = {'NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',
              'NUMPAD_5', 'NUMPAD_6', 'NUMPAD_7', 'NUMPAD_8',
              'NUMPAD_9', 'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
-             'MOUSEMOVE']
+             'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE', 'TRACKPADPAN', 'TRACKPADZOOM'}
 
 
 def get_input_pass(pass_keys, key_inputs, event):
