@@ -26,8 +26,8 @@ from bpy.props import *
 from . import mi_utils_base as ut_base
 
 
-shader3d = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
-shader2d = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+shader3d = gpu.shader.from_builtin('UNIFORM_COLOR')
+shader2d = gpu.shader.from_builtin('UNIFORM_COLOR')
 
 
 def draw_2d_point(point_x, point_y, p_size=4, p_col=(1.0,1.0,1.0,1.0)):
