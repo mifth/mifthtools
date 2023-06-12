@@ -19,7 +19,7 @@
 
 import bpy
 import bmesh
-import bgl
+# import bgl
 import string
 
 from bpy.props import *

@@ -17,22 +17,22 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 
-import bpy
-import bgl
-import blf
-import string
+
+import gpu
+from gpu_extras.batch import batch_for_shader
 
 from bpy.props import *
-from bpy.types import Operator, AddonPreferences
 
 from bpy_extras import view3d_utils
 
-import math
 import mathutils as mathu
-import random
 from mathutils import Vector
 
 from . import mi_utils_base as ut_base
+
+
+shader3d = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+shader2d = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 
 
 class MI_LW_Point():
@@ -84,6 +84,7 @@ def get_tool_verts(lw_tool, verts_ids, bm, obj, do_clamp, local_coords):
 def draw_lw(context, lw, cross_up_dir, draw_faloff):
     region = context.region
     rv3d = context.region_data
+    addon_prefs = context.preferences.addons[__package__].preferences
 
     start_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, lw.start_point.position)
     end_2d = view3d_utils.location_3d_to_region_2d(region, rv3d, lw.end_point.position)
@@ -94,36 +95,28 @@ def draw_lw(context, lw, cross_up_dir, draw_faloff):
     end_p2 = view3d_utils.location_3d_to_region_2d(region, rv3d, lw.end_point.position - dist_ends)
 
     if start_2d and end_2d and end_p1 and end_p2:
-        bgl.glEnable(bgl.GL_BLEND)
-        bgl.glLineWidth(1)
-        bgl.glPointSize(6)
+        gpu.state.line_width_set(addon_prefs.line_size)
+        gpu.state.point_size_set(addon_prefs.point_size)
 
-        bgl.glBegin(bgl.GL_LINE_STRIP)
-        bgl.glColor4f(0.99, 0.5, 0.99, 1.0)
-        bgl.glVertex2f(start_2d[0], start_2d[1])
-        bgl.glVertex2f(end_2d[0], end_2d[1])
-        bgl.glEnd()
+        coords = ((start_2d[0], start_2d[1]), (end_2d[0], end_2d[1]))
+        batch = batch_for_shader(shader2d, 'LINE_STRIP', {"pos": coords})
+        shader2d.bind()
+        shader2d.uniform_float("color", (0.99, 0.5, 0.99, 1.0))
+        batch.draw(shader2d)
+
 
         if draw_faloff:
-            bgl.glBegin(bgl.GL_LINE_LOOP)
-            bgl.glColor4f(0.99, 0.5, 0.99, 1.0)
-            bgl.glVertex2f(start_2d[0], start_2d[1])
-            bgl.glVertex2f(end_p1[0], end_p1[1])
-            bgl.glVertex2f(end_p2[0], end_p2[1])
-            bgl.glEnd()
+            coords = ((start_2d[0], start_2d[1]), (end_p1[0], end_p1[1]), (end_p2[0], end_p2[1]))
+            batch = batch_for_shader(shader2d, 'LINE_LOOP', {"pos": coords})
+            shader2d.bind()
+            shader2d.uniform_float("color", (0.99, 0.5, 0.99, 1.0))
+            batch.draw(shader2d)
 
-        bgl.glBegin(bgl.GL_POINTS)
-     #   bgl.glBegin(bgl.GL_POLYGON)
-        bgl.glColor4f(0.99, 0.8, 0.5, 1.0)
-        bgl.glVertex2f(start_2d[0], start_2d[1])
-        bgl.glVertex2f(middle_2d[0], middle_2d[1])
-        bgl.glVertex2f(end_2d[0], end_2d[1])
-        bgl.glEnd()
-
-        # restore opengl defaults
-        bgl.glLineWidth(1)
-        bgl.glDisable(bgl.GL_BLEND)
-        bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
+        coords = ((start_2d[0], start_2d[1]), (middle_2d[0], middle_2d[1]), (end_2d[0], end_2d[1]))
+        batch = batch_for_shader(shader2d, 'POINTS', {"pos": coords})
+        shader2d.bind()
+        shader2d.uniform_float("color", (0.99, 0.8, 0.5, 1.0))
+        batch.draw(shader2d)
 
 
 def pick_lw_point(context, m_coords, lw):

@@ -18,7 +18,7 @@
 # ***** END GPL LICENCE BLOCK *****
 
 import bpy
-import bgl
+# import bgl
 import string
 import bmesh
 

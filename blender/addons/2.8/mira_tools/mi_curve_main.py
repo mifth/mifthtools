@@ -17,19 +17,16 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 
-import bpy
-import bgl
-import blf
-import string
+# import bpy
 
 from bpy.props import *
-from bpy.types import Operator, AddonPreferences
+# from bpy.types import Operator, AddonPreferences
 
 from bpy_extras import view3d_utils
 
-import math
+# import math
 import mathutils as mathu
-import random
+# import random
 from mathutils import Vector
 
 from . import mi_utils_base as ut_base

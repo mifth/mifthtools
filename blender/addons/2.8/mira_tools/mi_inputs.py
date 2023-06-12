@@ -18,7 +18,7 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 
-import bpy
+# import bpy
 
 
 pass_keys = {'NUMPAD_0', 'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_4',

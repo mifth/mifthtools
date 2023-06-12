@@ -18,12 +18,12 @@
 # ***** END GPL LICENCE BLOCK *****
 
 import bpy
-import bgl
-import string
+# import bgl
+# import string
 import bmesh
 
 from bpy.props import *
-from bpy.types import Operator, AddonPreferences
+# from bpy.types import Operator, AddonPreferences
 
 from bpy_extras import view3d_utils
 

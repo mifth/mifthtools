@@ -17,15 +17,15 @@
 #
 # ***** END GPL LICENCE BLOCK *****
 
-import bpy
-import bgl
-import blf
+# import bpy
+# import bgl
+# import blf
 
 from bpy.props import *
-import math
-import mathutils as mathu
-import random
-from mathutils import Vector
+# import math
+# import mathutils as mathu
+# import random
+# from mathutils import Vector
 
 
 # Curve Colors

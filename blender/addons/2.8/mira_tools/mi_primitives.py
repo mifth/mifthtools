@@ -20,7 +20,7 @@
 
 import bpy
 
-import bgl
+# import bgl
 import blf
 
 import gpu
@@ -889,9 +889,8 @@ def draw_callback_px(self, context):
             seg_1 = self.circle_segments[0]
 
     #Set font color
-    bgl.glEnable(bgl.GL_BLEND)
     blf.color(0, c_orange[0], c_orange[1], c_orange[2], 1)
-    bgl.glLineWidth(2)
+    # gpu.state.line_width_set(2)
 
     #Draw segments text
     blf.position(font_id, rw - 400, 210 - font_size, 0)
@@ -925,10 +924,4 @@ def draw_callback_px(self, context):
     blf.position(font_id, rw - 400, 210 - (font_size * 5 + 10), 0)
     blf.size(font_id, font_size, 72)
     blf.draw(font_id, "Center is 3D Cursor " + str(self.center_is_cursor))
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    blf.color(0, 0.0, 0.0, 0.0, 1.0)
-    bgl.glDisable(bgl.GL_BLEND)
-    #bgl.glColor(0, 0.0, 0.0, 0.0, 1.0)
 

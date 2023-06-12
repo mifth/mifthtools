@@ -19,7 +19,7 @@
 
 import bpy
 import bmesh
-import bgl
+# import bgl
 
 from bpy.props import *
 from bpy.types import Operator, AddonPreferences

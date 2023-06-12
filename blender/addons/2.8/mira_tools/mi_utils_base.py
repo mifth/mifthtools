@@ -1,6 +1,6 @@
 import bpy
 import bmesh
-import bgl
+# import bgl
 import blf
 import string
 

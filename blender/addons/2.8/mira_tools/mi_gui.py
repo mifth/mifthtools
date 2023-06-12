@@ -372,7 +372,6 @@ class MI_PT_Panel(bpy.types.Panel):
             row.prop(context.scene.mi_settings, "curve_resolution", text='Resolution')
 
             row.prop(context.scene.mi_settings, "draw_handlers", text='Handlers')
-            row.operator("mira.curve_test", text="Curve Test")
             
             box.separator()
 

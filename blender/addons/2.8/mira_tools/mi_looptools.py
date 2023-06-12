@@ -16,12 +16,12 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-import bmesh
-import bpy
-import collections
-import mathutils
-import math
-from bpy_extras import view3d_utils
+# import bmesh
+# import bpy
+# import collections
+# import mathutils
+# import math
+# from bpy_extras import view3d_utils
 
 # THIS CODE IS TAKEN FROM BLENDER LOOPTOOLS ADDON. Thanks a lot to Bart Crouch.
 
