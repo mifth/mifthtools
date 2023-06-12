@@ -633,7 +633,7 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
 
             for i, point_data in enumerate(points_dists):
                 if point_data[0] >= vert_data[1]:
-                    best_bezier_len = None
+                    best_bezier_len = 0
                     vert_front_pos = self.lw_tool.start_point.position + (lw_tool_dir * vert_data[1])
 
                     # loop bezier points according to vert
@@ -643,16 +643,18 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                         elif b_point[0] >= vert_data[1]:
                             bp_nor = (b_point[2] - point_data[1][j - 1][2]).normalized()
                             bp_nor = bp_nor.cross(self.tool_up_vec).normalized()
-                            final_pos = mathu.geometry.intersect_line_plane(vert_front_pos - (self.tool_side_vec * 1000.0), vert_front_pos + (self.tool_side_vec * 1000.0), b_point[2], bp_nor)
+                            final_pos = mathu.geometry.intersect_line_plane(vert_front_pos - (self.tool_side_vec * 10000.0), vert_front_pos + (self.tool_side_vec * 10000.0), b_point[2], bp_nor)
 
                             best_bezier_len = (final_pos - vert_front_pos).length  # the length!
 
                             if deform_type in {'Shear', 'Twist'}:
-                                if (final_pos - vert_front_pos).normalized().angle(self.tool_side_vec) > math.radians(90):
-                                    best_bezier_len = -best_bezier_len
-                            break
+                                offset_tmp_vec = (final_pos - vert_front_pos).normalized()
 
-                    #final_dist = best_bezier_len
+                                if offset_tmp_vec.length != 0:
+                                    if offset_tmp_vec.angle(self.tool_side_vec) > math.radians(90):
+                                        best_bezier_len = -best_bezier_len
+
+                            break
 
                     # multiplier for the vert
                     dir_multilpier = None
@@ -671,7 +673,7 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                         if self.tool_side_vec_len != 0.0:
                             dir_multilpier = abs(vert_dist_scale * (best_bezier_len / self.tool_side_vec_len)) - vert_dist_scale
                         else:
-                            dir_multilpier = abs(vert_dist_scale * 0.0) - vert_dist_scale
+                            dir_multilpier = vert_dist_scale
 
                     # modify vert position
                     if deform_type == 'Twist':
