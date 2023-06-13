@@ -570,7 +570,7 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                         best_pos = None
                         for b_point_data in deform_lines[first_index:]:
                             j = deform_lines.index(b_point_data)
-                            #print(j, jj)
+
                             if j > 0:
                                 b_point_len = b_point_data[1] / line_len
                                 if b_point_len >= vert_len:
@@ -616,8 +616,12 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                     b_p_dist = mathu.geometry.distance_point_to_plane(b_point, self.lw_tool.start_point.position, lw_tool_dir)
                     b_p_side_dist = mathu.geometry.distance_point_to_plane(b_point, self.lw_tool.start_point.position, self.tool_side_vec)
                     bezier_dists.append( (b_p_dist, b_p_side_dist, b_point) )
+                
+                bezier_dists = sorted(bezier_dists, key=lambda x: x[0])
 
             points_dists.append( (p_dist, bezier_dists) )
+
+        points_dists = sorted(points_dists, key=lambda x: x[0])
 
 
         # find the best point for every vert
@@ -625,25 +629,33 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
             vert = bm.verts[vert_id]
             vert_data = self.work_verts[vert_id]
 
+            best_bezier_len = 0
+            dir_multilpier = 0
+            vert_front_pos = self.lw_tool.start_point.position + (lw_tool_dir * vert_data[1])
+
             deform_dir = None
             if deform_type == 'Scale':
                 deform_dir = (vert_data[0] - (self.lw_tool.start_point.position + (lw_tool_dir * vert_data[1]))).normalized()
             else:
-                deform_dir = self.tool_side_vec
+                deform_dir = self.tool_side_vec.copy().normalized()
+
+            is_found = False
 
             for i, point_data in enumerate(points_dists):
-                if point_data[0] >= vert_data[1]:
-                    best_bezier_len = 0
-                    vert_front_pos = self.lw_tool.start_point.position + (lw_tool_dir * vert_data[1])
 
-                    # loop bezier points according to vert
+                if is_found:
+                    break
+
+                if point_data[0] >= vert_data[1]:
+
+                    # loop bezier points according to a vert
                     for j, b_point in enumerate(point_data[1]):
-                        if not best_bezier_len:
-                            best_bezier_len = b_point[1]
-                        elif b_point[0] >= vert_data[1]:
+                        if b_point[0] >= vert_data[1] and j > 0:
+                            
                             bp_nor = (b_point[2] - point_data[1][j - 1][2]).normalized()
+
                             bp_nor = bp_nor.cross(self.tool_up_vec).normalized()
-                            final_pos = mathu.geometry.intersect_line_plane(vert_front_pos - (self.tool_side_vec * 10000.0), vert_front_pos + (self.tool_side_vec * 10000.0), b_point[2], bp_nor)
+                            final_pos = mathu.geometry.intersect_line_plane(vert_front_pos - (self.tool_side_vec * 100.0), vert_front_pos + (self.tool_side_vec * 100.0), b_point[2], bp_nor)
 
                             best_bezier_len = (final_pos - vert_front_pos).length  # the length!
 
@@ -654,15 +666,16 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                                     if offset_tmp_vec.angle(self.tool_side_vec) > math.radians(90):
                                         best_bezier_len = -best_bezier_len
 
+                            is_found = True
+
                             break
 
                     # multiplier for the vert
-                    dir_multilpier = None
                     if deform_type == 'Stretch':
                         if self.tool_side_vec_len != 0.0:
                             dir_multilpier = (vert_data[2] * (best_bezier_len / self.tool_side_vec_len)) - vert_data[2]
                         else:
-                            dir_multilpier = (vert_data[2] * 0.0) - vert_data[2]
+                            dir_multilpier = vert_data[2]
 
                     elif deform_type in {'Shear', 'Twist'}:
                         dir_multilpier = best_bezier_len - self.tool_side_vec_len
@@ -682,7 +695,6 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
                         vert.co = obj.matrix_world.inverted() @ (rot_mat @ (vert_data[0] - self.lw_tool.start_point.position) + self.lw_tool.start_point.position)
                     else:
                         vert.co = obj.matrix_world.inverted() @ (vert_data[0] + ( deform_dir *  dir_multilpier))
-                    break
 
 
 # we could use cur_main.get_bezier_line() method but we need some modifications to get point's index
