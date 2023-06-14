@@ -606,21 +606,34 @@ def update_mesh_to_curve(self, bm, deform_type, obj):
     else:  # ALL OTHER TYPES
         # get points dists
         points_dists = []
+        do_reverse_points = False
+
+        if len(self.curve_tool.curve_points) > 1:
+            p_dist0 = mathu.geometry.distance_point_to_plane(self.curve_tool.curve_points[0].position, self.lw_tool.start_point.position, lw_tool_dir)
+            p_dist1 = mathu.geometry.distance_point_to_plane(self.curve_tool.curve_points[1].position, self.lw_tool.start_point.position, lw_tool_dir)
+
+            if p_dist0 > p_dist1:
+                do_reverse_points = True
+
         for point in self.curve_tool.curve_points:
             bezier_dists = []
-            p_dist = mathu.geometry.distance_point_to_plane(point.position, self.lw_tool.start_point.position, lw_tool_dir)
 
             # add bezer dists
             if self.curve_tool.curve_points.index(point) > 0:
+                p_dist = mathu.geometry.distance_point_to_plane(point.position, self.lw_tool.start_point.position, lw_tool_dir)
+
                 for b_point in self.curve_tool.display_bezier[point.point_id]:
                     b_p_dist = mathu.geometry.distance_point_to_plane(b_point, self.lw_tool.start_point.position, lw_tool_dir)
                     b_p_side_dist = mathu.geometry.distance_point_to_plane(b_point, self.lw_tool.start_point.position, self.tool_side_vec)
                     bezier_dists.append( (b_p_dist, b_p_side_dist, b_point) )
-                
-                bezier_dists = sorted(bezier_dists, key=lambda x: x[0])
 
-            points_dists.append( (p_dist, bezier_dists) )
+                # Reverse List If Values go in a different direction
+                if do_reverse_points:
+                    bezier_dists.reverse()
 
+                points_dists.append( (p_dist, bezier_dists) )
+
+        # Sort List By Direction
         points_dists = sorted(points_dists, key=lambda x: x[0])
 
 
