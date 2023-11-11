@@ -631,7 +631,7 @@ def draw_text_2d(self, context):
 
     #Draw text
     blf.position(font_id, rw - 400, 210 - font_size, 0)
-    blf.size(font_id, font_size, 72)
+    blf.size(font_id, font_size)
     blf.color(0, 1, 0.75, 0.1, 1)
     blf.draw(font_id, str(cur_stretch_settings.points_number))
 

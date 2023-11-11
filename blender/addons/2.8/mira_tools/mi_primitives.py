@@ -894,11 +894,11 @@ def draw_callback_px(self, context):
 
     #Draw segments text
     blf.position(font_id, rw - 400, 210 - font_size, 0)
-    blf.size(font_id, font_size, 72)
+    blf.size(font_id, font_size)
     blf.draw(font_id, str(seg_1))
 
     blf.position(font_id, rw - 400, 210 - (font_size * 2), 0)
-    blf.size(font_id, font_size, 72)
+    blf.size(font_id, font_size)
     blf.draw(font_id, str(seg_2))
 
     if self.orient_on_surface:
@@ -906,7 +906,7 @@ def draw_callback_px(self, context):
     else:
         blf.color(0, c_orange[0], c_orange[1], c_orange[2], 1)
     blf.position(font_id, rw - 400, 210 - (font_size * 3 + 10), 0)
-    blf.size(font_id, font_size, 72)
+    blf.size(font_id, font_size)
     blf.draw(font_id, "Orient " + str(self.orient_on_surface))
 
     if self.median_center:
@@ -914,7 +914,7 @@ def draw_callback_px(self, context):
     else:
         blf.color(0, c_orange[0], c_orange[1], c_orange[2], 1)
     blf.position(font_id, rw - 400, 210 - (font_size * 4 + 10), 0)
-    blf.size(font_id, font_size, 72)
+    blf.size(font_id, font_size)
     blf.draw(font_id, "Median Center " + str(self.median_center))
 
     if self.center_is_cursor:
@@ -922,6 +922,6 @@ def draw_callback_px(self, context):
     else:
         blf.color(0, c_orange[0], c_orange[1], c_orange[2], 1)
     blf.position(font_id, rw - 400, 210 - (font_size * 5 + 10), 0)
-    blf.size(font_id, font_size, 72)
+    blf.size(font_id, font_size)
     blf.draw(font_id, "Center is 3D Cursor " + str(self.center_is_cursor))
 
