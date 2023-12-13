@@ -57,9 +57,9 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
             #bpy.ops.object.material_slot_copy()  # copy materials to new_obj
             context.view_layer.objects.active = new_obj
 
-            bpy.ops.object.modifier_add(type='EDGE_SPLIT')
-            bpy.context.object.modifiers["EdgeSplit"].split_angle = 0
-            bpy.ops.object.modifier_apply(modifier="EdgeSplit")
+            edge_mod = new_obj.modifiers.new('EdgeSplitMira', 'EDGE_SPLIT')
+            edge_mod.split_angle = 0
+            bpy.ops.object.modifier_apply(modifier="EdgeSplitMira")
 
             # get verts and faces
             out_verts=[]
