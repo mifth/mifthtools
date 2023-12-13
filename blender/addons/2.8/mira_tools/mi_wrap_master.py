@@ -44,11 +44,8 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
             self.report({'WARNING'}, "Select an object with UVMap!")
             return {'CANCELLED'}
         else:
-            uvs = wrap_obj.data.uv_layers.active.data
-            #wrap_obj.select_set(True)
 
             # create mesh
-            #new_mesh = bpy.data.meshes.new(wrap_obj.data.name + '_WRAP')
             new_obj = bpy.data.objects.new(wrap_obj.name + '_WRAP', wrap_obj.data.copy())
             new_obj.show_wire = True
             context.scene.collection.objects.link(new_obj)
@@ -62,8 +59,6 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
             bpy.ops.object.modifier_apply(modifier="EdgeSplitMira")
 
             # get verts and faces
-            out_verts=[]
-            out_faces=[]
             for face in new_obj.data.polygons:
 
                 for vert, loop in zip(face.vertices, face.loop_indices):
@@ -71,17 +66,8 @@ class MI_OT_Wrap_Object(bpy.types.Operator):
                     normal = new_obj.data.vertices[vert].co
                     uv = new_obj.data.uv_layers.active.data[loop].uv
                     new_obj.data.vertices[vert].co = (uv.x, 0, uv.y)
-                    #out_verts.append((uv.x, 0, uv.y))
-                    #oface.append(loop)
 
-                #out_faces.append(oface)
-
-
-            #new_obj.data.from_pydata(out_verts, [], out_faces)
             new_obj.data.update()
-
-            #for face in new_obj.data.polygons:
-                #wrap_obj.data.polygons[]
 
         return {'FINISHED'}
 
