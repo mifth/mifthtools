@@ -1,22 +1,17 @@
-# mifthtools
-This is my repository of tools which i use.
+# Mifth Tools
 
-Exchangers:
-http://blenderartists.org/forum/showthread.php?378946-Modo-Blender-Exchanger
-http://community.thefoundry.co.uk/discussion/topic.aspx?f=119&t=114220
+## Blender
 
-Blender:
+MiraTools:  
+http://blenderartists.org/forum/showthread.php?366107-MiraTools  
+https://github.com/mifth/mifthtools/wiki/Mira-Tools  
 
-MiraTools - Modeling/Retopo tools dedicated to my daughter.
-http://blenderartists.org/forum/showthread.php?366107-MiraTools
+MifthTools:  
+http://blenderartists.org/forum/showthread.php?346588-MifthTools-Addon  
 
-MifthTools - many tools which i use every day. Cloning, Animation.
-http://blenderartists.org/forum/showthread.php?346588-MifthTools-Addon
+Simple3DCoat Applink:   
+http://3d-coat.com/forum/index.php?showtopic=15481  
 
-SuperGrouper - Simple Grouping System. Forget about 20 layers limitation.
-http://blenderartists.org/forum/showthread.php?360257-Super-Grouper-WIP
-
-Simple3DCoat Applink - Applink for Blender/3DCoat integration.
-http://3d-coat.com/forum/index.php?showtopic=15481
-
-Thanks.
+## Exchangers  
+http://blenderartists.org/forum/showthread.php?378946-Modo-Blender-Exchanger   
+http://community.thefoundry.co.uk/discussion/topic.aspx?f=119&t=114220  
