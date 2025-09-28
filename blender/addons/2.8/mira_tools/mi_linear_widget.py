@@ -1,8 +1,8 @@
 import gpu
 from gpu_extras.batch import batch_for_shader
 
+import bpy
 from bpy.props import *
-
 from bpy_extras import view3d_utils
 
 import mathutils as mathu
@@ -11,8 +11,8 @@ from mathutils import Vector
 from . import mi_utils_base as ut_base
 
 
-shader3d = gpu.shader.from_builtin('UNIFORM_COLOR')
-shader2d = gpu.shader.from_builtin('UNIFORM_COLOR')
+shader3d = gpu.shader.from_builtin('POINT_UNIFORM_COLOR' if bpy.app.version >= (4, 5, 0) else 'UNIFORM_COLOR')
+shader2d = gpu.shader.from_builtin('POINT_UNIFORM_COLOR' if bpy.app.version >= (4, 5, 0) else 'UNIFORM_COLOR')
 
 
 class MI_LW_Point():

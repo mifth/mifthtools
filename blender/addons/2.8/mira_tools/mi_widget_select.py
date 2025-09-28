@@ -1,3 +1,4 @@
+import bpy
 from bpy.props import *
 from bpy.types import Operator, AddonPreferences
 
@@ -6,8 +7,8 @@ from gpu_extras import presets
 from gpu_extras.batch import batch_for_shader
 
 
-shader3d = gpu.shader.from_builtin('UNIFORM_COLOR')
-shader2d = gpu.shader.from_builtin('UNIFORM_COLOR')
+shader3d = gpu.shader.from_builtin('POINT_UNIFORM_COLOR' if bpy.app.version >= (4, 5, 0) else 'UNIFORM_COLOR')
+shader2d = gpu.shader.from_builtin('POINT_UNIFORM_COLOR' if bpy.app.version >= (4, 5, 0) else 'UNIFORM_COLOR')
 
 
 def draw_circle_select(m_coords, radius = 16, p_col = (0.7,0.8,1.0,0.6), enabled = False, sub = False):
